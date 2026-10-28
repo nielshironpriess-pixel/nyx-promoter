@@ -749,12 +749,12 @@ async function startScan() {
           note: String(r.note || "").trim(), promoter: String(r.promoter || "").trim() };
       });
       reviewScan(rows, out && out.note);
-    } catch (e) { close(); toast(e.message || "Scanningen fejlede."); }
+    } catch (e) { scanMsg("Scanningen virkede ikke", e.message || "Ukendt fejl."); }
   });
   inp.click();
 }
 function reviewScan(rows, note) {
-  if (!rows.length) { close(); return toast("Fandt ingen borde på billederne."); }
+  if (!rows.length) return scanMsg("Ingen af dine borde fundet", (note ? note + " " : "") + "Tjek at der står Niels Priess på bordene, og at billederne er fra Tables → List i Nyx.");
   const anyPromoter = rows.some((r) => r.promoter), from = payStart(payYm(todayISO()));
   const html = rows.map((r, i) => {
     const m = r.date && matchBooking(r), old = r.date && r.date < from, on = (!anyPromoter || isMe(r.promoter)) && !old;
@@ -784,6 +784,10 @@ function reviewScan(rows, note) {
   });
   f.querySelectorAll("[data-pick]").forEach((c) => c.addEventListener("change", () => c.closest(".scanrow").classList.toggle("off", !c.checked)));
 }
+function scanMsg(title, text) {
+  root.innerHTML = `<div class="scrim" id="scrim"><div class="sheet" role="dialog" aria-modal="true"><h3>${esc(title)}</h3><p class="sh" style="user-select:text">${esc(text)}</p><div class="btns" style="justify-content:flex-end"><button class="btn teal" data-close>OK</button></div></div></div>`;
+  root.querySelector("#scrim").addEventListener("click", (e) => { if (e.target.id === "scrim" || e.target.closest("[data-close]")) close(); });
+}
 async function importScan(rows) {
   let nNew = 0, nUpd = 0;
   try {
@@ -798,8 +802,9 @@ async function importScan(rows) {
       if (!old) b.notes = [r.note, area === "Andet" && r.area ? r.area : ""].filter(Boolean).join(" · ") || "Fra Nyx";
       await store.put("bookings", b); old ? nUpd++ : nNew++;
     }
-    toast([nNew && nNew + " nye", nUpd && nUpd + " opdateret"].filter(Boolean).join(", ") || "Intet gemt");
-  } catch { toast("Kunne ikke gemme alt. Prøv igen."); }
+    const sum = rows.reduce((a, r) => a + num(r.spent), 0);
+    scanMsg(rows.length ? "Gemt" : "Intet valgt", rows.length ? `${nNew} nye og ${nUpd} opdaterede borde. Solgt for ${kr(sum)} i alt. De står under Statistik i lønperioden for deres dato.` : "Du skal sætte flueben ved de borde, der skal gemmes.");
+  } catch (e) { scanMsg("Kunne ikke gemme", `${nNew + nUpd} af ${rows.length} borde blev gemt. Fejl: ${(e && (e.message || e.code)) || "ukendt"}`); }
 }
 /* ---------- /scan ---------- */
 
