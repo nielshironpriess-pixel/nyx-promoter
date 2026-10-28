@@ -282,6 +282,26 @@ body:has(#loginForm) .topbar,body:has(#loginForm) nav.tabs{display:none}
 .todo-row .bub{width:36px;height:36px;border-radius:12px;display:grid;place-items:center;font-weight:800;color:var(--green-ink);background:var(--teal);font-size:14px}
 .todo-row .bub.olive{background:var(--green)}.todo-row .bub.gold{background:var(--gold);color:var(--fg)}
 .hseg{display:grid;grid-template-columns:1fr 1fr;gap:6px;background:var(--raise);border-radius:12px;padding:4px;margin:4px 0 12px}
+.hseg.three{grid-template-columns:repeat(3,1fr)}
+.shero{background:var(--teal);color:var(--green-ink);border-radius:22px;padding:18px;margin-top:12px;box-shadow:0 10px 24px rgba(123,36,51,.22)}
+.shero .lab{font-size:12px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#e6c9c4}
+.shero .amt{font-family:var(--serif);font-size:40px;font-weight:700;line-height:1.1;margin:4px 0 2px}
+.shero .prog{height:8px;background:rgba(255,255,255,.18);border-radius:99px;margin:12px 0 8px;overflow:hidden}
+.shero .prog i{display:block;height:100%;background:var(--gold);border-radius:99px}
+.shero .row2{display:flex;justify-content:space-between;gap:8px;font-size:13px;color:#f1dcd6}
+.shero .prov{display:flex;justify-content:space-between;align-items:baseline;gap:8px;width:100%;margin-top:14px;padding:12px 0 0;border:0;border-top:1px solid rgba(255,255,255,.2);background:none;color:inherit;font:inherit;text-align:left}
+.shero .prov b{font-family:var(--serif);font-size:22px;color:var(--gold)}
+.salert{margin-top:10px;border-color:var(--gold)!important}
+.fchips{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 10px}
+.fchip{border:1px solid var(--line);background:var(--surface);border-radius:99px;padding:7px 12px;font-size:14px;font-weight:600;color:var(--muted)}
+.fchip span{opacity:.7;margin-left:2px}
+.fchip[aria-pressed="true"]{background:var(--teal);border-color:var(--teal);color:var(--green-ink)}
+.pill{display:inline-block;background:var(--gold);color:var(--fg);border-radius:99px;padding:3px 9px;font-size:13px;font-weight:700}
+.lg{display:inline-block;width:10px;height:10px;border-radius:3px;vertical-align:-1px;margin:0 2px 0 6px}
+details.more{margin-top:22px;border:1px solid var(--line);border-radius:16px;background:var(--surface);padding:0 14px 14px}
+details.more summary{padding:14px 0 4px;font-weight:700;cursor:pointer;color:var(--fg)}
+details.more:not([open]){padding-bottom:0}
+details.more:not([open]) summary{padding-bottom:14px}
 .hseg button{border:0;background:none;border-radius:9px;padding:9px 0;font-weight:700;color:var(--muted)}
 .hseg button[aria-pressed="true"]{background:var(--surface);color:var(--teal);box-shadow:0 1px 3px rgba(60,30,20,.1)}
 </style>
@@ -806,29 +826,6 @@ const svgI = (k) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" 
 
 /* ---------- Hive salg ---------- */
 function hiveTabs(on) { return `<div class="hseg"><button data-tab-go="hive" aria-pressed="${on === "hive"}">Bordkort</button><button data-tab-go="hivesalg" aria-pressed="${on === "hivesalg"}">Salg og provision</button></div>`; }
-function vHiveSales() {
-  ui.month ||= payYm(todayISO());
-  const m = monthStats(ui.month, hiveB), pct = num(S.settings.hivePct), mer = m.withMer.reduce((a, b) => a + extra(b), 0);
-  const max = Math.max(m.expected, m.sold, 1);
-  return `<div class="top"><span></span><div class="title"><b>Hive</b><span>Salg og provision</span></div><span></span></div>
-    ${hiveTabs("hivesalg")}
-    <div class="monthsw"><button data-month="-1" aria-label="Forrige lønperiode">‹</button><strong>${payName(ui.month)}</strong><button data-month="1" aria-label="Næste lønperiode">›</button></div>
-    <section class="cmp num"><div><div class="sub">Solgt på Hive</div><div class="big" style="color:var(--green)">${kr(m.sold)}</div>
-      <div class="sub">${nBorde(m.came.length)} kom${pct ? ` · din provision ${kr(m.sold * pct / 100)}` : ""}</div></div>
-      <div class="line"><span>Forventet</span><span class="bar"><i style="width:${m.expected / max * 100}%;background:var(--muted)"></i></span><b>${kr(m.expected)}</b></div>
-      <div class="line"><span>Solgt</span><span class="bar"><i style="width:${m.sold / max * 100}%;background:var(--green)"></i></span><b>${kr(m.sold)}</b></div></section>
-    <div class="kpis num">
-      <div class="kpi"><div class="l">Provision</div><div class="v">${pct ? kr(m.sold * pct / 100) : "–"}</div><div class="s">${pct ? pct + " % af salget" : "Sæt procent herunder"}</div></div>
-      <div class="kpi"><div class="l">Merspend</div><div class="v">${kr(mer)}</div><div class="s">${nBorde(m.withMer.length)} brugte mere</div></div>
-      <div class="kpi"><div class="l">Borde booket</div><div class="v">${m.act.length}</div><div class="s">${kr(m.avgExp)} i snit</div></div>
-      <div class="kpi"><div class="l">Mødte op</div><div class="v">${m.show === null ? "–" : m.show + " %"}</div><div class="s">${m.tableGuests} gæster</div></div>
-    </div>
-    ${merSection(m)}
-    ${periodTables(m)}
-    <h2>Provision på Hive</h2>
-    <form class="form" id="hivePctForm"><label class="f">Procent af bordsalg (%)<input id="h-pct" inputmode="decimal" value="${pct || ""}" placeholder="Fx 10"></label>
-    <div style="align-self:end"><button class="btn teal" type="submit">Gem</button></div></form>`;
-}
 function nextNight() { let x = todayISO(); for (let i = 0; i < 7; i++) { if ([4, 5, 6].includes(d(x).getDay())) return x; x = addDays(x, 1); } return todayISO(); }
 function bookingRow(b) {
   const sub = [!mine(b) ? "af " + first2(memberName(ownerOf(b))) : "", b.club ? b.club + ", " + dayLabel(b.date) : b.area !== "Andet" ? b.area : "", num(b.guests) ? num(b.guests) + " gæster" : "", b.arrival ? "kl. " + b.arrival : "", b.phone || ""].filter(Boolean).join(" · ");
@@ -874,37 +871,64 @@ function teamSection() {
     <form class="form" id="teamJoin" style="margin-top:14px"><label class="f">Dit navn<input id="j-me" required></label><label class="f">Kode fra din ven<input id="j-code" required autocapitalize="characters" placeholder="ABC123"></label>
     <div class="full"><button class="btn" type="submit">Tilslut hold</button></div></form>`;
   return `<h2>Hold · ${esc(store.team.name)}</h2><div class="list">${store.members.map((m) => `<div class="row"><span class="tag num">${esc(first2(m.name)[0] || "?")}</span><span class="mid"><span class="t">${esc(m.name)}${m.user_id === store.uid ? " (dig)" : ""}</span></span></div>`).join("")}</div>
-    <p class="note">Koden til holdet er <b style="font-size:16px;letter-spacing:.1em;color:var(--teal)">${esc(store.team.code)}</b>. Din ven opretter en konto i appen og skriver koden under Statistik → Hold.</p>
+    <p class="note">Koden til holdet er <b style="font-size:16px;letter-spacing:.1em;color:var(--teal)">${esc(store.team.code)}</b>. Din ven opretter en konto i appen og skriver koden under Salg → Indstillinger og hold.</p>
     <div class="btns"><button class="btn" data-act="copycode">Kopiér kode</button><button class="btn danger" data-act="leaveteam">Forlad holdet</button></div>`;
 }
-function periodTables(m) {
-  const rows = m.bs.filter(active).sort((a, b) => a.date.localeCompare(b.date) || String(a.table).localeCompare(String(b.table), "da", { numeric: true }));
-  if (!rows.length) return "";
-  return `<h2>Borde i lønperioden</h2><div class="list">${rows.map((b) => {
-    const sp = num(b.spent), mer = sp - num(b.expected), wait = b.status === "kom" && !sp;
-    return `<button class="row" data-booking="${esc(b.id)}"><span class="tag num ${b.status}">${esc(b.table || "?")}</span>
-      <span class="mid"><span class="t">${esc(b.name || "Uden navn")}</span><span class="s">${dayLabel(b.date)}${b.club ? " · " + esc(b.club) : ""} · pris ${kr(b.expected)}</span></span>
-      <span class="right num">${sp ? kr(sp) : wait ? "Skriv" : STATUS[b.status]}<small ${sp && mer > 0 ? 'style="color:var(--green)"' : ""}>${sp ? (mer > 0 ? "+" + kr(mer) + " mer" : "kun minimum") : wait ? "brugt" : ""}</small></span></button>`;
-  }).join("")}</div>`;
+/* ---------- salg: fælles opbygning for Søpavillonen og Hive ---------- */
+const MB = () => (typeof myBookings === "function" ? myBookings() : S.bookings);
+const TFILT = [["alle", "Alle"], ["mangler", "Mangler tal"], ["mer", "Med merspend"], ["min", "Kun minimum"], ["kommer", "Kommer"], ["udeblev", "Udeblev"]];
+function tFilter(b, f) {
+  const sp = num(b.spent);
+  if (f === "mangler") return (b.status === "kom" && !sp) || (b.status === "booket" && b.date < todayISO());
+  if (f === "mer") return !!sp && extra(b) > 0;
+  if (f === "min") return !!sp && extra(b) <= 0;
+  if (f === "kommer") return b.status === "booket" && b.date >= todayISO();
+  if (f === "udeblev") return b.status === "udeblev";
+  return true;
 }
-function merSection(m) {
-  const sum = (arr, f) => arr.reduce((a, b) => a + f(b), 0);
-  const w = m.withMer, n = m.noMer, mer = sum(w, extra);
-  if (!w.length && !n.length && !m.waiting) return `<h2>Bordsalg</h2><div class="empty">Når du har skrevet, hvad dine borde brugte, kan du se her, hvilke der lavede merspend.</div>`;
-  return `<h2>Bordsalg</h2><div class="list">
-    <div class="row"><span class="tag kom num">${w.length}</span><span class="mid"><span class="t">Med merspend</span><span class="s">pris ${kr(sum(w, (b) => num(b.expected)))} + merspend ${kr(mer)}</span></span><span class="right num" style="color:var(--green)">+${kr(mer)}<small>${kr(w.length ? mer / w.length : 0)} i snit</small></span></div>
-    <div class="row"><span class="tag num">${n.length}</span><span class="mid"><span class="t">Uden merspend</span><span class="s">brugte kun bordprisen${n.some((b) => extra(b) < 0) ? " eller mindre" : ""}</span></span><span class="right num">${kr(sum(n, (b) => num(b.spent)))}<small>solgt</small></span></div>
-    ${m.waiting ? `<button class="row" data-act="todo"><span class="tag booket num">${m.waiting}</span><span class="mid"><span class="t">Venter på tal</span><span class="s">kom, men du har ikke skrevet hvad de brugte</span></span><span class="right">Udfyld</span></button>` : ""}
+function salesHero(m, pct, place) {
+  const p = m.expected ? Math.min(100, Math.round(m.sold / m.expected * 100)) : 0;
+  return `<section class="shero num">
+    <div class="lab">Solgt ${place} i perioden</div>
+    <div class="amt">${kr(m.sold)}</div>
+    <div class="prog" aria-hidden="true"><i style="width:${p}%"></i></div>
+    <div class="row2"><span>${nBorde(m.came.length)} kom af ${m.act.length} booket</span><span>forventet ${kr(m.expected)}</span></div>
+    ${pct ? `<div class="prov"><span>Din provision · ${String(pct).replace(".", ",")} %</span><b>${kr(m.sold * pct / 100)}</b></div>`
+      : `<button class="prov" data-act="profile"><span>Sæt din provision i profilen</span><b>›</b></button>`}
+  </section>`;
+}
+function salesAlert(m) {
+  const n = m.bs.filter((b) => tFilter(b, "mangler")).length;
+  if (!n) return "";
+  return `<div class="list salert"><button class="row todo-row" data-act="todo"><span class="bub">${n}</span><span class="mid"><span class="t">${n === 1 ? "Et bord mangler" : n + " borde mangler"} tal</span><span class="s">Skriv hvad de brugte, så salget passer</span></span><span class="right">Udfyld ›</span></button></div>`;
+}
+function salesKpis(m, hive) {
+  const mer = m.withMer.reduce((a, b) => a + extra(b), 0);
+  return `<div class="kpis num">
+    <div class="kpi"><div class="l">Merspend</div><div class="v">${kr(mer)}</div><div class="s">${m.withMer.length} af ${m.withMer.length + m.noMer.length} borde brugte mere</div></div>
+    <div class="kpi"><div class="l">Snit pr. bord</div><div class="v">${kr(m.avgSold || m.avgExp)}</div><div class="s">${m.avgSold ? "solgt" : "forventet"} pr. bord</div></div>
+    <div class="kpi"><div class="l">Mødte op</div><div class="v">${m.show === null ? "–" : m.show + " %"}</div><div class="s">${m.tableGuests} gæster ved bordene</div></div>
+    ${hive ? `<div class="kpi"><div class="l">Borde booket</div><div class="v">${m.act.length}</div><div class="s">${kr(m.expected)} forventet</div></div>`
+      : `<div class="kpi"><div class="l">Gæsteliste</div><div class="v">${m.guests}</div><div class="s">${m.guestNights ? "ca. " + Math.round(m.guests / m.guestNights) + " pr. aften" : "ingen aftener endnu"}</div></div>`}
   </div>`;
 }
-function vStats() {
-  ui.month ||= payYm(todayISO());
-  const m = monthStats(ui.month);
-  const max = Math.max(m.expected, m.sold, 1);
-  const diff = m.sold - m.expOfCame;
-  const pct = num(S.settings.pct);
+function periodTables(m) {
+  const all = m.bs.slice().sort((a, b) => a.date.localeCompare(b.date) || String(a.table).localeCompare(String(b.table), "da", { numeric: true }));
+  if (!all.length) return `<div class="empty">Ingen borde i denne lønperiode endnu.</div>`;
+  const counts = Object.fromEntries(TFILT.map(([k]) => [k, all.filter((b) => tFilter(b, k)).length]));
+  if (!counts[ui.tf || "alle"]) ui.tf = "alle";
+  const f = ui.tf || "alle", rows = all.filter((b) => tFilter(b, f));
+  return `<div class="fchips">${TFILT.filter(([k]) => k === "alle" || counts[k]).map(([k, l]) => `<button class="fchip" data-tf="${k}" aria-pressed="${f === k}">${l} <span class="num">${counts[k]}</span></button>`).join("")}</div>
+  <div class="list">${rows.map((b) => {
+    const sp = num(b.spent), mer = sp - num(b.expected), wait = tFilter(b, "mangler");
+    return `<button class="row" data-booking="${esc(b.id)}"><span class="tag num ${b.status}">${esc(b.table || "?")}</span>
+      <span class="mid"><span class="t">${esc(b.name || "Uden navn")}</span><span class="s">${dayLabel(b.date)} · pris ${kr(b.expected)}</span></span>
+      <span class="right num">${sp ? kr(sp) : wait ? '<span class="pill">Skriv tal</span>' : STATUS[b.status]}<small ${sp && mer > 0 ? 'style="color:var(--green)"' : ""}>${sp ? (mer > 0 ? "+" + kr(mer) + " mer" : "kun minimum") : ""}</small></span></button>`;
+  }).join("")}</div>`;
+}
+function salesChart(pred) {
   const months = Array.from({ length: 6 }, (_, i) => shiftMonth(ui.month, i - 5));
-  const ms = months.map((x) => monthStats(x)), cmax = Math.max(...ms.map((x) => Math.max(x.sold, x.expected)), 1);
+  const ms = months.map((x) => monthStats(x, pred)), cmax = Math.max(...ms.map((x) => Math.max(x.sold, x.expected)), 1);
   const W = 340, Hh = 150, top = 20, bot = 22, slot = W / 6, bw = 14;
   const bars = months.map((ym, i) => {
     const cx = slot * i + slot / 2, he = (Hh - top - bot) * ms[i].expected / cmax, hs = (Hh - top - bot) * ms[i].sold / cmax;
@@ -913,47 +937,59 @@ function vStats() {
       ${ms[i].sold ? `<text class="val" x="${cx + 8}" y="${Hh - bot - hs - 5}" text-anchor="middle">${Math.round(ms[i].sold / 1000)}k</text>` : ""}
       <text x="${cx}" y="${Hh - 6}" text-anchor="middle">${mShort(payStart(ym))}–${mShort(payEnd(ym))}</text>`;
   }).join("");
+  return `<div class="chart"><svg viewBox="0 0 ${W} ${Hh}" role="img" aria-label="Forventet og solgt pr. lønperiode"><line x1="0" x2="${W}" y1="${Hh - bot}" y2="${Hh - bot}" stroke="var(--line)"/>${bars}</svg></div>
+  <p class="note"><span class="lg" style="background:var(--stripe2)"></span> forventet <span class="lg" style="background:var(--green)"></span> solgt · seneste 6 lønperioder</p>`;
+}
+function salesTop(pred) {
   const byTable = {}, byName = {};
-  myBookings().filter((b) => !b.club && b.status === "kom" && num(b.spent)).forEach((b) => {
-    const t = (b.club ? b.club + " " : b.area === "Andet" ? "" : b.area + " ") + "bord " + b.table; (byTable[t] ||= { n: 0, s: 0 }); byTable[t].n++; byTable[t].s += num(b.spent);
+  MB().filter((b) => (pred ? pred(b) : !b.club) && b.status === "kom" && num(b.spent)).forEach((b) => {
+    const t = (b.club || b.area === "Andet" ? "" : b.area + " ") + "bord " + b.table; (byTable[t] ||= { n: 0, s: 0 }); byTable[t].n++; byTable[t].s += num(b.spent);
     const k = (b.name || "").trim().toLowerCase(); if (k) { (byName[k] ||= { name: b.name.trim(), n: 0, s: 0 }); byName[k].n++; byName[k].s += num(b.spent); }
   });
   const topT = Object.entries(byTable).sort((a, b) => b[1].s - a[1].s).slice(0, 3);
-  const byClub = {};
-  m.bs.forEach((b) => { const c = (byClub[clubOf(b)] ||= { n: 0, exp: 0, sold: 0 }); if (active(b)) { c.n++; c.exp += num(b.expected); } c.sold += sold(b); });
-  const clubs = Object.entries(byClub).sort((a, b) => b[1].sold - a[1].sold);
   const topN = Object.values(byName).sort((a, b) => b.s - a.s).slice(0, 5);
+  if (!topT.length) return `<div class="empty">Når du har skrevet, hvad dine borde brugte, kan du se dine bedste borde og kunder her.</div>`;
+  return `<h2>Bedste borde</h2><div class="list">${topT.map(([t, v]) => `<div class="row"><span class="tag kom num">${v.n}×</span><span class="mid"><span class="t">${esc(t[0].toUpperCase() + t.slice(1))}</span><span class="s">${kr(v.s / v.n)} i snit</span></span><span class="right num">${kr(v.s)}</span></div>`).join("")}</div>
+  <h2>Stamkunder</h2><div class="list">${topN.map((c) => `<div class="row"><span class="tag num">${c.n}×</span><span class="mid"><span class="t">${esc(c.name)}</span><span class="s">${kr(c.s / c.n)} i snit</span></span><span class="right num">${kr(c.s)}</span></div>`).join("")}</div>`;
+}
+function salesBody(m, pred) {
+  const tab = ui.stab || "borde";
+  return `<div class="hseg three" style="margin-top:18px">${[["borde", "Borde"], ["udvikling", "Udvikling"], ["top", "Bedste"]].map(([k, l]) => `<button data-stab="${k}" aria-pressed="${tab === k}">${l}</button>`).join("")}</div>
+  ${tab === "udvikling" ? salesChart(pred) : tab === "top" ? salesTop(pred) : periodTables(m)}`;
+}
+const monthSw = () => `<div class="monthsw"><button data-month="-1" aria-label="Forrige lønperiode">‹</button><strong>${payName(ui.month)}</strong><button data-month="1" aria-label="Næste lønperiode">›</button></div>`;
+function vHiveSales() {
+  ui.month ||= payYm(todayISO());
+  const m = monthStats(ui.month, hiveB), pct = num(S.settings.hivePct);
+  return `<div class="top"><span></span><div class="title"><b>Hive</b><span>Salg og provision</span></div><span></span></div>
+    ${hiveTabs("hivesalg")}
+    ${monthSw()}
+    ${salesHero(m, pct, "på Hive")}
+    ${salesAlert(m)}
+    ${salesKpis(m, true)}
+    ${salesBody(m, hiveB)}
+    <details class="more"><summary>Provision på Hive</summary>
+    <form class="form" id="hivePctForm"><label class="f">Procent af bordsalg (%)<input id="h-pct" inputmode="decimal" value="${pct || ""}" placeholder="Fx 10"></label>
+    <div style="align-self:end"><button class="btn teal" type="submit">Gem</button></div></form></details>`;
+}
+function vStats() {
+  ui.month ||= payYm(todayISO());
+  const m = monthStats(ui.month), pct = num(S.settings.pct);
+  const team = typeof teamSection === "function" ? teamSection() : "";
+  const sky = typeof store !== "undefined" && store.mode === "sky";
   return `<div class="top"><span></span><div class="title"><b>Søpavillonen</b><span>Salg og statistik</span></div><span></span></div>
-  <div class="monthsw"><button data-month="-1" aria-label="Forrige lønperiode">‹</button><strong>${payName(ui.month)}</strong><button data-month="1" aria-label="Næste lønperiode">›</button></div>
-  ${poolSection()}
-  <section class="cmp num">
-    <div><div class="sub">${store.team ? "Du har solgt for" : "Solgt for"}</div><div class="big" style="color:var(--green)">${kr(m.sold)}</div>
-    <div class="sub">${nBorde(m.came.length)} kom${pct ? ` · din provision ${kr(m.sold * pct / 100)}` : ""}</div></div>
-    <div class="line"><span>Forventet</span><span class="bar"><i style="width:${m.expected / max * 100}%;background:var(--muted)"></i></span><b>${kr(m.expected)}</b></div>
-    <div class="line"><span>Solgt</span><span class="bar"><i style="width:${m.sold / max * 100}%;background:var(--green)"></i></span><b>${kr(m.sold)}</b></div>
-    ${m.expOfCame ? `<div class="sub">De borde der kom, brugte <b style="color:${diff >= 0 ? "var(--green)" : "var(--red)"}">${diff >= 0 ? "+" : "−"}${kr(Math.abs(diff))}</b> i forhold til hvad du regnede med.</div>` : ""}
-  </section>
-  ${merSection(m)}
-  ${periodTables(m)}
-  <section class="tiles num">
-    <div class="tile"><div class="v">${kr(m.avgExp)}</div><div class="k">forventet i snit pr. bord</div></div>
-    <div class="tile"><div class="v" style="color:var(--green)">${kr(m.avgSold)}</div><div class="k">solgt i snit pr. bord</div></div>
-    <div class="tile"><div class="v">${m.act.length}</div><div class="k">borde booket</div></div>
-    <div class="tile"><div class="v">${m.show === null ? "–" : m.show + " %"}</div><div class="k">mødte op</div></div>
-    <div class="tile"><div class="v">${m.guests}</div><div class="k">på din gæsteliste</div></div>
-    <div class="tile"><div class="v">${m.guestNights ? Math.round(m.guests / m.guestNights) : 0}</div><div class="k">på liste i snit pr. aften</div></div>
-  </section>
-  <h2>Seneste 6 lønperioder</h2><div class="chart"><svg viewBox="0 0 ${W} ${Hh}" role="img" aria-label="Forventet og solgt pr. lønperiode"><line x1="0" x2="${W}" y1="${Hh - bot}" y2="${Hh - bot}" stroke="var(--line)"/>${bars}</svg></div>
-  <p class="note">Beige søjle er forventet, oliven er solgt.</p>
-  ${clubs.some(([c]) => c !== HOME) ? `<h2>Pr. klub</h2><div class="list">${clubs.map(([c, x]) => `<div class="row"><span class="tag num">${x.n}</span><span class="mid"><span class="t">${esc(c)}</span><span class="s">forventet ${kr(x.exp)}</span></span><span class="right num">${kr(x.sold)}<small>solgt</small></span></div>`).join("")}</div>` : ""}
-  <h2>Bedste borde</h2>${topT.length ? `<div class="list">${topT.map(([t, v]) => `<div class="row"><span class="tag kom num">${v.n}×</span><span class="mid"><span class="t">${esc(t)}</span><span class="s">${kr(v.s / v.n)} i snit</span></span><span class="right num">${kr(v.s)}</span></div>`).join("")}</div>` : `<div class="empty">Vises når du har skrevet, hvad dine borde har brugt.</div>`}
-  <h2>Stamkunder</h2>${topN.length ? `<div class="list">${topN.map((c) => `<div class="row"><span class="tag num">${c.n}×</span><span class="mid"><span class="t">${esc(c.name)}</span><span class="s">${kr(c.s / c.n)} i snit</span></span><span class="right num">${kr(c.s)}</span></div>`).join("")}</div>` : `<div class="empty">Dine bedste kunder samles her.</div>`}
-  <h2>Indstillinger</h2>
-  <form class="form" id="setForm"><label class="f">Provision af bordsalg (%)<input id="s-pct" inputmode="decimal" value="${num(S.settings.pct) || ""}" placeholder="Fx 10"></label>
+  ${monthSw()}
+  ${salesHero(m, pct, "på Søpavillonen")}
+  ${salesAlert(m)}
+  ${typeof poolSection === "function" ? poolSection() : ""}
+  ${salesKpis(m, false)}
+  ${salesBody(m)}
+  <details class="more"><summary>Indstillinger${team ? " og hold" : ""}</summary>
+  <form class="form" id="setForm"><label class="f">Provision af bordsalg (%)<input id="s-pct" inputmode="decimal" value="${pct || ""}" placeholder="Fx 10"></label>
   <div style="align-self:end"><button class="btn teal" type="submit">Gem</button></div></form>
-  ${teamSection()}
-  ${store.mode === "sky" ? `<h2>Konto</h2><div class="btns"><button class="btn" data-act="logout">Log ud</button></div>
-  <p class="note">Læg appen på hjemmeskærmen: Safari → Del → Føj til hjemmeskærm.</p>` : ""}`;
+  ${team}
+  ${sky ? `<h2>Konto</h2><div class="btns"><button class="btn" data-act="logout">Log ud</button></div>
+  <p class="note">Læg appen på hjemmeskærmen: Safari → Del → Føj til hjemmeskærm.</p>` : ""}</details>`;
 }
 
 /* ---------- notes ---------- */
@@ -1204,7 +1240,7 @@ async function importScan(rows) {
       await store.put("bookings", b); old ? nUpd++ : nNew++;
     }
     const sum = rows.reduce((a, r) => a + num(r.price), 0);
-    scanMsg(rows.length ? "Gemt" : "Intet valgt", rows.length ? `${nNew} nye og ${nUpd} opdaterede borde, ${kr(sum)} i bordpriser. Gå til Statistik → Borde i lønperioden og skriv, hvad de brugte, når du ved det.` : "Du skal sætte flueben ved de borde, der skal gemmes.");
+    scanMsg(rows.length ? "Gemt" : "Intet valgt", rows.length ? `${nNew} nye og ${nUpd} opdaterede borde, ${kr(sum)} i bordpriser. Gå til Salg → Mangler tal og skriv, hvad de brugte, når du ved det.` : "Du skal sætte flueben ved de borde, der skal gemmes.");
   } catch (e) { scanMsg("Kunne ikke gemme", `${nNew + nUpd} af ${rows.length} borde blev gemt. Fejl: ${(e && (e.message || e.code)) || "ukendt"}`); }
 }
 /* ---------- /scan ---------- */
@@ -1255,6 +1291,8 @@ view.addEventListener("click", (e) => {
   if ((x = t("[data-table]"))) { const A = AREAS[ui.area]; return bookingSheet(bookingAt(ui.date, A.name, x.dataset.table) || newBooking(ui.date, A.name, x.dataset.table)); }
   if ((x = t("[data-news]"))) { try { localStorage.setItem(seenKey(), new Date().toISOString()); } catch {} const b = S.bookings.find((y) => y.id === x.dataset.news); render(); return b ? bookingSheet(b) : toast("Bordet er ikke delt mere"); }
   if ((x = t("[data-booking]"))) return bookingSheet(S.bookings.find((b) => b.id === x.dataset.booking));
+  if ((x = t("[data-stab]"))) { ui.stab = x.dataset.stab; return render(); }
+  if ((x = t("[data-tf]"))) { ui.tf = x.dataset.tf; return render(); }
   if ((x = t("[data-month]"))) { ui.month = shiftMonth(ui.month, Number(x.dataset.month)); return render(); }
   if ((x = t("[data-nseg]"))) { ui.noteSeg = x.dataset.nseg; return render(); }
   if ((x = t("[data-party]"))) return partySheet(S.notes.find((n) => n.id === x.dataset.party));
@@ -1268,7 +1306,7 @@ view.addEventListener("click", (e) => {
   if (!(x = t("[data-act]"))) return;
   const act = x.dataset.act;
   if (act === "logout") return store.signOut();
-  if (act === "copycode") return copyText(`Hej! Hent Bordbog på ${location.origin}, opret en konto, og skriv koden ${store.team.code} under Statistik → Hold.`);
+  if (act === "copycode") return copyText(`Hej! Hent Bordbog på ${location.origin}, opret en konto, og skriv koden ${store.team.code} under Salg → Indstillinger og hold.`);
   if (act === "leaveteam") { if (!x.dataset.armed) { x.dataset.armed = "1"; x.textContent = "Tryk igen for at forlade"; return; } return safe(store.rpc("nyx_leave_team", {}).then(() => store.loadAll()), "Du har forladt holdet"); }
   if (act === "seenall") { try { localStorage.setItem(seenKey(), new Date().toISOString()); } catch {} return render(); }
   if (act === "allnews") { ui.allNews = true; return render(); }
