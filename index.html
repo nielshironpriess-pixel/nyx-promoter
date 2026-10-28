@@ -529,6 +529,8 @@ const HIVE = { name: "Hive", y0: 0, h: 968, items: [
   HT("4", 140, 932, 75, 52, "20-25"), HT("3", 185, 986, 75, 62, "20-25"), HT("2", 290, 978, 90, 72, "20-25"), HT("1", 415, 978, 105, 72, "20-25"),
   HB("Bar 2", 525, 760, 190, 135), HB("Balkon", 742, 700, 30, 240, true), HT("41", 780, 720, 58, 70, "8-10"), HT("40", 780, 855, 58, 70, "8-10"),
 ] };
+const NIGHT_DAYS = () => (isCrew() ? [4] : [4, 5, 6]);
+const okDay = (iso) => !isCrew() || d(iso).getDay() === 4;
 const DEFAULT_EVENTS = { 3: ["Onsdag", "22:00–03:00", ""], 4: ["Moon", "22:00–05:00", "18+"], 5: ["Friday", "17:30–05:00", "23+"], 6: ["Saturday", "17:30–05:00", "23+"] };
 const STATUS = { booket: "Booket", kom: "Kom", udeblev: "Udeblev", aflyst: "Aflyst" };
 
@@ -858,10 +860,10 @@ function eventCard(date) {
 function vEvents() {
   const today = todayISO(), end = addDays(today, 28);
   const set = new Set();
-  for (let i = 0; i <= 28; i++) { const x = addDays(today, i); if ([4, 5, 6].includes(d(x).getDay())) set.add(x); }
-  [...S.bookings.filter((b) => !b.club).map((b) => b.date), ...S.nights.map((n) => n.id)].forEach((x) => x && x >= today && set.add(x));
+  for (let i = 0; i <= 28; i++) { const x = addDays(today, i); if (NIGHT_DAYS().includes(d(x).getDay())) set.add(x); }
+  [...S.bookings.filter((b) => !b.club).map((b) => b.date), ...S.nights.map((n) => n.id)].forEach((x) => x && x >= today && okDay(x) && set.add(x));
   const upcoming = [...set].sort();
-  const past = [...new Set([...S.bookings.filter((b) => !b.club).map((b) => b.date), ...S.nights.map((n) => n.id)])].filter((x) => x && x < today).sort().reverse();
+  const past = [...new Set([...S.bookings.filter((b) => !b.club).map((b) => b.date), ...S.nights.map((n) => n.id)])].filter((x) => x && x < today && okDay(x)).sort().reverse();
   const todo = S.bookings.filter((b) => b.date < today && (b.status === "booket" || (b.status === "kom" && !num(b.spent))));
   return `<div class="top"><span></span><div class="title"><b>Events</b></div><span></span></div>
   <button class="btn teal scanbtn" data-act="scan">Scan screenshots fra Nyx</button>
@@ -1021,7 +1023,7 @@ function vHome() {
   if (fu.length) todo.push(`<button class="row todo-row" data-tab-go="events"><span class="bub gold">${fu.length}</span><span class="mid"><span class="t">Skriv tak til ${fu.length === 1 ? esc(first(fu[0].name)) : fu.length + " kunder"}</span><span class="s">Fra de seneste aftener</span></span><span class="right">›</span></button>`);
   const bd = upcomingBirthdays(today, 14);
   if (bd.length) todo.push(`<button class="row todo-row" data-tab-go="events"><span class="bub gold">🎂</span><span class="mid"><span class="t">${esc(bd[0].name)} fylder ${bd[0].age}</span><span class="s">${bd[0].days === 0 ? "I dag" : "Om " + bd[0].days + " dage"}${bd.length > 1 ? " · og " + (bd.length - 1) + " mere" : ""}</span></span><span class="right">›</span></button>`);
-  const upcoming = [...new Set([next, ...[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((i) => addDays(today, i)).filter((x) => [4, 5, 6].includes(d(x).getDay()))])].filter((x) => x > next).slice(0, 3);
+  const upcoming = [...new Set([next, ...[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((i) => addDays(today, i)).filter((x) => NIGHT_DAYS().includes(d(x).getDay()))])].filter((x) => x > next).slice(0, 3);
   return `<div class="hello-date">${new Date().toLocaleDateString("da-DK", { weekday: "long", day: "numeric", month: "long" })}</div>
     <h1 class="hello">${greeting()}, ${esc(first(pr.name || meNyx()))}</h1>
     ${needsCode() ? `<form class="genvej" id="homeJoin" style="margin:0 0 14px"><b>Er du underpromoter?</b><span class="s">Skriv koden, du har fået af din promoter, så bliver din konto koblet på.</span>
@@ -1056,7 +1058,7 @@ const svgI = (k) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" 
 
 /* ---------- Hive salg ---------- */
 function hiveTabs(on) { return `<div class="hseg"><button data-tab-go="hive" aria-pressed="${on === "hive"}">Bordkort</button><button data-tab-go="hivesalg" aria-pressed="${on === "hivesalg"}">Salg og provision</button></div>`; }
-function nextNight() { let x = todayISO(); for (let i = 0; i < 7; i++) { if ([4, 5, 6].includes(d(x).getDay())) return x; x = addDays(x, 1); } return todayISO(); }
+function nextNight() { let x = todayISO(); for (let i = 0; i < 7; i++) { if (NIGHT_DAYS().includes(d(x).getDay())) return x; x = addDays(x, 1); } return todayISO(); }
 function bookingRow(b) {
   const sub = [!mine(b) ? "af " + first2(memberName(ownerOf(b))) : "", b.club ? b.club + ", " + dayLabel(b.date) : b.area !== "Andet" ? b.area : "", num(b.guests) ? num(b.guests) + " gæster" : "", b.arrival ? "kl. " + b.arrival : "", b.phone || ""].filter(Boolean).join(" · ");
   return `<button class="row" data-booking="${esc(b.id)}"><span class="tag num ${b.status}">${esc(b.table || "?")}</span>
@@ -1393,7 +1395,7 @@ const sold_ = (b) => (b.status === "kom" ? num(b.spent) || 0 : 0);
 
 /* ---------- gæsteliste: navne til hver aften ---------- */
 const listOf = (date) => S.notes.filter((n) => n.kind === "gaest" && n.date === date);
-function stepNight(date, dir) { let x = date; for (let i = 0; i < 14; i++) { x = addDays(x, dir); if (DEFAULT_EVENTS[d(x).getDay()]) return x; } return addDays(date, dir); }
+function stepNight(date, dir) { let x = date; for (let i = 0; i < 14; i++) { x = addDays(x, dir); if (DEFAULT_EVENTS[d(x).getDay()] && okDay(x)) return x; } return addDays(date, dir); }
 const noteOwner = (n) => (store.meta && store.meta["notes:" + n.id] || {}).owner || store.uid;
 const VIP_MAX = 20;
 const gN = (n) => num(n.count) || 1;
@@ -1458,6 +1460,7 @@ function gaestSheet(n) {
     <div class="full btns">${noteOwner(n) === store.uid ? `<button type="button" class="btn danger" data-del>Slet</button>` : "<span></span>"}<button class="btn teal">Gem</button></div>
   </form>`, (f) => {
     const nx = { ...n, name: v(f, "ge-name"), count: Math.max(1, num(v(f, "ge-count"))), date: v(f, "ge-date") || n.date, note: v(f, "ge-note"), vip: f.querySelector("#ge-vip").checked };
+    if (!okDay(nx.date)) { toast("Du kan kun skrive gæster på torsdage (Moon)"); return false; }
     if (nx.vip && noteOwner(n) === store.uid && !vipRoom(nx.date, nx.count, n.id)) return false;
     safe(store.put("notes", nx), "Gemt");
   },
@@ -1538,6 +1541,7 @@ function bookingSheet(b) {
     const sh = f.querySelector("#b-share"); if (sh) o.shared = sh.checked;
     if (other) o.club = v(f, "b-club") || "Anden klub";
     if (o.spent && o.status === "booket") o.status = "kom";
+    if (!o.club && !okDay(o.date)) { toast("Du kan kun booke torsdage (Moon)"); return false; }
     safe(store.put("bookings", o), "Gemt");
     if (ui.todoRun && o.spent) { (ui.todoDone ||= new Set()).add(o.id); setTimeout(() => { const n = nextTodo(); if (n) bookingSheet(n); else ui.todoRun = false; }, 250); }
   }, () => safe(store.del("bookings", b.id), "Slettet"));
