@@ -693,7 +693,7 @@ const scanEngine = {
 /* ---------- /scan-motor ---------- */
 /* ---------- scan screenshots fra Nyx ---------- */
 const AREA_OF = {}; AREAS.forEach((A) => A.items.forEach((it) => { if (it.k === "t" || it.k === "r") AREA_OF[it.id] = A.name; }));
-const ME = "Niels";
+const ME = "Niels Priess";
 function scanPrompt(n) {
   return `Du får ${n} screenshot(s) fra Nyx, natklubben ${HOME}s personale-app. Promoteren hedder ${ME}. I dag er ${todayISO()}.
 Find hver bordbooking eller bordsalg der står på billederne. For hver booking, aflæs:
@@ -705,7 +705,7 @@ Find hver bordbooking eller bordsalg der står på billederne. For hver booking,
 - kind: "spent" hvis beløbet er hvad bordet faktisk har brugt/købt for (omsætning, betalt, total, solgt), "expected" hvis det er en pris, depositum eller minimumsforbrug, "unknown" hvis det ikke fremgår.
 - promoter: navnet på den promoter/sælger/booker der står på bookingen, ellers tom streng.
 - status: "kom" hvis der står at gæsterne er ankommet/checket ind, "udeblev" ved no-show, "aflyst" ved annulleret, ellers "booket".
-Tag alle bookinger med, også andre promoteres; markér dem bare med deres navn. Lad være med at gætte tal du ikke kan se. Samme booking kan stå på flere billeder: tag den kun med én gang.
+Tag KUN bookinger, hvor promoteren/sælgeren er ${ME} (står der kun "Niels" eller "Priess" ved en booking, så tag den også med). Spring bookinger fra andre promotere over. Lad være med at gætte tal du ikke kan se. Samme booking kan stå på flere billeder: tag den kun med én gang.
 Svar KUN med JSON i præcis dette format:
 {"rows":[{"date":"2026-10-31","table":"41","name":"Mikkel Jensen","guests":8,"amount":12000,"kind":"spent","promoter":"Niels","status":"kom"}],"note":"kort note på dansk hvis noget var uklart, ellers tom"}`;
 }
@@ -717,7 +717,7 @@ async function shrink(file) {
     return await new Promise((ok) => c.toBlob((b) => ok(b || file), "image/jpeg", 0.85));
   } catch { return file; }
 }
-const isMe = (p) => new RegExp("\\b" + ME + "\\b", "i").test(String(p || ""));
+const isMe = (p) => /priess|niels/i.test(String(p || ""));
 function matchBooking(r) {
   const on = S.bookings.filter((b) => b.date === r.date && !b.club);
   return (r.table && on.find((b) => String(b.table) === String(r.table))) || (r.name && on.find((b) => key(b.name) === key(r.name))) || null;
