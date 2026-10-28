@@ -174,6 +174,13 @@ nav.tabs button[aria-current="page"]{background:var(--bg);color:var(--teal)}
 label.f{display:flex;flex-direction:column;gap:5px;font-size:12px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);min-width:0}
 label.f input,label.f select,label.f textarea{background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:10px 12px;font-size:16px;text-transform:none;letter-spacing:0;font-weight:400;width:100%;min-width:0;color:var(--fg)}
 label.f textarea{min-height:60px;resize:vertical}
+/* iPhone: rolig bordark uden sidelæns rystelser */
+.sheet{overflow-x:hidden;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;touch-action:pan-y}
+.scrim{overscroll-behavior:contain}
+html:has(.scrim),body:has(.scrim){overflow:hidden}
+.sheet form,.sheet label.f{max-width:100%}
+label.f input[type=date],label.f input[type=time]{-webkit-appearance:none;appearance:none;display:block;min-height:44px;max-width:100%;text-align:left}
+label.f input::-webkit-date-and-time-value{text-align:left;margin:0}
 .status{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
 .status button{border:1px solid var(--line);background:var(--bg);border-radius:10px;padding:9px 0;font-size:13px;font-weight:700;color:var(--muted)}
 .status button[aria-pressed="true"].booket{background:var(--teal);color:var(--green-ink);border-color:var(--teal)}
