@@ -206,6 +206,16 @@ label.f small.mer{text-transform:none;letter-spacing:0;font-size:13px;color:var(
 .spentbox{display:grid;grid-template-columns:1fr 1fr;gap:10px;background:var(--bg);border:1px solid var(--line);border-radius:14px;padding:12px}
 .spentbox .sbh{grid-column:1/-1;font-family:var(--serif);font-size:17px;color:var(--teal)}
 .spentbox [data-minonly]{align-self:center}
+.badge{position:absolute;top:2px;right:calc(50% - 22px);min-width:18px;height:18px;border-radius:99px;background:var(--teal);color:var(--green-ink);font-size:11px;font-weight:800;display:grid;place-items:center;padding:0 5px}
+nav.tabs button{position:relative}
+.row.news .dot{width:10px;height:10px;border-radius:99px;background:transparent;align-self:start;margin-top:6px}
+.row.news.new .dot{background:var(--teal)}
+.row.news.new .t{font-weight:700}
+label.share{display:flex;gap:12px;align-items:flex-start;background:var(--bg);border:1px solid var(--line);border-radius:14px;padding:12px}
+label.share input{width:22px;height:22px;accent-color:var(--teal);margin-top:2px}
+label.share small{color:var(--muted)}
+.cmp.pool{margin-bottom:12px}
+#l-toggle{margin-top:6px}
 </style>
 </head>
 <body>
@@ -298,6 +308,12 @@ const active = (b) => b.status !== "aflyst";
 const bookingsOn = (date) => S.bookings.filter((b) => b.date === date && !b.club);
 const HOME = "Søpavillonen";
 const clubOf = (b) => b.club || HOME;
+/* hold: egne borde vs borde delt af andre på holdet */
+const ownerOf = (b) => (store.meta && store.meta["bookings:" + b.id] || {}).owner || store.uid;
+const mine = (b) => !store.uid || ownerOf(b) === store.uid;
+const myBookings = () => S.bookings.filter(mine);
+const memberName = (uid) => ((store.members || []).find((m) => m.user_id === uid) || {}).name || "holdet";
+const first2 = (n) => String(n || "").trim().split(/\s+/)[0];
 const clubNames = () => [...new Set(["Hive", ...S.bookings.map((b) => b.club).filter(Boolean)])];
 const extra = (b) => num(b.spent) - num(b.expected);
 const sold = (b) => b.status === "kom" ? num(b.spent) : 0;
@@ -306,7 +322,7 @@ const sold = (b) => b.status === "kom" ? num(b.spent) : 0;
 const key = (n) => String(n || "").trim().toLowerCase();
 function customers() {
   const c = {};
-  S.bookings.slice().sort((a, b) => (a.date || "").localeCompare(b.date || "")).forEach((b) => {
+  myBookings().sort((a, b) => (a.date || "").localeCompare(b.date || "")).forEach((b) => {
     const k = key(b.name); if (!k) return;
     const x = (c[k] ||= { name: b.name.trim(), phone: "", bday: "", n: 0, spent: 0 });
     if (b.phone) x.phone = b.phone; if (b.bday) x.bday = b.bday;
@@ -324,7 +340,7 @@ function upcomingBirthdays(today, within = 30) {
   return Object.values(customers()).filter((c) => /^\d{4}-\d\d-\d\d$/.test(c.bday)).map((c) => ({ ...c, ...nextBirthday(c.bday, today) }))
     .filter((c) => c.days <= within).sort((a, b) => a.days - b.days);
 }
-const followups = (today) => S.bookings.filter((b) => b.date < today && b.date >= addDays(today, -14) && (b.status === "kom" || b.status === "udeblev") && !b.followed && b.name)
+const followups = (today) => myBookings().filter((b) => b.date < today && b.date >= addDays(today, -14) && (b.status === "kom" || b.status === "udeblev") && !b.followed && b.name)
   .sort((a, b) => b.date.localeCompare(a.date));
 async function copyText(t) {
   try { await navigator.clipboard.writeText(t); toast("Beskeden er kopieret"); }
@@ -335,7 +351,7 @@ const first = (n) => String(n || "").trim().split(/\s+/)[0];
 /* ---------- storage: Supabase med login (samme konto som Goon), ellers demo i browseren ---------- */
 const DK_ERR = { "Invalid login credentials": "Forkert email eller adgangskode", "Email not confirmed": "Din email er ikke bekræftet endnu" };
 const store = {
-  sb: null, mode: "venter", uid: null,
+  sb: null, mode: "venter", uid: null, meta: {}, team: null, members: [], news: [], teamOk: false, pool: {},
   async start() {
     const cfg = await import("./js/config.js");
     if (!cfg.SUPABASE_URL || !cfg.SUPABASE_ANON_KEY) return this.startLocal("Demo: tallene gemmes kun i denne browser.");
@@ -362,16 +378,52 @@ const store = {
     let t = null;
     const later = () => { clearTimeout(t); t = setTimeout(() => this.loadAll(), 400); };
     this.sb.channel("nyx-" + this.uid).on("postgres_changes", { event: "*", schema: "public", table: "nyx_docs", filter: "owner=eq." + this.uid }, later).subscribe();
+    this.later = later; this.listenTeam();
     document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") this.loadAll(); });
     setStatus("Gemt i din konto og opdateres live på alle dine enheder.");
   },
   async loadAll() {
-    const { data, error } = await this.sb.from("nyx_docs").select("col,id,data");
+    let res = await this.sb.from("nyx_docs").select("col,id,data,owner,team");
+    if (res.error && /team/.test(res.error.message)) res = await this.sb.from("nyx_docs").select("col,id,data,owner");
+    const { data, error } = res;
     if (error) { setStatus(/does not exist|schema cache/i.test(error.message) ? "Tabellen findes ikke endnu. Kør supabase/nyx.sql i Supabase." : "Kunne ikke hente dine tal: " + error.message); S.ready = true; render(); return; }
-    const by = { bookings: [], nights: [], notes: [] }; let settings = {};
-    data.forEach((r) => { if (r.col === "settings") settings = r.data; else if (by[r.col]) by[r.col].push({ ...r.data, id: r.id }); });
+    const by = { bookings: [], nights: [], notes: [] }; let settings = {}; this.meta = {};
+    data.forEach((r) => {
+      this.meta[r.col + ":" + r.id] = { owner: r.owner, team: r.team || null };
+      const own = r.owner === this.uid;
+      if (r.col === "settings") { if (own) settings = r.data; }
+      else if (r.col === "bookings" || own) by[r.col] && by[r.col].push({ ...r.data, id: r.id });
+    });
+    await this.loadTeam();
     Object.assign(S, by, { settings: { pct: 0, ...settings }, ready: true });
     render();
+  },
+  async loadTeam() {
+    const m = await this.sb.from("nyx_members").select("user_id,team_id,name");
+    if (m.error) { this.teamOk = false; this.team = null; this.members = []; return; }
+    this.teamOk = true; this.members = m.data || [];
+    const me = this.members.find((x) => x.user_id === this.uid);
+    if (!me) { this.team = null; this.news = []; return; }
+    const t = await this.sb.from("nyx_teams").select("id,name,code").eq("id", me.team_id).maybeSingle();
+    this.team = t.data || { id: me.team_id, name: "Holdet", code: "" };
+    const n = await this.sb.from("nyx_news").select("id,actor,owner,booking,text,created_at").order("created_at", { ascending: false }).limit(40);
+    this.news = n.data || [];
+    this.pool = {}; this.listenTeam();
+  },
+  listenTeam() {
+    if (!this.team || !this.later || this.teamCh === this.team.id) return;
+    this.teamCh = this.team.id;
+    this.sb.channel("hold-" + this.team.id)
+      .on("postgres_changes", { event: "*", schema: "public", table: "nyx_docs", filter: "team=eq." + this.team.id }, this.later)
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "nyx_news", filter: "team_id=eq." + this.team.id }, this.later)
+      .on("postgres_changes", { event: "*", schema: "public", table: "nyx_members", filter: "team_id=eq." + this.team.id }, this.later).subscribe();
+  },
+  async rpc(fn, args) { const { data, error } = await this.sb.rpc(fn, args); if (error) throw new Error(error.message); return data; },
+  async poolFor(ym) {
+    const k = ym; if (this.pool[k]) return this.pool[k];
+    this.pool[k] = "henter";
+    try { this.pool[k] = await this.rpc("nyx_team_stats", { p_from: payStart(ym), p_to: payEnd(ym) }); } catch { this.pool[k] = null; }
+    render(); return this.pool[k];
   },
   startLocal(msg) {
     this.mode = "lokal";
@@ -387,9 +439,19 @@ const store = {
   },
   async put(col, obj) {
     if (this.mode === "sky") {
-      const { id, ...data } = obj;
-      const { error } = await this.sb.from("nyx_docs").upsert({ owner: this.uid, col, id, data, updated_at: new Date().toISOString() });
-      if (error) throw error;
+      const { id, ...data } = obj, m = this.meta[col + ":" + id], now = new Date().toISOString();
+      if (m && m.owner !== this.uid) {
+        const { error } = await this.sb.from("nyx_docs").update({ data, updated_at: now }).match({ owner: m.owner, col, id });
+        if (error) throw error;
+      } else {
+        const team = col === "bookings" && obj.shared && this.team ? this.team.id : null;
+        const row = { owner: this.uid, col, id, data, updated_at: now };
+        if (this.teamOk) row.team = team;
+        const { error } = await this.sb.from("nyx_docs").upsert(row);
+        if (error) throw error;
+        this.meta[col + ":" + id] = { owner: this.uid, team };
+      }
+      Object.values(this.pool).length && (this.pool = {});
     }
     this.local(col, obj);
   },
@@ -404,31 +466,49 @@ const store = {
 };
 
 /* ---------- login ---------- */
-function showLogin() {
+function showLogin(signup) {
   document.querySelector("nav.tabs").hidden = true;
   view.innerHTML = `<form class="login" id="loginForm">
-    <div class="logo">NIELS</div><p style="margin:0;font-weight:700;letter-spacing:.2em;color:var(--muted)">BORDBOG</p><p class="note">Log ind med samme email og adgangskode som på Goon.</p>
+    <div class="logo">NIELS</div><p style="margin:0;font-weight:700;letter-spacing:.2em;color:var(--muted)">BORDBOG</p>
+    <p class="note">${signup ? "Opret en konto med din email. Bagefter kan du komme på et hold med en kode." : "Log ind med din email og adgangskode."}</p>
     <label class="f">Email<input id="l-email" type="email" autocomplete="email" required></label>
-    <label class="f">Adgangskode<input id="l-pass" type="password" autocomplete="current-password" required></label>
-    <p class="err" id="l-err"></p><button class="btn teal" type="submit">Log ind</button></form>`;
+    <label class="f">Adgangskode<input id="l-pass" type="password" autocomplete="${signup ? "new-password" : "current-password"}" minlength="6" required></label>
+    <p class="err" id="l-err"></p><button class="btn teal" type="submit">${signup ? "Opret konto" : "Log ind"}</button>
+    <button class="btn" type="button" id="l-toggle">${signup ? "Jeg har en konto" : "Opret ny konto"}</button></form>`;
+  view.querySelector("#l-toggle").addEventListener("click", () => showLogin(!signup));
   view.querySelector("#loginForm").addEventListener("submit", async (e) => {
     e.preventDefault(); e.stopPropagation();
-    const f = e.target, b = f.querySelector("button"); b.disabled = true; b.textContent = "Logger ind…";
-    try { view.innerHTML = '<p class="note" style="padding-top:24px">Henter dine bookinger…</p>'; await store.signIn(f.querySelector("#l-email").value.trim(), f.querySelector("#l-pass").value); }
-    catch (err) { showLogin(); view.querySelector("#l-err").textContent = err.message; }
+    const f = e.target, email = f.querySelector("#l-email").value.trim(), pass = f.querySelector("#l-pass").value;
+    const b = f.querySelector("button[type=submit]"); b.disabled = true; b.textContent = signup ? "Opretter…" : "Logger ind…";
+    try {
+      if (signup) {
+        const { data, error } = await store.sb.auth.signUp({ email, password: pass });
+        if (error) throw new Error(DK_ERR[error.message] || error.message);
+        if (!data.session) { showLogin(false); view.querySelector("#l-err").textContent = "Tjek din mail og tryk på linket. Log derefter ind her."; return; }
+        store.uid = data.user.id; view.innerHTML = '<p class="note" style="padding-top:24px">Gør klar…</p>'; return store.afterLogin();
+      }
+      view.innerHTML = '<p class="note" style="padding-top:24px">Henter dine bookinger…</p>'; await store.signIn(email, pass);
+    } catch (err) { showLogin(signup); view.querySelector("#l-err").textContent = err.message; }
   });
 }
-
 const setStatus = (t) => { document.getElementById("status").textContent = t; };
 async function safe(p, ok) { try { await p; if (ok) toast(ok); } catch (e) { toast(e && e.code === "quota_exceeded" ? "Databasen er fuld." : "Kunne ikke gemme. Prøv igen."); } }
 function toast(t) { const el = document.createElement("div"); el.className = "toast"; el.textContent = t; document.body.appendChild(el); setTimeout(() => el.remove(), 2000); }
 
 /* ---------- render ---------- */
 const view = document.getElementById("view");
+function badge() {
+  const b = document.querySelector('nav.tabs [data-tab="events"]'); if (!b) return;
+  const n = store.team ? unread().length : 0; let el = b.querySelector(".badge");
+  if (!n) { el && el.remove(); return; }
+  if (!el) { el = document.createElement("span"); el.className = "badge"; b.appendChild(el); }
+  el.textContent = n > 9 ? "9+" : n;
+}
 function render() {
   document.querySelectorAll("nav.tabs button").forEach((b) => b.setAttribute("aria-current", b.dataset.tab === (ui.tab === "night" ? "borde" : ui.tab) ? "page" : "false"));
   if (!S.ready) return;
   const y = window.scrollY;
+  badge();
   view.innerHTML = { events: vEvents, borde: vNight, night: vNight, stats: vStats, noter: vNoter }[ui.tab]();
   if (ui.keepScroll) window.scrollTo(0, y);
   ui.keepScroll = true;
@@ -454,7 +534,7 @@ function vEvents() {
   return `<div class="top"><span></span><div class="title"><b>Events</b></div><span></span></div>
   <button class="btn teal scanbtn" data-act="scan">Scan screenshots fra Nyx</button>
   ${todo.length ? `<button class="ev todo" data-act="todo"><div class="r1"><span class="wd thu">Mangler beløb</span></div><div class="r2"><span class="name">${todo.length} ${todo.length === 1 ? "bord" : "borde"} mangler hvad de brugte</span><span class="stats">Udfyld</span></div></button>` : ""}
-  ${followSection(today)}${bdaySection(today)}
+  ${newsSection()}${followSection(today)}${bdaySection(today)}
   ${clubSection(today)}
   <h2>Kommende på ${HOME}</h2>${upcoming.map(eventCard).join("")}
   <h2>Andet event på ${HOME}</h2>
@@ -462,6 +542,17 @@ function vEvents() {
   ${past.length ? `<h2>Tidligere</h2>${(ui.showPast ? past : past.slice(0, 5)).map(eventCard).join("")}${past.length > 5 && !ui.showPast ? `<button class="btn" data-act="showpast">Vis alle ${past.length}</button>` : ""}` : ""}`;
 }
 
+const seenKey = () => "bordbog-seen-" + store.uid;
+const lastSeen = () => { try { return localStorage.getItem(seenKey()) || ""; } catch { return ""; } };
+const unread = () => (store.news || []).filter((n) => n.actor !== store.uid && n.created_at > lastSeen());
+function newsSection() {
+  if (!store.team) return "";
+  const items = (store.news || []).filter((n) => n.actor !== store.uid).slice(0, ui.allNews ? 30 : 5), seen = lastSeen();
+  if (!items.length) return "";
+  return `<h2>Nyt fra holdet</h2><div class="list">${items.map((n) => `<button class="row news ${n.created_at > seen ? "new" : ""}" data-news="${esc(n.booking)}"><span class="dot"></span>
+    <span class="mid"><span class="t" style="white-space:normal">${esc(n.text)}</span><span class="s">${new Date(n.created_at).toLocaleString("da-DK", { weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}</span></span><span class="right">›</span></button>`).join("")}</div>
+  <div class="btns" style="margin-top:8px">${unread().length ? `<button class="btn" data-act="seenall">Marker som læst</button>` : ""}${!ui.allNews && store.news.length > 5 ? `<button class="btn" data-act="allnews">Vis flere</button>` : ""}</div>`;
+}
 function clubSection(today) {
   const rows = S.bookings.filter((b) => b.club && (b.date >= today || (b.date >= addDays(today, -7)))).sort((a, b) => a.date.localeCompare(b.date));
   return `<h2>Andre klubber</h2>${rows.length ? `<div class="list">${rows.map(bookingRow).join("")}</div>` : `<div class="empty">Borde du booker på fx Hive samles her.</div>`}
@@ -514,7 +605,7 @@ function vNight() {
 }
 function nextNight() { let x = todayISO(); for (let i = 0; i < 7; i++) { if ([4, 5, 6].includes(d(x).getDay())) return x; x = addDays(x, 1); } return todayISO(); }
 function bookingRow(b) {
-  const sub = [b.club ? b.club + ", " + dayLabel(b.date) : b.area !== "Andet" ? b.area : "", num(b.guests) ? num(b.guests) + " gæster" : "", b.arrival ? "kl. " + b.arrival : "", b.phone || ""].filter(Boolean).join(" · ");
+  const sub = [!mine(b) ? "af " + first2(memberName(ownerOf(b))) : "", b.club ? b.club + ", " + dayLabel(b.date) : b.area !== "Andet" ? b.area : "", num(b.guests) ? num(b.guests) + " gæster" : "", b.arrival ? "kl. " + b.arrival : "", b.phone || ""].filter(Boolean).join(" · ");
   return `<button class="row" data-booking="${esc(b.id)}"><span class="tag num ${b.status}">${esc(b.table || "?")}</span>
     <span class="mid"><span class="t">${esc(b.name || "Uden navn")}</span><span class="s">${esc(sub)}</span></span>
     <span class="right num">${b.status === "kom" && num(b.spent) ? kr(b.spent) : kr(b.expected)}<small>${b.status === "kom" && num(b.spent) ? (num(b.expected) && extra(b) > 0 ? "+" + kr(extra(b)) + " merspend" : "solgt") : STATUS[b.status]}</small></span></button>`;
@@ -522,7 +613,7 @@ function bookingRow(b) {
 
 /* ---------- stats ---------- */
 function monthStats(ym) {
-  const bs = S.bookings.filter((b) => inPay(b.date, ym));
+  const bs = myBookings().filter((b) => inPay(b.date, ym));
   const act = bs.filter(active), came = bs.filter((b) => b.status === "kom"), withSpent = came.filter((b) => num(b.spent));
   const decided = bs.filter((b) => b.status === "kom" || b.status === "udeblev");
   const nights = S.nights.filter((n) => inPay(n.id, ym) && num(n.guestlist));
@@ -535,6 +626,30 @@ function monthStats(ym) {
     guests: nights.reduce((a, n) => a + num(n.guestlist), 0), guestNights: nights.length,
     tableGuests: came.reduce((a, b) => a + num(b.guests), 0),
     withMer: withSpent.filter((b) => extra(b) > 0), noMer: withSpent.filter((b) => extra(b) <= 0), waiting: came.length - withSpent.length };
+}
+function poolSection() {
+  if (!store.team) return "";
+  const p = store.pool[ui.month];
+  if (p === undefined) { store.poolFor(ui.month); return `<section class="cmp"><div class="sub">Fælles pulje</div><p class="note">Henter holdets tal…</p></section>`; }
+  if (p === "henter") return `<section class="cmp"><div class="sub">Fælles pulje</div><p class="note">Henter holdets tal…</p></section>`;
+  if (!p) return `<section class="cmp"><div class="sub">Fælles pulje</div><p class="note">Kunne ikke hente holdets tal.</p></section>`;
+  const tot = p.reduce((a, x) => a + num(x.sold), 0), mx = Math.max(...p.map((x) => num(x.sold)), 1);
+  return `<section class="cmp num pool"><div><div class="sub">Fælles pulje · ${esc(store.team.name)}</div><div class="big" style="color:var(--green)">${kr(tot)}</div>
+    <div class="sub">${p.reduce((a, x) => a + x.came, 0)} borde kom · merspend ${kr(p.reduce((a, x) => a + num(x.mer), 0))}</div></div>
+    ${p.map((x) => `<div class="line"><span>${esc(first2(x.name))}${x.user_id === store.uid ? " (dig)" : ""}</span><span class="bar"><i style="width:${num(x.sold) / mx * 100}%;background:var(--green)"></i></span><b>${kr(x.sold)}</b></div>`).join("")}
+  </section>`;
+}
+function teamSection() {
+  if (store.mode !== "sky") return "";
+  if (!store.teamOk) return `<h2>Hold</h2><div class="empty">Vil du dele en pulje med en ven? Kør supabase/hold.sql i Supabase først.</div>`;
+  if (!store.team) return `<h2>Hold</h2><p class="note">Lav et hold med en ven. I ser kun jeres egne borde, men I får en fælles pulje, og I kan dele enkelte borde, fx på Hive.</p>
+    <form class="form" id="teamNew"><label class="f">Dit navn<input id="t-me" required placeholder="Niels"></label><label class="f">Holdets navn<input id="t-name" placeholder="Fx Niels & Chrille"></label>
+    <div class="full"><button class="btn teal" type="submit">Opret hold</button></div></form>
+    <form class="form" id="teamJoin" style="margin-top:14px"><label class="f">Dit navn<input id="j-me" required></label><label class="f">Kode fra din ven<input id="j-code" required autocapitalize="characters" placeholder="ABC123"></label>
+    <div class="full"><button class="btn" type="submit">Tilslut hold</button></div></form>`;
+  return `<h2>Hold · ${esc(store.team.name)}</h2><div class="list">${store.members.map((m) => `<div class="row"><span class="tag num">${esc(first2(m.name)[0] || "?")}</span><span class="mid"><span class="t">${esc(m.name)}${m.user_id === store.uid ? " (dig)" : ""}</span></span></div>`).join("")}</div>
+    <p class="note">Koden til holdet er <b style="font-size:16px;letter-spacing:.1em;color:var(--teal)">${esc(store.team.code)}</b>. Din ven opretter en konto i appen og skriver koden under Statistik → Hold.</p>
+    <div class="btns"><button class="btn" data-act="copycode">Kopiér kode</button><button class="btn danger" data-act="leaveteam">Forlad holdet</button></div>`;
 }
 function periodTables(m) {
   const rows = m.bs.filter(active).sort((a, b) => a.date.localeCompare(b.date) || String(a.table).localeCompare(String(b.table), "da", { numeric: true }));
@@ -573,7 +688,7 @@ function vStats() {
       <text x="${cx}" y="${Hh - 6}" text-anchor="middle">${mShort(payStart(ym))}–${mShort(payEnd(ym))}</text>`;
   }).join("");
   const byTable = {}, byName = {};
-  S.bookings.filter((b) => b.status === "kom" && num(b.spent)).forEach((b) => {
+  myBookings().filter((b) => b.status === "kom" && num(b.spent)).forEach((b) => {
     const t = (b.club ? b.club + " " : b.area === "Andet" ? "" : b.area + " ") + "bord " + b.table; (byTable[t] ||= { n: 0, s: 0 }); byTable[t].n++; byTable[t].s += num(b.spent);
     const k = (b.name || "").trim().toLowerCase(); if (k) { (byName[k] ||= { name: b.name.trim(), n: 0, s: 0 }); byName[k].n++; byName[k].s += num(b.spent); }
   });
@@ -584,8 +699,9 @@ function vStats() {
   const topN = Object.values(byName).sort((a, b) => b.s - a.s).slice(0, 5);
   return `<div class="top"><span></span><div class="title"><b>Statistik</b></div><span></span></div>
   <div class="monthsw"><button data-month="-1" aria-label="Forrige lønperiode">‹</button><strong>${payName(ui.month)}</strong><button data-month="1" aria-label="Næste lønperiode">›</button></div>
+  ${poolSection()}
   <section class="cmp num">
-    <div><div class="sub">Solgt for</div><div class="big" style="color:var(--green)">${kr(m.sold)}</div>
+    <div><div class="sub">${store.team ? "Du har solgt for" : "Solgt for"}</div><div class="big" style="color:var(--green)">${kr(m.sold)}</div>
     <div class="sub">${m.came.length} borde kom${pct ? ` · din provision ${kr(m.sold * pct / 100)}` : ""}</div></div>
     <div class="line"><span>Forventet</span><span class="bar"><i style="width:${m.expected / max * 100}%;background:var(--muted)"></i></span><b>${kr(m.expected)}</b></div>
     <div class="line"><span>Solgt</span><span class="bar"><i style="width:${m.sold / max * 100}%;background:var(--green)"></i></span><b>${kr(m.sold)}</b></div>
@@ -609,6 +725,7 @@ function vStats() {
   <h2>Indstillinger</h2>
   <form class="form" id="setForm"><label class="f">Provision af bordsalg (%)<input id="s-pct" inputmode="decimal" value="${num(S.settings.pct) || ""}" placeholder="Fx 10"></label>
   <div style="align-self:end"><button class="btn teal" type="submit">Gem</button></div></form>
+  ${teamSection()}
   ${store.mode === "sky" ? `<h2>Konto</h2><div class="btns"><button class="btn" data-act="logout">Log ud</button></div>
   <p class="note">Læg appen på hjemmeskærmen: Safari → Del → Føj til hjemmeskærm.</p>` : ""}`;
 }
@@ -649,9 +766,9 @@ const v = (f, id) => f.querySelector("#" + id).value.trim();
 function nextTodo() { return S.bookings.filter((b) => ((b.date <= todayISO() && b.status === "kom" && !num(b.spent)) || (b.date < todayISO() && b.status === "booket")) && !(ui.todoDone && ui.todoDone.has(b.id))).sort((a, b) => a.date.localeCompare(b.date))[0]; }
 function bookingSheet(b) {
   const exists = S.bookings.some((x) => x.id === b.id);
-  const names = [...new Set(S.bookings.map((x) => x.name).filter(Boolean))];
+  const names = [...new Set(myBookings().map((x) => x.name).filter(Boolean))];
   const free = b.area === "Andet", other = b.club != null;
-  const f = openSheet(`<h3>${other ? "Bord på " + esc(b.club || "anden klub") : free ? "Bord" : esc(b.area) + ", bord " + esc(b.table)}</h3><p class="sh">${other ? "Booking uden for " + HOME : dayLabel(b.date) + " · " + esc(eventFor(b.date).name)}</p>
+  const f = openSheet(`<h3>${other ? "Bord på " + esc(b.club || "anden klub") : free ? "Bord" : esc(b.area) + ", bord " + esc(b.table)}</h3><p class="sh">${other ? "Booking uden for " + HOME : dayLabel(b.date) + " · " + esc(eventFor(b.date).name)}${!mine(b) ? " · delt af " + esc(memberName(ownerOf(b))) : ""}</p>
   <form class="form">
     ${other ? `<label class="f">Klub<input id="b-club" list="clubs" value="${esc(b.club)}" required autocomplete="off"><datalist id="clubs">${clubNames().map((c) => `<option value="${esc(c)}">`).join("")}</datalist></label>
 ` : ""}
@@ -669,12 +786,14 @@ function bookingSheet(b) {
       <label class="f">Brugt i alt (kr.)<input id="b-spent" inputmode="numeric" data-money value="${fmtIn(b.spent)}" placeholder="Ikke skrevet"></label>
       <button type="button" class="btn" data-minonly>Kun minimum</button><small class="mer" id="b-mer"></small></div>
     <label class="f full">Noter<textarea id="b-notes" placeholder="Fx flasker, fødselsdag">${esc(b.notes)}</textarea></label>
-    <div class="full btns">${exists ? `<button type="button" class="btn danger" data-del>Slet</button>` : `<button type="button" class="btn" data-close>Annullér</button>`}<button class="btn teal" type="submit">Gem</button></div>
+    ${store.team && mine(b) ? `<label class="share full"><input type="checkbox" id="b-share" ${b.shared ?? !!b.club ? "checked" : ""}><span><b>Del med holdet</b><br><small>${esc(store.team.name)} kan se bordet og skrive merspend ind</small></span></label>` : ""}
+    <div class="full btns">${exists && mine(b) ? `<button type="button" class="btn danger" data-del>Slet</button>` : `<button type="button" class="btn" data-close>Annullér</button>`}<button class="btn teal" type="submit">Gem</button></div>
   </form>`, (f) => {
     const o = { ...b, name: v(f, "b-name"), guests: num(v(f, "b-guests")), expected: num(v(f, "b-expected")), phone: v(f, "b-phone"), arrival: v(f, "b-arrival"),
       spent: num(v(f, "b-spent")), notes: v(f, "b-notes"), bday: v(f, "b-bday"), status: f.querySelector("[data-st][aria-pressed=true]").dataset.st };
     if (free) o.table = v(f, "b-table");
     o.date = v(f, "b-date") || o.date;
+    const sh = f.querySelector("#b-share"); if (sh) o.shared = sh.checked;
     if (other) o.club = v(f, "b-club") || "Anden klub";
     if (o.spent && o.status === "booket") o.status = "kom";
     safe(store.put("bookings", o), "Gemt");
@@ -876,6 +995,8 @@ function setGuestlist(date, val) {
 view.addEventListener("input", (e) => { if (e.target.id === "gl") setGuestlist(ui.date, num(e.target.value)); });
 view.addEventListener("submit", (e) => {
   e.preventDefault();
+  if (e.target.id === "teamNew") { const f = e.target; return safe(store.rpc("nyx_create_team", { p_team: f.querySelector("#t-name").value, p_name: f.querySelector("#t-me").value }).then(() => store.loadAll()), "Holdet er oprettet"); }
+  if (e.target.id === "teamJoin") { const f = e.target; return store.rpc("nyx_join_team", { p_code: f.querySelector("#j-code").value, p_name: f.querySelector("#j-me").value }).then(() => store.loadAll()).then(() => toast("Du er på holdet"), (err) => toast(/findes ikke/.test(err.message) ? "Koden findes ikke" : /allerede/.test(err.message) ? "Du er allerede på et hold" : "Kunne ikke tilslutte")); }
   if (e.target.id === "setForm") safe(store.settings({ ...S.settings, pct: num(e.target.querySelector("#s-pct").value) }), "Gemt");
   if (e.target.id === "ideaForm") { const t = e.target.querySelector("#ideaText").value.trim(); if (t) safe(store.put("notes", { id: newId(), kind: "ide", text: t, done: false, created: Date.now() })); }
 });
@@ -891,6 +1012,7 @@ view.addEventListener("click", (e) => {
   if ((x = t("[data-area]"))) { ui.area = (ui.area + Number(x.dataset.area) + AREAS.length) % AREAS.length; return render(); }
   if ((x = t("[data-gl]"))) { const inp = view.querySelector("#gl"); const nv = Math.max(0, num(inp.value) + Number(x.dataset.gl)); inp.value = nv; return setGuestlist(ui.date, nv); }
   if ((x = t("[data-table]"))) { const A = AREAS[ui.area]; return bookingSheet(bookingAt(ui.date, A.name, x.dataset.table) || newBooking(ui.date, A.name, x.dataset.table)); }
+  if ((x = t("[data-news]"))) { try { localStorage.setItem(seenKey(), new Date().toISOString()); } catch {} const b = S.bookings.find((y) => y.id === x.dataset.news); render(); return b ? bookingSheet(b) : toast("Bordet er ikke delt mere"); }
   if ((x = t("[data-booking]"))) return bookingSheet(S.bookings.find((b) => b.id === x.dataset.booking));
   if ((x = t("[data-month]"))) { ui.month = shiftMonth(ui.month, Number(x.dataset.month)); return render(); }
   if ((x = t("[data-nseg]"))) { ui.noteSeg = x.dataset.nseg; return render(); }
@@ -905,6 +1027,10 @@ view.addEventListener("click", (e) => {
   if (!(x = t("[data-act]"))) return;
   const act = x.dataset.act;
   if (act === "logout") return store.signOut();
+  if (act === "copycode") return copyText(`Hej! Hent Bordbog på ${location.origin}, opret en konto, og skriv koden ${store.team.code} under Statistik → Hold.`);
+  if (act === "leaveteam") { if (!x.dataset.armed) { x.dataset.armed = "1"; x.textContent = "Tryk igen for at forlade"; return; } return safe(store.rpc("nyx_leave_team", {}).then(() => store.loadAll()), "Du har forladt holdet"); }
+  if (act === "seenall") { try { localStorage.setItem(seenKey(), new Date().toISOString()); } catch {} return render(); }
+  if (act === "allnews") { ui.allNews = true; return render(); }
   if (act === "back") go("events");
   if (act === "scan") startScan();
   if (act === "editnight") nightSheet(ui.date);

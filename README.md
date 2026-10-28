@@ -36,3 +36,8 @@ Alt ligger i én tabel, `nyx_docs` (bookinger, aftener, noter og indstillinger s
 
 Knappen "Scan screenshots fra Nyx" sender op til 5 screenshots til `api/scan.js`, som lader Claude læse dato, bord, kunde, gæster og beløb. Du godkender rækkerne, før de gemmes.
 Det kræver en Anthropic API-nøgle: opret den på console.anthropic.com, og læg den i Vercel → Settings → Environment Variables som `ANTHROPIC_API_KEY`. Redeploy bagefter.
+
+## Hold og fælles pulje
+
+Kør `supabase/hold.sql` i Supabase (efter `nyx.sql`). Under Statistik → Hold kan du oprette et hold og give din ven koden.
+Hver ser kun sine egne borde, undtagen borde der er sat til "Del med holdet" (Hive-borde deles som standard). Statistik viser holdets fælles pulje, og Events viser "Nyt fra holdet", når nogen deler et bord eller skriver tal ind.
