@@ -28,6 +28,9 @@
     },
     "api/genvej.js": {
       "maxDuration": 60
+    },
+    "api/notify.js": {
+      "maxDuration": 20
     }
   }
 }

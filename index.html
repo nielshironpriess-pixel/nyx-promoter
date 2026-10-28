@@ -27,6 +27,7 @@
   --f:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",Roboto,sans-serif;
 }
 *{box-sizing:border-box}
+[hidden]{display:none!important}
 html,body,button,a,input,select,textarea,label{touch-action:manipulation}
 html,body{background:var(--bg);color:var(--fg)}
 body{font-family:var(--f);font-size:15px;line-height:1.4;margin:0;min-height:100vh;
@@ -432,7 +433,7 @@ button:active,.ev:active,.kpi:active,.qa:active,.hero:active,a.cbtn:active{trans
 
 <div class="sidescrim" id="sideScrim"></div>
 <aside class="side" id="side" aria-label="Menu">
-  <div class="brand big">Bordbog</div><div class="brand-sub">Niels' promoterbog</div>
+  <div class="brand big">Bordbog</div><div class="brand-sub" id="brandSub">Niels' promoterbog</div>
   <nav class="snav">
     <button data-tab="home"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg>Overblik</button>
     <div class="nav-label">Søpavillonen</div>
@@ -443,7 +444,7 @@ button:active,.ev:active,.kpi:active,.qa:active,.hero:active,a.cbtn:active{trans
     <button data-tab="hive"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l8 4.6v9.2L12 22l-8-6.2V6.6z M12 8l3.5 2v4L12 16l-3.5-2v-4z"/></svg>Hive bordkort</button>
     <button data-tab="hivesalg"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V11M10 20V5M16 20v-6M2 20h20"/><circle cx="19" cy="5" r="2"/></svg>Hive salg</button>
     <div class="nav-label">Andet</div>
-    <button data-tab="kunder"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.9M16 3.1a4 4 0 0 1 0 7.8"/></svg>Bedste kunder</button>    <button data-tab="noter"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-3.5 10.9c.6.4 1 1.1 1 1.9V16h5v-.2c0-.8.4-1.5 1-1.9A6 6 0 0 0 12 3z"/></svg>Noter og selskaber</button>
+    <button data-tab="crew" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.4 6.8 19.1l1-5.8L3.5 9.2l5.9-.9z"/></svg>Underpromotere</button>    <button data-tab="kunder"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.9M16 3.1a4 4 0 0 1 0 7.8"/></svg>Bedste kunder</button>    <button data-tab="noter"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-3.5 10.9c.6.4 1 1.1 1 1.9V16h5v-.2c0-.8.4-1.5 1-1.9A6 6 0 0 0 12 3z"/></svg>Noter og selskaber</button>
     <button data-act="scan"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8V5a1 1 0 0 1 1-1h3M16 4h3a1 1 0 0 1 1 1v3M20 16v3a1 1 0 0 1-1 1h-3M8 20H5a1 1 0 0 1-1-1v-3M7 12h10"/></svg>Scan fra Nyx</button>
   </nav>
   <button class="me-card" data-act="profile"><span class="avatar" id="sideAvatar">?</span><span><b id="sideName">Din profil</b><small>Rediger profil</small></span></button>
@@ -555,7 +556,7 @@ const clubOf = (b) => b.club || HOME;
 const ownerOf = (b) => (store.meta && store.meta["bookings:" + b.id] || {}).owner || store.uid;
 const mine = (b) => !store.uid || ownerOf(b) === store.uid;
 const myBookings = () => S.bookings.filter(mine);
-const memberName = (uid) => ((store.members || []).find((m) => m.user_id === uid) || {}).name || "holdet";
+const memberName = (uid) => ((store.members || []).find((m) => m.user_id === uid) || {}).name || crewName(uid) || (store.boss && store.boss.id === uid ? store.boss.name : "") || "holdet";
 const first2 = (n) => String(n || "").trim().split(/\s+/)[0];
 const clubNames = () => [...new Set(["Hive", ...S.bookings.map((b) => b.club).filter(Boolean)])];
 const extra = (b) => num(b.spent) - num(b.expected);
@@ -642,8 +643,20 @@ const store = {
       else if (r.col === "bookings" || own) by[r.col] && by[r.col].push({ ...r.data, id: r.id });
     });
     await this.loadTeam();
+    await this.loadRole();
     Object.assign(S, by, { settings: { pct: 0, ...settings }, ready: true });
     render();
+  },
+  async loadRole() {
+    const { data, error } = await this.sb.rpc("nyx_role");
+    if (error) { this.crewOk = false; this.boss = null; this.crew = []; this.invites = []; return; }
+    const d = data || {}; this.crewOk = true; this.boss = d.boss || null; this.crew = d.crew || []; this.invites = d.invites || [];
+    let code = null; try { code = localStorage.getItem("nyx-crew-code"); } catch {}
+    if (code && !this.boss) {
+      try { localStorage.removeItem("nyx-crew-code"); } catch {}
+      const r = await this.sb.rpc("nyx_crew_join", { p_code: code, p_name: "" });
+      if (r.error) toast("Koden virkede ikke: " + r.error.message); else return this.loadRole();
+    }
   },
   async loadTeam() {
     const m = await this.sb.from("nyx_members").select("user_id,team_id,name");
@@ -685,6 +698,8 @@ const store = {
     render();
   },
   async put(col, obj) {
+    const isNew = col === "bookings" && !S.bookings.some((x) => x.id === obj.id);
+    if (col === "bookings") obj = { ...obj, at: new Date().toISOString() };
     if (this.mode === "sky") {
       const { id, ...data } = obj, m = this.meta[col + ":" + id], now = new Date().toISOString();
       if (m && m.owner !== this.uid) {
@@ -701,9 +716,12 @@ const store = {
       Object.values(this.pool).length && (this.pool = {});
     }
     this.local(col, obj);
+    if (col === "bookings") notifyBoss(obj, isNew ? "ny" : "ret");
   },
   async del(col, id) {
+    const gone = col === "bookings" && S.bookings.find((x) => x.id === id);
     if (this.mode === "sky") { const { error } = await this.sb.from("nyx_docs").delete().match({ owner: this.uid, col, id }); if (error) throw error; }
+    if (gone) notifyBoss(gone, "slet");
     this.local(col, id, true);
   },
   async settings(s) {
@@ -719,6 +737,7 @@ function showLogin(signup) {
     <div class="logo">NIELS</div><p style="margin:0;font-weight:700;letter-spacing:.2em;color:var(--muted)">BORDBOG</p>
     <p class="note">${signup ? "Opret en konto med din email. Bagefter kan du komme på et hold med en kode." : "Log ind med din email og adgangskode."}</p>
     <label class="f">Email<input id="l-email" type="email" autocomplete="email" required></label>
+    ${signup ? `<label class="f">Kode fra din promoter (hvis du har en)<input id="l-code" autocapitalize="characters" placeholder="Fx 9E546A"></label>` : ""}
     <label class="f">Adgangskode<input id="l-pass" type="password" autocomplete="${signup ? "new-password" : "current-password"}" minlength="6" required></label>
     <p class="err" id="l-err"></p><button class="btn teal" type="submit">${signup ? "Opret konto" : "Log ind"}</button>
     <button class="btn" type="button" id="l-toggle">${signup ? "Jeg har en konto" : "Opret ny konto"}</button>
@@ -740,6 +759,7 @@ function showLogin(signup) {
     const b = f.querySelector("button[type=submit]"); b.disabled = true; b.textContent = signup ? "Opretter…" : "Logger ind…";
     try {
       if (signup) {
+        const code = (f.querySelector("#l-code") || {}).value; if (code && code.trim()) { try { localStorage.setItem("nyx-crew-code", code.trim()); } catch {} }
         const { data, error } = await store.sb.auth.signUp({ email, password: pass });
         if (error) throw new Error(DK_ERR[error.message] || error.message);
         if (!data.session) { showLogin(false); view.querySelector("#l-err").textContent = "Tjek din mail og tryk på linket. Log derefter ind her."; return; }
@@ -782,14 +802,16 @@ function badge() {
 }
 function render() {
   const cur = ui.tab === "night" ? "borde" : ui.tab;
+  { const cb = document.querySelector('.snav [data-tab="crew"]'); if (cb) cb.hidden = !(isBoss() && store.crewOk); }
   document.querySelectorAll("nav.tabs [data-tab], .snav [data-tab]").forEach((b) => b.setAttribute("aria-current", b.dataset.tab === cur || (cur === "borde" && b.dataset.tab === "events" && b.closest("nav.tabs")) || (cur === "hivesalg" && b.dataset.tab === "hive" && b.closest("nav.tabs")) ? "page" : "false"));
   const ini = esc(initials(profile().name || meNyx()));
   ["topAvatar", "sideAvatar"].forEach((id) => { const el = document.getElementById(id); if (el) el.innerHTML = ini; });
   const sn = document.getElementById("sideName"); if (sn) sn.textContent = profile().name || "Din profil";
+  { const bs = document.getElementById("brandSub"), fn = first(profile().name || meNyx()); if (bs && fn) bs.textContent = fn + (/[sxz]$/i.test(fn) ? "'" : "s") + " promoterbog"; }
   if (!S.ready) return;
   const y = window.scrollY;
   badge();
-  view.innerHTML = { home: vHome, hivesalg: vHiveSales, hive: vHive, events: vEvents, borde: vNight, night: vNight, stats: vStats, noter: vNoter, kunder: vKunder }[ui.tab]();
+  view.innerHTML = { home: vHome, hivesalg: vHiveSales, hive: vHive, events: vEvents, borde: vNight, night: vNight, stats: vStats, noter: vNoter, kunder: vKunder, crew: vCrew }[ui.tab]();
   if (ui.tab !== ui._lastTab) { enterAnim(ui._lastTab); ui._lastTab = ui.tab; }
   slideSegs();
   if (ui.keepScroll) window.scrollTo(0, y);
@@ -917,8 +939,9 @@ function profileSheet() {
     <label class="f full">Dit navn i Nyx<input id="pf-nyx" value="${esc(pr.nyx || meNyx())}" placeholder="Som det står ved dine borde"></label>
     <p class="full note" style="margin:-6px 0 0">Scanneren vælger de borde, hvor dette navn står som promoter.</p>
     <label class="f full">Telefon<input id="pf-phone" type="tel" value="${esc(pr.phone || "")}"></label>
-    <label class="f">Provision Søpavillonen (%)<input id="pf-pct" inputmode="decimal" value="${num(S.settings.pct) || ""}" placeholder="Fx 10"></label>
-    <label class="f">Provision Hive (%)<input id="pf-hpct" inputmode="decimal" value="${num(S.settings.hivePct) || ""}" placeholder="Fx 10"></label>
+    <label class="f" ${isCrew() ? "hidden" : ""}>Provision Søpavillonen (%)<input id="pf-pct" inputmode="decimal" value="${num(S.settings.pct) || ""}" placeholder="Fx 10"></label>
+    <label class="f" ${isCrew() ? "hidden" : ""}>Provision Hive (%)<input id="pf-hpct" inputmode="decimal" value="${num(S.settings.hivePct) || ""}" placeholder="Fx 10"></label>
+    ${isCrew() ? `<p class="full note" style="margin:0">Du booker borde for <b>${esc(store.boss.name)}</b>. De får besked, når du booker eller retter et bord.</p>` : store.mode === "sky" && store.crewOk && !(store.crew || []).length ? `<div class="full genvej"><b>Har du en kode fra din promoter?</b><input id="pf-code" placeholder="Fx 9E546A" autocapitalize="characters" style="background:rgba(255,255,255,.6);border:1px solid var(--line);border-radius:10px;padding:10px 12px;font-size:16px"><button type="button" class="btn" data-joincode>Tilslut</button></div>` : ""}
     ${store.mode === "sky" ? `<div class="full genvej"><b>iPhone-genvej</b><span class="note">Del screenshots fra Nyx direkte til Bordbog. Kopiér din adresse og sæt den ind i genvejen.</span><button type="button" class="btn" data-genvej>Kopiér genvejs-adresse</button></div>` : ""}
     ${store.team ? `<p class="full note" style="margin:0">Hold: <b>${esc(store.team.name)}</b> · kode <b>${esc(store.team.code)}</b></p>` : ""}
     <div class="full btns">${store.mode === "sky" ? `<button type="button" class="btn" data-logout>Log ud</button>` : `<button type="button" class="btn" data-close>Luk</button>`}<button class="btn teal" type="submit">Gem</button></div></form>`, (f) => {
@@ -927,6 +950,13 @@ function profileSheet() {
     if (store.team && store.sb && np.name) store.sb.from("nyx_members").update({ name: np.name }).eq("user_id", store.uid).then(() => store.loadTeam && store.loadTeam().then(render));
   });
   const lo = root.querySelector("[data-logout]"); if (lo) lo.addEventListener("click", () => store.signOut());
+  const jc = root.querySelector("[data-joincode]");
+  if (jc) jc.addEventListener("click", async () => {
+    const c = root.querySelector("#pf-code").value.trim(); if (!c) return;
+    jc.disabled = true; jc.textContent = "Tilslutter…";
+    try { await joinCrew(c, root.querySelector("#pf-name").value.trim()); close(); toast("Du er nu koblet på " + (store.boss ? store.boss.name : "din promoter")); }
+    catch (e) { jc.disabled = false; jc.textContent = "Tilslut"; toast(e.message); }
+  });
   const gv = root.querySelector("[data-genvej]");
   if (gv) gv.addEventListener("click", async () => {
     gv.disabled = true; gv.textContent = "Henter…";
@@ -978,7 +1008,7 @@ function vHome() {
     <div class="kpis num">
       <button class="kpi" data-tab-go="stats"><div class="l">Søpavillonen</div><div class="v">${kr(so.sold)}</div><div class="s">${nBorde(so.came.length)} solgt</div></button>
       <button class="kpi" data-tab-go="hivesalg"><div class="l">Hive</div><div class="v">${kr(hv.sold)}</div><div class="s">${nBorde(hv.came.length)} solgt</div></button>
-      <div class="kpi"><div class="l">Din provision</div><div class="v">${pctS || pctH ? kr(prov) : "–"}</div><div class="s">${pctS || pctH ? `${pctS} % / ${pctH} % på Hive` : "Sæt procent i din profil"}</div></div>
+      ${isCrew() ? `<div class="kpi"><div class="l">Borde booket</div><div class="v">${so.act.length + hv.act.length}</div><div class="s">i lønperioden</div></div>` : `<div class="kpi"><div class="l">Din provision</div><div class="v">${pctS || pctH ? kr(prov) : "–"}</div><div class="s">${pctS || pctH ? `${pctS} % / ${pctH} % på Hive` : "Sæt procent i din profil"}</div></div>`}
       <div class="kpi"><div class="l">Merspend</div><div class="v">${kr(mer)}</div><div class="s">${nBorde(so.withMer.length + hv.withMer.length)} brugte mere</div></div>
     </div>
     ${todo.length ? `<h2>Til dig</h2><div class="list">${todo.join("")}</div>` : ""}
@@ -1061,7 +1091,7 @@ function salesHero(m, pct, place) {
     <div class="amt">${kr(m.sold)}</div>
     <div class="prog" aria-hidden="true"><i style="width:${p}%"></i></div>
     <div class="row2"><span>${nBorde(m.came.length)} kom af ${m.act.length} booket</span><span>forventet ${kr(m.expected)}</span></div>
-    ${pct ? `<div class="prov"><span>Din provision · ${String(pct).replace(".", ",")} %</span><b>${kr(m.sold * pct / 100)}</b></div>`
+    ${isCrew() ? "" : pct ? `<div class="prov"><span>Din provision · ${String(pct).replace(".", ",")} %</span><b>${kr(m.sold * pct / 100)}</b></div>`
       : `<button class="prov" data-act="profile"><span>Sæt din provision i profilen</span><b>›</b></button>`}
   </section>`;
 }
@@ -1136,9 +1166,9 @@ function vHiveSales() {
     ${salesAlert(m)}
     ${salesKpis(m, true)}
     ${salesBody(m, hiveB)}
-    <details class="more"><summary>Provision på Hive</summary>
+    ${isCrew() ? "" : `<details class="more"><summary>Provision på Hive</summary>
     <form class="form" id="hivePctForm"><label class="f">Procent af bordsalg (%)<input id="h-pct" inputmode="decimal" value="${pct || ""}" placeholder="Fx 10"></label>
-    <div style="align-self:end"><button class="btn teal" type="submit">Gem</button></div></form></details>`;
+    <div style="align-self:end"><button class="btn teal" type="submit">Gem</button></div></form></details>`}`;
 }
 function vStats() {
   ui.month ||= payYm(todayISO());
@@ -1153,8 +1183,8 @@ function vStats() {
   ${salesKpis(m, false)}
   ${salesBody(m)}
   <details class="more"><summary>Indstillinger${team ? " og hold" : ""}</summary>
-  <form class="form" id="setForm"><label class="f">Provision af bordsalg (%)<input id="s-pct" inputmode="decimal" value="${pct || ""}" placeholder="Fx 10"></label>
-  <div style="align-self:end"><button class="btn teal" type="submit">Gem</button></div></form>
+  ${isCrew() ? "" : `<form class="form" id="setForm"><label class="f">Provision af bordsalg (%)<input id="s-pct" inputmode="decimal" value="${pct || ""}" placeholder="Fx 10"></label>
+  <div style="align-self:end"><button class="btn teal" type="submit">Gem</button></div></form>`}
   ${team}
   ${sky ? `<h2>Konto</h2><div class="btns"><button class="btn" data-act="logout">Log ud</button></div>
   <p class="note">Læg appen på hjemmeskærmen: Safari → Del → Føj til hjemmeskærm.</p>` : ""}</details>`;
@@ -1238,6 +1268,84 @@ function enterAnim(prevTab) {
   view.classList.remove("enter", "enter-r", "enter-l"); void view.offsetWidth;
   view.classList.add(prevTab == null ? "enter" : b >= a ? "enter-r" : "enter-l");
 }
+/* ---------- underpromotere: chef (admin) og crew ---------- */
+const isCrew = () => !!store.boss;
+const isBoss = () => store.mode === "sky" && !store.boss;
+const crewName = (uid) => ((store.crew || []).find((c) => c.id === uid) || {}).name;
+const b64uToU8 = (s) => { const r = atob(s.replace(/-/g, "+").replace(/_/g, "/")); return Uint8Array.from(r, (c) => c.charCodeAt(0)); };
+const standalone = () => matchMedia("(display-mode: standalone)").matches || navigator.standalone === true;
+async function pushState() {
+  if (!("serviceWorker" in navigator) || !("PushManager" in window) || !("Notification" in window)) return "nej";
+  if (Notification.permission === "denied") return "afvist";
+  try { const reg = await navigator.serviceWorker.getRegistration(); const s = reg && (await reg.pushManager.getSubscription()); return s ? "til" : "fra"; } catch { return "fra"; }
+}
+async function pushOn() {
+  if (!("Notification" in window) || !("PushManager" in window)) return toast(standalone() ? "Telefonen kan ikke få notifikationer her." : "Læg Bordbog på hjemmeskærmen først og åbn den derfra.");
+  const perm = await Notification.requestPermission();
+  if (perm !== "granted") return toast("Du sagde nej til notifikationer. Slå dem til under Indstillinger → Bordbog.");
+  try {
+    const reg = await navigator.serviceWorker.register("sw.js").then(() => navigator.serviceWorker.ready);
+    const { key } = await (await fetch("/api/notify")).json();
+    const sub = (await reg.pushManager.getSubscription()) || (await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: b64uToU8(key) }));
+    const j = sub.toJSON();
+    const { error } = await store.sb.from("nyx_push").upsert({ endpoint: j.endpoint, user_id: store.uid, sub: j });
+    if (error) throw error;
+    toast("Notifikationer er slået til"); ui.pushNow = "til"; render();
+  } catch (e) { toast("Kunne ikke slå notifikationer til: " + (e.message || e)); }
+}
+const notifyTimers = {};
+function notifyBoss(b, what) {
+  if (!isCrew() || store.mode !== "sky") return;
+  clearTimeout(notifyTimers[b.id]);
+  notifyTimers[b.id] = setTimeout(async () => {
+    const me = profile().name || meNyx() || "Din underpromoter";
+    const verb = what === "ny" ? "bookede" : what === "slet" ? "slettede" : num(b.spent) ? "skrev tal på" : "rettede";
+    const body = [b.club || b.area, "bord " + (b.table || "?"), b.date ? dayLabel(b.date) : "", b.name, num(b.spent) ? "brugt " + kr(b.spent) : num(b.expected) ? kr(b.expected) : ""].filter(Boolean).join(" · ");
+    try {
+      const { data } = await store.sb.auth.getSession();
+      await fetch("/api/notify", { method: "POST", headers: { "Content-Type": "application/json", Authorization: "Bearer " + (data.session?.access_token || "") }, body: JSON.stringify({ title: `${first(me)} ${verb} et bord`, body }) });
+    } catch {}
+  }, 1500);
+}
+async function joinCrew(code, name) {
+  const { error } = await store.sb.rpc("nyx_crew_join", { p_code: code, p_name: name || profile().name || "" });
+  if (error) throw new Error(error.message);
+  try { localStorage.removeItem("nyx-crew-code"); } catch {}
+  await store.loadAll();
+}
+function vCrew() {
+  if (!store.crewOk) return `<div class="top"><span></span><div class="title"><b>Underpromotere</b></div><span></span></div>
+    <div class="empty">Kør <b>supabase/crew.sql</b> i Supabase først (SQL Editor → New query → Run). Så kan du lave koder og følge med her.</div>`;
+  ui.month ||= payYm(todayISO());
+  const ps = ui.pushNow || "…";
+  if (!ui.pushNow) pushState().then((s) => { ui.pushNow = s; if (ui.tab === "crew") render(); });
+  const crew = store.crew || [];
+  const cards = crew.map((c) => {
+    const bs = S.bookings.filter((b) => ownerOf(b) === c.id);
+    const m = bs.filter((b) => inPay(b.date, ui.month) && active(b));
+    const sold = m.reduce((a, b) => a + sold_(b), 0), exp = m.reduce((a, b) => a + num(b.expected), 0);
+    const recent = bs.slice().sort((a, b) => String(b.at || b.date).localeCompare(String(a.at || a.date))).slice(0, ui.crewOpen === c.id ? 30 : 4);
+    return `<section class="cmp num"><div style="display:flex;justify-content:space-between;align-items:center;gap:10px">
+      <div><div class="sub">${esc(c.email || "")}</div><div class="big" style="font-size:24px">${esc(c.name)}</div></div>
+      <div style="text-align:right"><div class="big" style="font-size:22px;color:var(--green)">${kr(sold)}</div><div class="sub">${nBorde(m.length)} · forventet ${kr(exp)}</div></div></div>
+      ${recent.length ? `<div class="list">${recent.map(bookingRow).join("")}</div>` : `<p class="note" style="margin:0">Ingen borde endnu.</p>`}
+      ${bs.length > 4 ? `<button class="btn" data-crewopen="${esc(c.id)}">${ui.crewOpen === c.id ? "Vis færre" : "Vis alle " + bs.length + " borde"}</button>` : ""}
+    </section>`;
+  }).join("");
+  return `<div class="top"><span></span><div class="title"><b>Underpromotere</b><span>Du er admin</span></div><span></span></div>
+  ${monthSw()}
+  <div class="list" style="margin-top:12px"><div class="row todo-row"><span class="bub ${ps === "til" ? "olive" : ""}">🔔</span><span class="mid"><span class="t">Notifikationer på denne telefon</span>
+    <span class="s">${ps === "til" ? "Slået til. Du får besked, når de booker eller retter et bord." : ps === "afvist" ? "Afvist. Slå dem til under Indstillinger → Bordbog." : !standalone() && /iPhone|iPad/.test(navigator.userAgent) ? "Læg Bordbog på hjemmeskærmen og åbn den derfra først." : "Få besked, når de booker eller retter et bord."}</span></span>
+    ${ps === "til" ? `<span class="right">✓</span>` : `<button class="btn teal" data-act="pushon" style="padding:8px 12px">Slå til</button>`}</div></div>
+  ${crew.length ? `<h2>Dit team</h2>${cards}` : `<div class="empty" style="margin-top:12px">Ingen underpromotere endnu. Lav en kode herunder og giv den til dem.</div>`}
+  <h2>Lav en kode</h2>
+  <form class="form" id="inviteForm"><label class="f full">Deres email<input id="inv-email" type="email" placeholder="fx gabrielcaca08@gmail.com" autocapitalize="off"></label>
+  <div class="full"><button class="btn teal" type="submit">Lav kode</button></div></form>
+  ${(store.invites || []).length ? `<div class="list" style="margin-top:10px">${store.invites.map((i) => `<div class="row"><span class="tag num" style="min-width:86px;letter-spacing:.08em">${esc(i.code)}</span><span class="mid"><span class="t">${esc(i.email || "Alle emails")}</span><span class="s">Ikke brugt endnu</span></span><button class="btn" data-copyinv="${esc(i.code)}" style="padding:8px 12px">Kopiér</button></div>`).join("")}</div>` : ""}
+  <p class="note">De opretter en konto i Bordbog med deres email og skriver koden. De ser ingen provision, og du kan se og rette alle deres borde.</p>`;
+}
+const sold_ = (b) => (b.status === "kom" ? num(b.spent) || 0 : 0);
+
 /* ---------- notes ---------- */
 const NSTAGE = { ide: "Idé", kontakt: "Kontaktet", booket: "Booket" };
 function vNoter() {
@@ -1366,7 +1474,7 @@ const scanEngine = {
 /* ---------- /scan-motor ---------- */
 /* ---------- scan screenshots fra Nyx ---------- */
 const AREA_OF = {}; AREAS.forEach((A) => A.items.forEach((it) => { if (it.k === "t" || it.k === "r") AREA_OF[it.id] = A.name; }));
-const meNyx = () => ((S.settings && S.settings.profile) || {}).nyx || "Niels Priess";
+const meNyx = () => ((S.settings && S.settings.profile) || {}).nyx || (store.boss && store.boss.me) || "Niels Priess";
 function scanPrompt(n) {
   return `Du får ${n} screenshot(s) fra Nyx, natklubben ${HOME}s personale-app (fanen Tables, visningen List). I dag er ${todayISO()}.
 Øverst på hvert billede står aftenens dato (fx "Thu, Oct 22, 2026") og eventets navn. Listen er delt i områder med en overskrift (fx "SØ Main", "SØ Main Back", "Buffer").
@@ -1531,6 +1639,13 @@ view.addEventListener("submit", (e) => {
   if (e.target.id === "teamNew") { const f = e.target; return safe(store.rpc("nyx_create_team", { p_team: f.querySelector("#t-name").value, p_name: f.querySelector("#t-me").value }).then(() => store.loadAll()), "Holdet er oprettet"); }
   if (e.target.id === "teamJoin") { const f = e.target; return store.rpc("nyx_join_team", { p_code: f.querySelector("#j-code").value, p_name: f.querySelector("#j-me").value }).then(() => store.loadAll()).then(() => toast("Du er på holdet"), (err) => toast(/findes ikke/.test(err.message) ? "Koden findes ikke" : /allerede/.test(err.message) ? "Du er allerede på et hold" : "Kunne ikke tilslutte")); }
   if (e.target.id === "hivePctForm") return safe(store.settings({ ...S.settings, hivePct: num(e.target.querySelector("#h-pct").value) }), "Gemt");
+  if (e.target.id === "inviteForm") {
+    const em = e.target.querySelector("#inv-email").value.trim();
+    store.sb.rpc("nyx_crew_invite", { p_email: em }).then(async ({ data, error }) => {
+      if (error) return toast(error.message);
+      await store.loadAll(); copyText(`Hej! Hent Bordbog på ${location.origin}, tryk "Opret ny konto", brug din email${em ? " (" + em + ")" : ""} og skriv koden ${data}.`);
+    });
+  }
   if (e.target.id === "setForm") safe(store.settings({ ...S.settings, pct: num(e.target.querySelector("#s-pct").value) }), "Gemt");
   if (e.target.id === "ideaForm") { const t = e.target.querySelector("#ideaText").value.trim(); if (t) safe(store.put("notes", { id: newId(), kind: "ide", text: t, done: false, created: Date.now() })); }
 });
@@ -1552,6 +1667,9 @@ view.addEventListener("click", (e) => {
   if ((x = t("[data-table]"))) { const A = AREAS[ui.area]; return bookingSheet(bookingAt(ui.date, A.name, x.dataset.table) || newBooking(ui.date, A.name, x.dataset.table)); }
   if ((x = t("[data-news]"))) { try { localStorage.setItem(seenKey(), new Date().toISOString()); } catch {} const b = S.bookings.find((y) => y.id === x.dataset.news); render(); return b ? bookingSheet(b) : toast("Bordet er ikke delt mere"); }
   if ((x = t("[data-booking]"))) return bookingSheet(S.bookings.find((b) => b.id === x.dataset.booking));
+  if ((x = t("[data-crewopen]"))) { ui.crewOpen = ui.crewOpen === x.dataset.crewopen ? null : x.dataset.crewopen; return render(); }
+  if ((x = t("[data-copyinv]"))) return copyText(`Hej! Hent Bordbog på ${location.origin}, tryk "Opret ny konto", brug din email og skriv koden ${x.dataset.copyinv}.`);
+  if ((x = t("[data-act=pushon]"))) return pushOn();
   if ((x = t("[data-kseg]"))) { ui.kseg = x.dataset.kseg; return render(); }
   if ((x = t("[data-kunde]"))) return kundeSheet(x.dataset.kunde);
   if ((x = t("[data-preplus]"))) return prePlus(x.dataset.preplus);
