@@ -98,6 +98,12 @@ h2{font-size:13px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;
 .maptip{font-size:13px;color:var(--muted);margin-top:8px}
 
 /* lists */
+.crow{display:flex;align-items:center;border-top:1px solid var(--line)}
+.crow:first-child{border-top:0}
+.crow[hidden]{display:none}
+.crow .row{border-top:0;flex:1;min-width:0}
+.cbtn{flex:none;min-width:44px;height:40px;margin-right:10px;border-radius:12px;border:1px solid var(--line);background:var(--raise);font-weight:800;color:var(--teal);display:grid;place-items:center;text-decoration:none;font-size:14px}
+.cbtn.ig{background:linear-gradient(45deg,#f6b74d,#d6336c 55%,#7b3fbf);color:#fff;border:0}
 .list{display:flex;flex-direction:column;background:var(--surface);border:1px solid var(--line);border-radius:14px;overflow:hidden}
 .row{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:12px;align-items:center;padding:12px 14px;border:0;border-top:1px solid var(--line);background:none;text-align:left;width:100%}
 .row:first-child{border-top:0}
@@ -276,7 +282,7 @@ body:has(#loginForm) .topbar,body:has(#loginForm) nav.tabs,body:has(#newPassForm
 .kpi .l{font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
 .kpi .v{font-family:var(--serif);font-size:24px;font-weight:700;color:var(--green);margin-top:6px;line-height:1.1}
 .kpi .s{font-size:13px;color:var(--muted);margin-top:4px}
-.quick{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:14px}
+.quick:has(.qa){display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:14px}
 .qa{display:flex;flex-direction:column;align-items:center;gap:6px;background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:14px 6px;font-weight:700;font-size:13px}
 .qa svg{width:24px;height:24px;color:var(--teal)}
 .todo-row .bub{width:36px;height:36px;border-radius:12px;display:grid;place-items:center;font-weight:800;color:var(--green-ink);background:var(--teal);font-size:14px}
@@ -323,7 +329,7 @@ details.more:not([open]) summary{padding-bottom:14px}
     <button data-tab="hive"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l8 4.6v9.2L12 22l-8-6.2V6.6z M12 8l3.5 2v4L12 16l-3.5-2v-4z"/></svg>Hive bordkort</button>
     <button data-tab="hivesalg"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V11M10 20V5M16 20v-6M2 20h20"/><circle cx="19" cy="5" r="2"/></svg>Hive salg</button>
     <div class="nav-label">Andet</div>
-    <button data-tab="noter"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-3.5 10.9c.6.4 1 1.1 1 1.9V16h5v-.2c0-.8.4-1.5 1-1.9A6 6 0 0 0 12 3z"/></svg>Noter og selskaber</button>
+    <button data-tab="kunder"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.9M16 3.1a4 4 0 0 1 0 7.8"/></svg>Bedste kunder</button>    <button data-tab="noter"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-3.5 10.9c.6.4 1 1.1 1 1.9V16h5v-.2c0-.8.4-1.5 1-1.9A6 6 0 0 0 12 3z"/></svg>Noter og selskaber</button>
     <button data-act="scan"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8V5a1 1 0 0 1 1-1h3M16 4h3a1 1 0 0 1 1 1v3M20 16v3a1 1 0 0 1-1 1h-3M8 20H5a1 1 0 0 1-1-1v-3M7 12h10"/></svg>Scan fra Nyx</button>
   </nav>
   <button class="me-card" data-act="profile"><span class="avatar" id="sideAvatar">?</span><span><b id="sideName">Din profil</b><small>Rediger profil</small></span></button>
@@ -668,7 +674,7 @@ function render() {
   if (!S.ready) return;
   const y = window.scrollY;
   badge();
-  view.innerHTML = { home: vHome, hivesalg: vHiveSales, hive: vHive, events: vEvents, borde: vNight, night: vNight, stats: vStats, noter: vNoter }[ui.tab]();
+  view.innerHTML = { home: vHome, hivesalg: vHiveSales, hive: vHive, events: vEvents, borde: vNight, night: vNight, stats: vStats, noter: vNoter, kunder: vKunder }[ui.tab]();
   if (ui.keepScroll) window.scrollTo(0, y);
   ui.keepScroll = true;
 }
@@ -1024,6 +1030,65 @@ function vStats() {
   <p class="note">Læg appen på hjemmeskærmen: Safari → Del → Føj til hjemmeskærm.</p>` : ""}</details>`;
 }
 
+/* ---------- kunder: bedste bord- og pre-kunder ---------- */
+const ckey = (n) => String(n || "").trim().toLowerCase().replace(/\s+/g, " ");
+const igHandle = (s) => String(s || "").trim().replace(/^https?:\/\/(www\.)?instagram\.com\//i, "").replace(/^@/, "").replace(/[/?#].*$/, "");
+function kundeList() {
+  const map = {};
+  const get = (name) => { const k = ckey(name); return (map[k] ||= { key: k, name: String(name).trim(), visits: 0, total: 0, mer: 0, last: "", pre: 0, card: null }); };
+  MB().filter((b) => b.status === "kom" && b.name && b.name.trim()).forEach((b) => {
+    const c = get(b.name); c.visits++; c.total += num(b.spent) || num(b.expected); c.mer += num(b.spent) ? Math.max(0, extra(b)) : 0;
+    if (b.date > c.last) c.last = b.date;
+  });
+  S.notes.filter((n) => n.kind === "kunde").forEach((n) => {
+    const c = get(n.name); c.card = n; c.name = n.name.trim(); c.pre = num(n.pre);
+    if (n.lastPre && n.lastPre > c.last) c.last = n.lastPre;
+  });
+  return Object.values(map).map((c) => ({ ...c, type: c.card?.type || (c.visits ? "bord" : "pre"), ig: igHandle(c.card?.ig), phone: c.card?.phone || "" }));
+}
+function vKunder() {
+  const seg = ui.kseg || "bord", all = kundeList();
+  const list = seg === "pre" ? all.filter((c) => c.pre || c.type === "pre" || c.type === "begge").sort((a, b) => b.pre - a.pre || a.name.localeCompare(b.name, "da"))
+    : all.filter((c) => c.visits).sort((a, b) => b.total - a.total || b.visits - a.visits);
+  const rows = list.map((c, i) => {
+    const sub = [c.ig ? "@" + c.ig : "", seg === "pre" ? (c.visits ? nBorde(c.visits) + " købt" : "") : c.visits + (c.visits === 1 ? " gang" : " gange"), c.last ? "sidst " + dayLabel(c.last) : ""].filter(Boolean).join(" · ");
+    const right = seg === "pre" ? `<span class="right num">${c.pre}<small>${c.pre === 1 ? "gang" : "gange"}</small></span>` : `<span class="right num">${kr(c.total)}<small>${c.mer ? "+" + kr(c.mer) + " mer" : kr(c.total / c.visits) + " i snit"}</small></span>`;
+    return `<div class="crow" data-cname="${esc(c.key)}"><button class="row" data-kunde="${esc(c.key)}"><span class="tag num ${i < 3 ? "kom" : ""}">${i + 1}</span>
+      <span class="mid"><span class="t">${esc(c.name)}</span><span class="s">${esc(sub) || (c.card ? "" : "Tryk for at tilføje Instagram")}</span></span>${right}</button>
+      ${seg === "pre" ? `<button class="cbtn" data-preplus="${esc(c.key)}" aria-label="Kom på pre en gang til">+1</button>` : ""}
+      ${c.ig ? `<a class="cbtn ig" href="https://instagram.com/${encodeURIComponent(c.ig)}" target="_blank" rel="noopener" aria-label="Åbn Instagram">IG</a>` : ""}</div>`;
+  }).join("");
+  return `<div class="top"><span></span><div class="title"><b>Kunder</b><span>Dine bedste kunder</span></div><span></span></div>
+  <div class="seg" style="margin-bottom:12px"><button data-kseg="bord" aria-pressed="${seg === "bord"}">Bordkunder</button><button data-kseg="pre" aria-pressed="${seg === "pre"}">Pre-kunder</button></div>
+  <form class="quick" id="kSearch" onsubmit="return false"><input id="kq" type="search" placeholder="Søg navn eller Instagram" autocomplete="off"><button class="btn teal" type="button" data-act="newkunde" style="flex:none;padding:10px 18px">+ Ny</button></form>
+  ${list.length ? `<div class="list" id="klist">${rows}</div>` : `<div class="empty">${seg === "pre" ? "Tilføj de gæster, der kommer på pre. Tryk + Ny, vælg Pre, og tryk +1 hver gang de kommer." : "Når dine borde er markeret som Kom, samles kunderne her med hvad de har brugt."}</div>`}
+  <p class="note">${seg === "pre" ? "Sorteret efter hvor mange gange de har været på pre." : "Sorteret efter hvad de har brugt i alt på alle dine borde. Tryk på en kunde for at skrive Instagram og telefon."}</p>`;
+}
+function kundeSheet(key) {
+  const c = kundeList().find((x) => x.key === key) || { name: "", type: ui.kseg === "pre" ? "pre" : "bord", pre: 0, ig: "", phone: "", card: null, visits: 0, total: 0 };
+  const n = c.card || {};
+  const hist = MB().filter((b) => ckey(b.name) === key && b.status === "kom").sort((a, b) => b.date.localeCompare(a.date)).slice(0, 6);
+  openSheet(`<h3>${esc(c.name || "Ny kunde")}</h3><p class="sh">${c.visits ? `${c.visits} ${c.visits === 1 ? "bord" : "borde"} · ${kr(c.total)} i alt` : "Gemmes i din kundeliste"}</p>
+  <form class="form">
+    <label class="f full">Navn<input id="k-name" value="${esc(c.name)}" required autocomplete="off" autocorrect="off" spellcheck="false"></label>
+    <label class="f">Instagram<input id="k-ig" value="${c.ig ? "@" + esc(c.ig) : ""}" placeholder="@brugernavn" autocapitalize="off" autocorrect="off" spellcheck="false"></label>
+    <label class="f">Telefon<input id="k-phone" type="tel" value="${esc(c.phone)}"></label>
+    <label class="f">Type<select id="k-type">${[["bord", "Bordkunde"], ["pre", "Pre-kunde"], ["begge", "Begge"]].map(([v2, l]) => `<option value="${v2}" ${c.type === v2 ? "selected" : ""}>${l}</option>`).join("")}</select></label>
+    <label class="f">Gange på pre<input id="k-pre" inputmode="numeric" value="${num(c.pre) || ""}" placeholder="0"></label>
+    <label class="f full">Noter<textarea id="k-text" placeholder="Fx drikker Dom, kommer med 6 venner">${esc(n.text || "")}</textarea></label>
+    ${hist.length ? `<div class="full"><div class="nav-label" style="padding:4px 0">Seneste borde</div>${hist.map((b) => `<p class="note" style="margin:2px 0">${dayLabel(b.date)} · ${esc(b.club || b.area)} bord ${esc(b.table)} · ${kr(num(b.spent) || num(b.expected))}</p>`).join("")}</div>` : ""}
+    <div class="full btns">${c.card ? `<button class="btn danger" type="button" data-del>Fjern kort</button>` : "<span></span>"}<button class="btn teal" type="submit">Gem</button></div>
+  </form>`, (f) => {
+    const name = v(f, "k-name"); if (!name) return false;
+    safe(store.put("notes", { ...n, id: n.id || "k" + newId(), kind: "kunde", name, ig: igHandle(v(f, "k-ig")), phone: v(f, "k-phone"), type: v(f, "k-type"), pre: num(v(f, "k-pre")), text: v(f, "k-text") }), "Gemt");
+  }, () => safe(store.del("notes", n.id), "Fjernet"));
+}
+function prePlus(key) {
+  const c = kundeList().find((x) => x.key === key); if (!c) return;
+  const n = c.card || { id: "k" + newId(), kind: "kunde", name: c.name, type: "pre" };
+  safe(store.put("notes", { ...n, pre: num(n.pre) + 1, lastPre: todayISO(), type: n.type === "bord" ? "begge" : n.type || "pre" }), c.name + " +1 på pre");
+}
+
 /* ---------- notes ---------- */
 const NSTAGE = { ide: "Idé", kontakt: "Kontaktet", booket: "Booket" };
 function vNoter() {
@@ -1296,6 +1361,7 @@ function setGuestlist(date, val) {
   if (!nightOf(date)) S.nights.push(n);
   clearTimeout(glTimer); glTimer = setTimeout(() => safe(store.put("nights", { ...n })), 600);
 }
+view.addEventListener("input", (e) => { if (e.target.id === "kq") { const q = e.target.value.trim().toLowerCase(); view.querySelectorAll(".crow").forEach((r) => { r.hidden = !!q && !r.textContent.toLowerCase().includes(q); }); } });
 view.addEventListener("input", (e) => { if (e.target.id === "gl") setGuestlist(ui.date, num(e.target.value)); });
 view.addEventListener("submit", (e) => {
   e.preventDefault();
@@ -1323,6 +1389,10 @@ view.addEventListener("click", (e) => {
   if ((x = t("[data-table]"))) { const A = AREAS[ui.area]; return bookingSheet(bookingAt(ui.date, A.name, x.dataset.table) || newBooking(ui.date, A.name, x.dataset.table)); }
   if ((x = t("[data-news]"))) { try { localStorage.setItem(seenKey(), new Date().toISOString()); } catch {} const b = S.bookings.find((y) => y.id === x.dataset.news); render(); return b ? bookingSheet(b) : toast("Bordet er ikke delt mere"); }
   if ((x = t("[data-booking]"))) return bookingSheet(S.bookings.find((b) => b.id === x.dataset.booking));
+  if ((x = t("[data-kseg]"))) { ui.kseg = x.dataset.kseg; return render(); }
+  if ((x = t("[data-kunde]"))) return kundeSheet(x.dataset.kunde);
+  if ((x = t("[data-preplus]"))) return prePlus(x.dataset.preplus);
+  if ((x = t("[data-act=newkunde]"))) return kundeSheet("");
   if ((x = t("[data-stab]"))) { ui.stab = x.dataset.stab; return render(); }
   if ((x = t("[data-tf]"))) { ui.tf = x.dataset.tf; return render(); }
   if ((x = t("[data-month]"))) { ui.month = shiftMonth(ui.month, Number(x.dataset.month)); return render(); }
