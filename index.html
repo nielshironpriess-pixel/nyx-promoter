@@ -184,6 +184,18 @@ label.f textarea{min-height:60px;resize:vertical}
 .toast{background:var(--teal)!important;color:var(--green-ink)!important;position:fixed;left:50%;transform:translateX(-50%);bottom:calc(100px + env(safe-area-inset-bottom,0px));z-index:30;background:var(--fg);color:var(--bg);padding:10px 16px;border-radius:99px;font-weight:600;font-size:14px}
 .foot{font-size:12px;color:var(--faint);text-align:center;padding-top:18px}
 @media (prefers-reduced-motion:no-preference){.sheet{animation:up .2s ease-out}@keyframes up{from{transform:translateY(24px);opacity:.6}}}
+.scanbtn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;margin:4px 0 14px}
+.scanbar{height:6px;border-radius:99px;background:var(--raise);overflow:hidden;margin-top:14px}
+.scanbar i{display:block;height:100%;width:40%;background:var(--green);border-radius:99px;animation:scan 1.2s ease-in-out infinite alternate}
+@keyframes scan{from{transform:translateX(-20%)}to{transform:translateX(170%)}}
+.scanlist{display:flex;flex-direction:column;gap:10px}
+.scanrow{border:1px solid var(--line);border-radius:14px;padding:10px 12px;background:var(--bg)}
+.scanrow.off{opacity:.5}
+.scanrow.off .sgrid{display:none}
+.scanrow .chk{display:flex;gap:10px;align-items:center;font-weight:600;font-size:14px;margin-bottom:8px}
+.scanrow .chk input{width:20px;height:20px;accent-color:var(--teal)}
+.sgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.sgrid .full{grid-column:1/-1}
 </style>
 </head>
 <body>
@@ -413,6 +425,7 @@ function vEvents() {
   const past = [...new Set([...S.bookings.filter((b) => !b.club).map((b) => b.date), ...S.nights.map((n) => n.id)])].filter((x) => x && x < today).sort().reverse();
   const todo = S.bookings.filter((b) => b.date < today && (b.status === "booket" || (b.status === "kom" && !num(b.spent))));
   return `<div class="top"><span></span><div class="title"><b>Events</b></div><span></span></div>
+  <button class="btn teal scanbtn" data-act="scan">Scan screenshots fra Nyx</button>
   ${todo.length ? `<button class="ev todo" data-act="todo"><div class="r1"><span class="wd thu">Mangler beløb</span></div><div class="r2"><span class="name">${todo.length} ${todo.length === 1 ? "bord" : "borde"} mangler hvad de brugte</span><span class="stats">Udfyld</span></div></button>` : ""}
   ${followSection(today)}${bdaySection(today)}
   ${clubSection(today)}
@@ -458,7 +471,7 @@ function vNight() {
     const exp = rows.filter(active).reduce((a, b) => a + num(b.expected), 0), sp = rows.reduce((a, b) => a + sold(b), 0);
     return top + `<h2>${rows.filter(active).length} borde · forventet ${kr(exp)}${sp ? " · solgt " + kr(sp) : ""}</h2>
       ${rows.length ? `<div class="list">${rows.map(bookingRow).join("")}</div>` : `<div class="empty">Ingen borde denne aften endnu. Skift til <b>Kort</b> og tryk på et bord.</div>`}
-      <div class="btns" style="margin-top:12px"><button class="btn" data-act="newfree">+ Bord uden for kortet</button></div>`;
+      <div class="btns" style="margin-top:12px"><button class="btn" data-act="newfree">+ Bord uden for kortet</button><button class="btn" data-act="scan">Scan fra Nyx</button></div>`;
   }
   const items = A.items.map((it) => {
     const pos = `left:${it.x / 9.2}%;top:${(it.y - A.y0) / A.h * 100}%;width:${it.w / 9.2}%;height:${it.h / A.h * 100}%`;
@@ -639,6 +652,119 @@ function partySheet(p) {
   () => safe(store.del("notes", p.id), "Slettet"));
 }
 
+/* ---------- scan-motor: /api/scan på Vercel ---------- */
+const scanEngine = {
+  max: 5,
+  async ready() { return store.mode === "sky"; },
+  async read(blobs, prompt) {
+    const images = await Promise.all(blobs.map((b) => new Promise((ok, bad) => { const r = new FileReader(); r.onload = () => ok({ type: b.type || "image/jpeg", data: String(r.result).split(",")[1] }); r.onerror = bad; r.readAsDataURL(b); })));
+    const { data } = await store.sb.auth.getSession();
+    const res = await fetch("/api/scan", { method: "POST", headers: { "Content-Type": "application/json", Authorization: "Bearer " + (data.session?.access_token || "") }, body: JSON.stringify({ prompt, images }) });
+    const out = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(out.error || "Scanningen fejlede. Prøv igen.");
+    return out;
+  },
+};
+/* ---------- /scan-motor ---------- */
+/* ---------- scan screenshots fra Nyx ---------- */
+const AREA_OF = {}; AREAS.forEach((A) => A.items.forEach((it) => { if (it.k === "t" || it.k === "r") AREA_OF[it.id] = A.name; }));
+const ME = "Niels";
+function scanPrompt(n) {
+  return `Du får ${n} screenshot(s) fra Nyx, natklubben ${HOME}s personale-app. Promoteren hedder ${ME}. I dag er ${todayISO()}.
+Find hver bordbooking eller bordsalg der står på billederne. For hver booking, aflæs:
+- date: aftenens dato som YYYY-MM-DD. Står året ikke, så brug det år der giver en dato tættest på i dag. Står datoen kun øverst på skærmen, så brug den for alle rækker på det billede. null hvis den ikke står nogen steder.
+- table: bordnummeret præcis som det står (fx "41", "777", "33"). Tom streng hvis der ikke er et.
+- name: kundens/gæstens navn som det står. Tom streng hvis ukendt.
+- guests: antal gæster/personer/pax ved bordet som tal, eller null.
+- amount: beløbet i kroner som heltal uden punktum og "kr", eller null. Hvis der står både minimumsforbrug/pris og faktisk forbrug/omsætning, så brug det faktiske forbrug.
+- kind: "spent" hvis beløbet er hvad bordet faktisk har brugt/købt for (omsætning, betalt, total, solgt), "expected" hvis det er en pris, depositum eller minimumsforbrug, "unknown" hvis det ikke fremgår.
+- promoter: navnet på den promoter/sælger/booker der står på bookingen, ellers tom streng.
+- status: "kom" hvis der står at gæsterne er ankommet/checket ind, "udeblev" ved no-show, "aflyst" ved annulleret, ellers "booket".
+Tag alle bookinger med, også andre promoteres; markér dem bare med deres navn. Lad være med at gætte tal du ikke kan se. Samme booking kan stå på flere billeder: tag den kun med én gang.
+Svar KUN med JSON i præcis dette format:
+{"rows":[{"date":"2026-10-31","table":"41","name":"Mikkel Jensen","guests":8,"amount":12000,"kind":"spent","promoter":"Niels","status":"kom"}],"note":"kort note på dansk hvis noget var uklart, ellers tom"}`;
+}
+async function shrink(file) {
+  try {
+    const bmp = await createImageBitmap(file); const k = Math.min(1, 1600 / Math.max(bmp.width, bmp.height));
+    const c = document.createElement("canvas"); c.width = Math.round(bmp.width * k); c.height = Math.round(bmp.height * k);
+    c.getContext("2d").drawImage(bmp, 0, 0, c.width, c.height);
+    return await new Promise((ok) => c.toBlob((b) => ok(b || file), "image/jpeg", 0.85));
+  } catch { return file; }
+}
+const isMe = (p) => new RegExp("\\b" + ME + "\\b", "i").test(String(p || ""));
+function matchBooking(r) {
+  const on = S.bookings.filter((b) => b.date === r.date && !b.club);
+  return (r.table && on.find((b) => String(b.table) === String(r.table))) || (r.name && on.find((b) => key(b.name) === key(r.name))) || null;
+}
+async function startScan() {
+  if (!(await scanEngine.ready())) return toast("Scanning er ikke tilgængelig her.");
+  const inp = document.createElement("input"); inp.type = "file"; inp.accept = "image/*"; inp.multiple = true;
+  inp.addEventListener("change", async () => {
+    const files = [...inp.files].slice(0, scanEngine.max);
+    if (!files.length) return;
+    if (inp.files.length > files.length) toast(`Kun de første ${files.length} billeder bliver scannet.`);
+    root.innerHTML = `<div class="scrim"><div class="sheet"><h3>Scanner…</h3><p class="sh">Læser ${files.length} ${files.length === 1 ? "billede" : "billeder"} fra Nyx. Det tager typisk 10 til 30 sekunder.</p><div class="scanbar"><i></i></div></div></div>`;
+    try {
+      const blobs = await Promise.all(files.map(shrink));
+      const out = await scanEngine.read(blobs, scanPrompt(blobs.length));
+      const rows = (Array.isArray(out) ? out : out && out.rows || []).map((r) => ({
+        date: /^\d{4}-\d{2}-\d{2}$/.test(r.date || "") ? r.date : "", table: String(r.table ?? "").trim(), name: String(r.name || "").trim(),
+        guests: num(r.guests), amount: num(r.amount), kind: ["spent", "expected"].includes(r.kind) ? r.kind : "spent",
+        promoter: String(r.promoter || "").trim(), status: STATUS[r.status] ? r.status : "booket" }));
+      reviewScan(rows, out && out.note);
+    } catch (e) { close(); toast(e.message || "Scanningen fejlede."); }
+  });
+  inp.click();
+}
+function reviewScan(rows, note) {
+  if (!rows.length) { close(); return toast("Fandt ingen borde på billederne."); }
+  const anyPromoter = rows.some((r) => r.promoter);
+  const html = rows.map((r, i) => {
+    const m = r.date && matchBooking(r), on = !anyPromoter || isMe(r.promoter);
+    return `<div class="scanrow ${on ? "" : "off"}" data-i="${i}">
+      <label class="chk"><input type="checkbox" data-pick ${on ? "checked" : ""}><span>${esc(r.promoter || "Ingen promoter")}${m ? " · findes, opdateres" : " · ny"}</span></label>
+      <div class="sgrid">
+        <label class="f">Dato<input type="date" data-k="date" value="${esc(r.date)}"></label>
+        <label class="f">Bord<input data-k="table" value="${esc(r.table)}"></label>
+        <label class="f full">Kunde<input data-k="name" value="${esc(r.name)}"></label>
+        <label class="f">Gæster<input data-k="guests" inputmode="numeric" value="${r.guests || ""}"></label>
+        <label class="f">Beløb (kr.)<input data-k="amount" inputmode="numeric" value="${r.amount || ""}"></label>
+        <label class="f full">Beløbet er<select data-k="kind"><option value="spent" ${r.kind === "spent" ? "selected" : ""}>Brugt (solgt)</option><option value="expected" ${r.kind === "expected" ? "selected" : ""}>Forventet pris</option></select></label>
+      </div></div>`;
+  }).join("");
+  const f = openSheet(`<h3>Fundet ${rows.length} ${rows.length === 1 ? "bord" : "borde"}</h3>
+    <p class="sh">${anyPromoter ? `Dine borde (${ME}) er valgt.` : "Alle borde er valgt."} Ret tallene, hvis noget er læst forkert, og tryk Gem.${note ? "<br>" + esc(note) : ""}</p>
+    <form class="form"><div class="full scanlist">${html}</div>
+    <div class="full btns"><button type="button" class="btn" data-close>Annullér</button><button class="btn teal" type="submit">Gem valgte</button></div></form>`, (form) => {
+    const picked = [...form.querySelectorAll(".scanrow")].filter((el) => el.querySelector("[data-pick]").checked).map((el) => {
+      const g = (k) => el.querySelector(`[data-k="${k}"]`).value.trim(), r = rows[el.dataset.i];
+      return { ...r, date: g("date"), table: g("table"), name: g("name"), guests: num(g("guests")), amount: num(g("amount")), kind: g("kind") };
+    });
+    const bad = picked.find((r) => !r.date);
+    if (bad) { toast("Et valgt bord mangler dato."); return false; }
+    importScan(picked);
+  });
+  f.querySelectorAll("[data-pick]").forEach((c) => c.addEventListener("change", () => c.closest(".scanrow").classList.toggle("off", !c.checked)));
+}
+async function importScan(rows) {
+  let nNew = 0, nUpd = 0;
+  try {
+    for (const r of rows) {
+      const old = matchBooking(r);
+      const b = old ? { ...old } : newBooking(r.date, AREA_OF[r.table] || "Andet", r.table);
+      if (r.name && !b.name) b.name = r.name;
+      if (r.guests) b.guests = r.guests;
+      if (r.amount) { if (r.kind === "expected") b.expected = r.amount; else { b.spent = r.amount; if (!num(b.expected)) b.expected = r.amount; } }
+      if (r.kind === "spent" && r.amount) b.status = "kom"; else if (!old && r.status) b.status = r.status;
+      if (!old) b.notes = "Fra Nyx-scanning";
+      await store.put("bookings", b); old ? nUpd++ : nNew++;
+    }
+    toast([nNew && nNew + " nye", nUpd && nUpd + " opdateret"].filter(Boolean).join(", ") || "Intet gemt");
+  } catch { toast("Kunne ikke gemme alt. Prøv igen."); }
+}
+/* ---------- /scan ---------- */
+
 /* ---------- events wiring ---------- */
 document.querySelector("nav.tabs").addEventListener("click", (e) => {
   const b = e.target.closest("[data-tab]"); if (!b) return;
@@ -684,6 +810,7 @@ view.addEventListener("click", (e) => {
   const act = x.dataset.act;
   if (act === "logout") return store.signOut();
   if (act === "back") go("events");
+  if (act === "scan") startScan();
   if (act === "editnight") nightSheet(ui.date);
   if (act === "newfree") bookingSheet(newBooking(ui.date, "Andet", ""));
   if (act === "newclub") bookingSheet({ ...newBooking(nextNight(), "Andet", ""), club: clubNames().slice(-1)[0] || "Hive" });

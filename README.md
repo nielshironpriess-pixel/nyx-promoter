@@ -31,3 +31,8 @@ npm run dev
 
 ## Data
 Alt ligger i én tabel, `nyx_docs` (bookinger, aftener, noter og indstillinger som JSON), låst så kun du kan se dine egne rækker.
+
+## Scan fra Nyx
+
+Knappen "Scan screenshots fra Nyx" sender op til 5 screenshots til `api/scan.js`, som lader Claude læse dato, bord, kunde, gæster og beløb. Du godkender rækkerne, før de gemmes.
+Det kræver en Anthropic API-nøgle: opret den på console.anthropic.com, og læg den i Vercel → Settings → Environment Variables som `ANTHROPIC_API_KEY`. Redeploy bagefter.

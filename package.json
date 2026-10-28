@@ -5,5 +5,12 @@
   "description": "Niels Bordbog – salg, bordbookinger, gæsteliste og provision",
   "scripts": {
     "dev": "npx --yes serve@14.2.4 -l 3000 ."
+  },
+  "type": "module",
+  "dependencies": {
+    "@anthropic-ai/sdk": "0.137.0"
+  },
+  "engines": {
+    "node": ">=20"
   }
 }
