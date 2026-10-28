@@ -730,12 +730,20 @@ function matchBooking(r) {
   const on = S.bookings.filter((b) => b.date === r.date && !b.club);
   return (r.table && on.find((b) => String(b.table) === String(r.table))) || (r.name && on.find((b) => key(b.name) === key(r.name))) || null;
 }
-async function startScan() {
-  if (!(await scanEngine.ready())) return toast("Scanning er ikke tilgængelig her.");
-  const inp = document.createElement("input"); inp.type = "file"; inp.accept = "image/*"; inp.multiple = true;
+/* iPhone: filvælgeren skal ligge i siden og åbnes direkte fra trykket, ellers kommer billederne aldrig frem */
+const scanInput = document.createElement("input");
+scanInput.type = "file"; scanInput.accept = "image/*"; scanInput.multiple = true;
+scanInput.style.cssText = "position:fixed;left:-9999px;width:1px;height:1px;opacity:0";
+document.body.appendChild(scanInput);
+function startScan() { scanInput.value = ""; scanInput.click(); }
+{
+  const inp = scanInput;
   inp.addEventListener("change", async () => {
-    const files = [...inp.files].slice(0, scanEngine.max);
-    if (!files.length) return;
+    const all = [...inp.files];
+    if (!all.length) return;
+    root.innerHTML = `<div class="scrim"><div class="sheet"><h3>Scanner…</h3><p class="sh">Gør klar…</p><div class="scanbar"><i></i></div></div></div>`;
+    if (!(await scanEngine.ready())) return scanMsg("Scanning er ikke tilgængelig", "Du skal være logget ind for at scanne.");
+    const files = all.slice(0, scanEngine.max);
     if (inp.files.length > files.length) toast(`Kun de første ${files.length} billeder bliver scannet.`);
     root.innerHTML = `<div class="scrim"><div class="sheet"><h3>Scanner…</h3><p class="sh">Læser ${files.length} ${files.length === 1 ? "billede" : "billeder"} fra Nyx. Det tager typisk 10 til 30 sekunder.</p><div class="scanbar"><i></i></div></div></div>`;
     try {
@@ -751,7 +759,6 @@ async function startScan() {
       reviewScan(rows, out && out.note);
     } catch (e) { scanMsg("Scanningen virkede ikke", e.message || "Ukendt fejl."); }
   });
-  inp.click();
 }
 function reviewScan(rows, note) {
   if (!rows.length) return scanMsg("Ingen af dine borde fundet", (note ? note + " " : "") + "Tjek at der står Niels Priess på bordene, og at billederne er fra Tables → List i Nyx.");
