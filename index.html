@@ -412,6 +412,12 @@ label.f input,label.f select,label.f textarea,.status button,.spentbox,label.sha
 .nyxh .btn{padding:7px 12px;font-size:13px}
 .nyxbox{margin-top:10px}
 .nyxpre{margin:0;white-space:pre-wrap;font:15px/1.5 var(--f);background:rgba(255,255,255,.55);border:1px solid var(--line);border-radius:12px;padding:10px 12px;user-select:text;-webkit-user-select:text}
+.moonimg{display:block;width:100%;padding:0;border:0;background:#fff;border-radius:14px;overflow:hidden;margin-top:8px;box-shadow:0 2px 10px rgba(0,0,0,.08)}
+.moonimg img{display:block;width:100%;height:auto;max-height:420px;object-fit:cover;object-position:top}
+.moonb{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}.moonb .btn{flex:1;min-width:120px;padding:11px 12px}
+.moonfull{position:fixed;inset:0;z-index:80;background:rgba(0,0,0,.92);overflow:auto;-webkit-overflow-scrolling:touch;padding:env(safe-area-inset-top,0) 0 env(safe-area-inset-bottom,0)}
+.moonfull img{display:block;width:100%;max-width:700px;margin:0 auto}
+.moonfull button{position:fixed;top:calc(env(safe-area-inset-top,0px) + 10px);right:12px;width:40px;height:40px;border-radius:99px;border:0;background:rgba(255,255,255,.9);font-size:20px;font-weight:700}
 :root{--vip:#b8892c;--vip2:#d9b45a;--vip-ink:#fffaf0}
 .lseg button[data-lseg=vip]{color:var(--vip)}
 .lseg.vipon::before{background:linear-gradient(135deg,var(--vip2),var(--vip))!important}
@@ -465,7 +471,7 @@ button:active,.ev:active,.kpi:active,.qa:active,.hero:active,a.cbtn:active{trans
     <button data-tab="home"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg>Overblik</button>
     <div class="nav-label">Søpavillonen</div>
     <button data-tab="events"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>Events</button>
-    <button data-tab="liste"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6h11M9 12h11M9 18h11M4 6h.01M4 12h.01M4 18h.01"/></svg>Gæsteliste</button>    <button data-tab="borde"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3l7 7-9 9a3 3 0 0 1-4 0l-3-3a3 3 0 0 1 0-4z M16 5l3 3"/></svg>Bordkort</button>
+    <button data-tab="liste"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6h11M9 12h11M9 18h11M4 6h.01M4 12h.01M4 18h.01"/></svg>Gæsteliste</button>    <button data-tab="borde"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3l7 7-9 9a3 3 0 0 1-4 0l-3-3a3 3 0 0 1 0-4z M16 5l3 3"/></svg>Bordkort</button>    <button data-tab="moon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16v16H4z M4 9h16 M9 9v11"/></svg>Menu til kunder</button>
     <button data-tab="stats"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V11M10 20V5M16 20v-6M2 20h20"/></svg>Salg og statistik</button>
     <div class="nav-label hive-only">Hive</div>
     <button data-tab="hive"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l8 4.6v9.2L12 22l-8-6.2V6.6z M12 8l3.5 2v4L12 16l-3.5-2v-4z"/></svg>Hive bordkort</button>
@@ -848,7 +854,7 @@ function render() {
   if (!S.ready) return;
   const y = window.scrollY;
   badge();
-  view.innerHTML = { home: vHome, hivesalg: vHiveSales, hive: vHive, events: vEvents, borde: vNight, night: vNight, stats: vStats, noter: vNoter, kunder: vKunder, crew: vCrew, liste: vListe }[ui.tab]();
+  view.innerHTML = { home: vHome, hivesalg: vHiveSales, hive: vHive, events: vEvents, borde: vNight, night: vNight, stats: vStats, noter: vNoter, kunder: vKunder, crew: vCrew, liste: vListe, moon: vMoon }[ui.tab]();
   if (ui.tab !== ui._lastTab) { enterAnim(ui._lastTab); ui._lastTab = ui.tab; }
   slideSegs();
   if (ui.keepScroll) window.scrollTo(0, y);
@@ -1446,6 +1452,52 @@ function toNyxSection() {
   <p class="note">Tryk på et bord for at kopiere det, og sæt ✓ når det er lagt i Nyx.</p>`;
 }
 
+/* ---------- Moon: menukort og bordkort til kunder ---------- */
+const MOON_TXT = `MOON – TABLE PACKAGES (torsdag)
+
+1 · 6.000 DKK (8 pax) · Access: Orangerie
+1 × Belvedere 1,75L · 1 × Moët 0,7L · 8 × Heineken · 12 mixers of choice
+
+2 · 8.000 DKK (10–12 pax) · Access: Loungen
+1 × Belvedere 3L · 1 × Moët 0,7L · 1 × Moon Bubbles · 24 mixers of choice
+
+3 · 10.000 DKK (12–14 pax) · Access: "The Corner"
+1 × Belvedere 3L · 1 × Belvedere 10 0,7L · 24 mixers of choice · 2 × confetti cannons
+
+4 · 15.000 DKK (14–16 pax) · Access: Main · Custom sign & show
+1 × Belvedere 3L · 1 × Belvedere 10 0,7L · 1 × Dom Pérignon 0,75L · 2 × Moon Bubbles · 30 mixers of choice · 2 × confetti cannons
+
+5 · 25.000 DKK (18+ pax) · Access: Main · Custom sign & show
+2 × Belvedere 3L · 1 × Dom Pérignon 0,75L · 1 × Clase Azul Reposado · 2 × Moon Bubbles · 48 mixers of choice · 2 × confetti cannons
+
+10% service fee lægges oveni. Pakkerne kan ikke købes efter kl. 22:00 om torsdagen.`;
+const MOON_IMG = { menu: ["assets/moon-menu.jpg", "Moon-menukort.jpg", "Menukort"], kort: ["assets/moon-bordkort.jpg", "Moon-bordkort.jpg", "Bordkort"] };
+async function moonFiles(keys) { return Promise.all(keys.map(async (k) => { const [u, n] = MOON_IMG[k]; const b = await (await fetch(u)).blob(); return new File([b], n, { type: "image/jpeg" }); })); }
+async function moonShare(keys) {
+  try {
+    const files = await moonFiles(keys);
+    if (navigator.canShare && navigator.canShare({ files })) return await navigator.share({ files });
+    toast("Deling virker ikke her. Brug Kopiér eller hold fingeren på billedet.");
+  } catch (e) { if (e && e.name !== "AbortError") toast("Kunne ikke dele billedet"); }
+}
+async function moonCopy(k) {
+  try {
+    const png = new Promise(async (res) => { const img = new Image(); img.src = MOON_IMG[k][0]; await img.decode(); const c = document.createElement("canvas"); c.width = img.naturalWidth; c.height = img.naturalHeight; c.getContext("2d").drawImage(img, 0, 0); c.toBlob(res, "image/png"); });
+    await navigator.clipboard.write([new ClipboardItem({ "image/png": png })]);
+    toast(MOON_IMG[k][2] + " er kopieret");
+  } catch { toast("Kunne ikke kopiere. Hold fingeren på billedet og vælg Kopiér."); }
+}
+function vMoon() {
+  const card = (k, extra) => `<section class="cmp moonc"><div class="nyxh" style="margin-top:0"><b style="font-size:17px">${MOON_IMG[k][2]}</b></div>
+    <button class="moonimg" data-moonview="${k}"><img src="${MOON_IMG[k][0]}" alt="Moon ${MOON_IMG[k][2].toLowerCase()}" loading="lazy"></button>
+    <div class="moonb"><button class="btn teal" data-moonshare="${k}">Del</button><button class="btn" data-mooncopy="${k}">Kopiér billede</button>${extra || ""}</div></section>`;
+  return `<div class="top"><span></span><div class="title"><b>Menu til kunder</b><span>Moon · torsdag</span></div><span></span></div>
+  <button class="btn teal" data-moonshare="menu,kort" style="width:100%;margin:6px 0 4px;padding:13px">Send menukort + bordkort</button>
+  <p class="note" style="margin:4px 0 6px">"Del" åbner iPhonens delemenu, så du kan sende direkte på Instagram, Snap eller SMS.</p>
+  ${card("menu", `<button class="btn" data-mooncopytxt>Kopiér som tekst</button>`)}
+  ${card("kort")}`;
+}
+
 /* ---------- gæsteliste: navne til hver aften ---------- */
 const listOf = (date) => S.notes.filter((n) => n.kind === "gaest" && n.date === date);
 function stepNight(date, dir) { let x = date; for (let i = 0; i < 14; i++) { x = addDays(x, dir); if (DEFAULT_EVENTS[d(x).getDay()] && okDay(x)) return x; } return addDays(date, dir); }
@@ -1868,6 +1920,10 @@ view.addEventListener("click", (e) => {
   if ((x = t("[data-lday]"))) { ui.listDate = stepNight(ui.listDate, Number(x.dataset.lday)); return render(); }
   if ((x = t("[data-gcame]"))) { const n = S.notes.find((y) => y.id === x.dataset.gcame); return n && safe(store.put("notes", { ...n, came: !n.came })); }
   if ((x = t("[data-gaest]"))) { const n = S.notes.find((y) => y.id === x.dataset.gaest); return n && gaestSheet(n); }
+  if ((x = t("[data-moonshare]"))) return moonShare(x.dataset.moonshare.split(","));
+  if ((x = t("[data-mooncopy]"))) return moonCopy(x.dataset.mooncopy);
+  if (t("[data-mooncopytxt]")) return copyText(MOON_TXT, "Menukortet er kopieret som tekst");
+  if ((x = t("[data-moonview]"))) { const o = document.createElement("div"); o.className = "moonfull"; o.innerHTML = `<img src="${MOON_IMG[x.dataset.moonview][0]}" alt=""><button aria-label="Luk">✕</button>`; o.addEventListener("click", (e) => { if (e.target.tagName === "BUTTON") o.remove(); }); document.body.appendChild(o); return; }
   if ((x = t("[data-cpy]"))) { const txt = (ui.cp || {})[x.dataset.cpy]; if (txt) copyText(txt, txt.includes("\n") ? "Kopieret – sæt ind i Nyx" : "Bordet er kopieret"); return; }
   if ((x = t("[data-cday]"))) { ui.crewDate = stepNight(ui.crewDate, Number(x.dataset.cday)); return render(); }
   if ((x = t("[data-nyxdone]"))) { const b = S.bookings.find((y) => y.id === x.dataset.nyxdone); return b && safe(store.put("bookings", { ...b, nyx: !b.nyx })); }
