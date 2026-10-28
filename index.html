@@ -1024,6 +1024,8 @@ function vHome() {
   const upcoming = [...new Set([next, ...[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((i) => addDays(today, i)).filter((x) => [4, 5, 6].includes(d(x).getDay()))])].filter((x) => x > next).slice(0, 3);
   return `<div class="hello-date">${new Date().toLocaleDateString("da-DK", { weekday: "long", day: "numeric", month: "long" })}</div>
     <h1 class="hello">${greeting()}, ${esc(first(pr.name || meNyx()))}</h1>
+    ${needsCode() ? `<form class="genvej" id="homeJoin" style="margin:0 0 14px"><b>Er du underpromoter?</b><span class="s">Skriv koden, du har fået af din promoter, så bliver din konto koblet på.</span>
+      <div style="display:flex;gap:8px;margin-top:8px"><input id="hj-code" placeholder="Fx 9E546A" autocapitalize="characters" autocomplete="off" style="flex:1;min-width:0;background:rgba(255,255,255,.6);border:1px solid var(--line);border-radius:10px;padding:10px 12px;font-size:16px"><button class="btn teal">Tilslut</button></div></form>` : ""}
     <button class="hero" data-night="${next}"><div class="lab">Næste aften · ${when}</div><div class="ttl">${esc(ne.name)}</div>
       <div class="sub">${dayLabel(next)} · ${esc(ne.time)}${ne.age ? " · " + esc(ne.age) : ""}</div>
       <div class="chips"><span class="chip">${nb.length} ${nb.length === 1 ? "bord" : "borde"}</span>${nexp ? `<span class="chip">${kr(nexp)}</span>` : ""}${ne.guestlist ? `<span class="chip">${ne.guestlist} på liste</span>` : ""}<span class="chip">Åbn bordkort ›</span></div></button>
@@ -1598,7 +1600,10 @@ const scanEngine = {
 /* ---------- /scan-motor ---------- */
 /* ---------- scan screenshots fra Nyx ---------- */
 const AREA_OF = {}; AREAS.forEach((A) => A.items.forEach((it) => { if (it.k === "t" || it.k === "r") AREA_OF[it.id] = A.name; }));
-const meNyx = () => ((S.settings && S.settings.profile) || {}).nyx || (store.boss && store.boss.me) || "Niels Priess";
+const isNiels = () => store.mode !== "sky" || /^niels/i.test(store.email || "");
+const emailName = () => { const x = String(store.email || "").split("@")[0].replace(/[._\d]+/g, " ").trim(); return x ? x.replace(/\b\w/g, (c) => c.toUpperCase()) : "Promoter"; };
+const meNyx = () => ((S.settings && S.settings.profile) || {}).nyx || (store.boss && store.boss.me) || (isNiels() ? "Niels Priess" : emailName());
+const needsCode = () => store.mode === "sky" && store.crewOk && !store.boss && !(store.crew || []).length && !isNiels();
 function scanPrompt(n) {
   return `Du får ${n} screenshot(s) fra Nyx, natklubben ${HOME}s personale-app (fanen Tables, visningen List). I dag er ${todayISO()}.
 Øverst på hvert billede står aftenens dato (fx "Thu, Oct 22, 2026") og eventets navn. Listen er delt i områder med en overskrift (fx "SØ Main", "SØ Main Back", "Buffer").
@@ -1763,6 +1768,11 @@ view.addEventListener("submit", (e) => {
   if (e.target.id === "teamNew") { const f = e.target; return safe(store.rpc("nyx_create_team", { p_team: f.querySelector("#t-name").value, p_name: f.querySelector("#t-me").value }).then(() => store.loadAll()), "Holdet er oprettet"); }
   if (e.target.id === "teamJoin") { const f = e.target; return store.rpc("nyx_join_team", { p_code: f.querySelector("#j-code").value, p_name: f.querySelector("#j-me").value }).then(() => store.loadAll()).then(() => toast("Du er på holdet"), (err) => toast(/findes ikke/.test(err.message) ? "Koden findes ikke" : /allerede/.test(err.message) ? "Du er allerede på et hold" : "Kunne ikke tilslutte")); }
   if (e.target.id === "hivePctForm") return safe(store.settings({ ...S.settings, hivePct: num(e.target.querySelector("#h-pct").value) }), "Gemt");
+  if (e.target.id === "homeJoin") {
+    const c = e.target.querySelector("#hj-code").value.trim(), btn = e.target.querySelector("button"); if (!c) return;
+    btn.disabled = true; btn.textContent = "Tilslutter…";
+    return joinCrew(c, profile().name || emailName()).then(() => { toast("Du er nu koblet på " + (store.boss ? store.boss.name : "din promoter")); render(); }, (err) => { btn.disabled = false; btn.textContent = "Tilslut"; toast(err.message); });
+  }
   if (e.target.id === "gaestForm") {
     const nm = e.target.querySelector("#g-name"), ct = e.target.querySelector("#g-count");
     if (addGaest(nm.value, ct.textContent) === false) return;
