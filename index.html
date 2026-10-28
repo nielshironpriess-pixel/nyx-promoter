@@ -196,6 +196,7 @@ label.f textarea{min-height:60px;resize:vertical}
 .scanrow .chk input{width:20px;height:20px;accent-color:var(--teal)}
 .sgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .sgrid .full{grid-column:1/-1}
+label.f small.mer{text-transform:none;letter-spacing:0;font-size:13px;color:var(--green);font-weight:700}
 </style>
 </head>
 <body>
@@ -273,6 +274,7 @@ const bookingsOn = (date) => S.bookings.filter((b) => b.date === date && !b.club
 const HOME = "Søpavillonen";
 const clubOf = (b) => b.club || HOME;
 const clubNames = () => [...new Set(["Hive", ...S.bookings.map((b) => b.club).filter(Boolean)])];
+const extra = (b) => num(b.spent) - num(b.expected);
 const sold = (b) => b.status === "kom" ? num(b.spent) : 0;
 
 /* ---------- kunder, fødselsdage og opfølgning ---------- */
@@ -490,7 +492,7 @@ function bookingRow(b) {
   const sub = [b.club ? b.club + ", " + dayLabel(b.date) : b.area !== "Andet" ? b.area : "", num(b.guests) ? num(b.guests) + " gæster" : "", b.arrival ? "kl. " + b.arrival : "", b.phone || ""].filter(Boolean).join(" · ");
   return `<button class="row" data-booking="${esc(b.id)}"><span class="tag num ${b.status}">${esc(b.table || "?")}</span>
     <span class="mid"><span class="t">${esc(b.name || "Uden navn")}</span><span class="s">${esc(sub)}</span></span>
-    <span class="right num">${b.status === "kom" && num(b.spent) ? kr(b.spent) : kr(b.expected)}<small>${b.status === "kom" && num(b.spent) ? "solgt" : STATUS[b.status]}</small></span></button>`;
+    <span class="right num">${b.status === "kom" && num(b.spent) ? kr(b.spent) : kr(b.expected)}<small>${b.status === "kom" && num(b.spent) ? (num(b.expected) && extra(b) > 0 ? "+" + kr(extra(b)) + " merspend" : "solgt") : STATUS[b.status]}</small></span></button>`;
 }
 
 /* ---------- stats ---------- */
@@ -506,7 +508,18 @@ function monthStats(ym) {
     expOfCame: withSpent.reduce((a, b) => a + num(b.expected), 0),
     show: decided.length ? Math.round(came.length / decided.length * 100) : null,
     guests: nights.reduce((a, n) => a + num(n.guestlist), 0), guestNights: nights.length,
-    tableGuests: came.reduce((a, b) => a + num(b.guests), 0) };
+    tableGuests: came.reduce((a, b) => a + num(b.guests), 0),
+    withMer: withSpent.filter((b) => extra(b) > 0), noMer: withSpent.filter((b) => extra(b) <= 0), waiting: came.length - withSpent.length };
+}
+function merSection(m) {
+  const sum = (arr, f) => arr.reduce((a, b) => a + f(b), 0);
+  const w = m.withMer, n = m.noMer, mer = sum(w, extra);
+  if (!w.length && !n.length) return `<h2>Bordsalg</h2><div class="empty">Når du har skrevet, hvad dine borde brugte, kan du se her, hvilke der lavede merspend.</div>`;
+  return `<h2>Bordsalg</h2><div class="list">
+    <div class="row"><span class="tag kom num">${w.length}</span><span class="mid"><span class="t">Med merspend</span><span class="s">pris ${kr(sum(w, (b) => num(b.expected)))} + merspend ${kr(mer)}</span></span><span class="right num" style="color:var(--green)">+${kr(mer)}<small>${kr(w.length ? mer / w.length : 0)} i snit</small></span></div>
+    <div class="row"><span class="tag num">${n.length}</span><span class="mid"><span class="t">Uden merspend</span><span class="s">brugte kun bordprisen${n.some((b) => extra(b) < 0) ? " eller mindre" : ""}</span></span><span class="right num">${kr(sum(n, (b) => num(b.spent)))}<small>solgt</small></span></div>
+    ${m.waiting ? `<button class="row" data-act="todo"><span class="tag booket num">${m.waiting}</span><span class="mid"><span class="t">Venter på tal</span><span class="s">kom, men du har ikke skrevet hvad de brugte</span></span><span class="right">Udfyld</span></button>` : ""}
+  </div>`;
 }
 function vStats() {
   const m = monthStats(ui.month);
@@ -542,6 +555,7 @@ function vStats() {
     <div class="line"><span>Solgt</span><span class="bar"><i style="width:${m.sold / max * 100}%;background:var(--green)"></i></span><b>${kr(m.sold)}</b></div>
     ${m.expOfCame ? `<div class="sub">De borde der kom, brugte <b style="color:${diff >= 0 ? "var(--green)" : "var(--red)"}">${diff >= 0 ? "+" : "−"}${kr(Math.abs(diff))}</b> i forhold til hvad du regnede med.</div>` : ""}
   </section>
+  ${merSection(m)}
   <section class="tiles num">
     <div class="tile"><div class="v">${kr(m.avgExp)}</div><div class="k">forventet i snit pr. bord</div></div>
     <div class="tile"><div class="v" style="color:var(--green)">${kr(m.avgSold)}</div><div class="k">solgt i snit pr. bord</div></div>
@@ -611,7 +625,7 @@ function bookingSheet(b) {
     <label class="f">Ankomst<input id="b-arrival" type="time" value="${esc(b.arrival)}"></label>
     <label class="f full">Kundens fødselsdag<input id="b-bday" type="date" value="${esc(b.bday || bdayOf(b.name))}"></label>
     <div class="full"><div class="status" role="group" aria-label="Status">${Object.entries(STATUS).map(([k, l]) => `<button type="button" class="${k}" data-st="${k}" aria-pressed="${b.status === k}">${l}</button>`).join("")}</div></div>
-    <label class="f full">Brugt i alt (kr.)<input id="b-spent" inputmode="numeric" value="${num(b.spent) || ""}" placeholder="Skriv det efter aftenen"></label>
+    <label class="f full">Brugt i alt (kr.)<input id="b-spent" inputmode="numeric" value="${num(b.spent) || ""}" placeholder="Skriv det efter aftenen"><small class="mer" id="b-mer"></small></label>
     <label class="f full">Noter<textarea id="b-notes" placeholder="Fx flasker, fødselsdag">${esc(b.notes)}</textarea></label>
     <div class="full btns">${exists ? `<button type="button" class="btn danger" data-del>Slet</button>` : `<button type="button" class="btn" data-close>Annullér</button>`}<button class="btn teal" type="submit">Gem</button></div>
   </form>`, (f) => {
@@ -623,6 +637,8 @@ function bookingSheet(b) {
     safe(store.put("bookings", o), "Gemt");
   }, () => safe(store.del("bookings", b.id), "Slettet"));
   f.querySelectorAll("[data-st]").forEach((x) => x.addEventListener("click", () => f.querySelectorAll("[data-st]").forEach((y) => y.setAttribute("aria-pressed", y === x))));
+  const merHint = () => { const sp = num(v(f, "b-spent")), ex = num(v(f, "b-expected")); f.querySelector("#b-mer").textContent = sp && ex ? (sp > ex ? "Merspend: +" + kr(sp - ex) : "Ingen merspend") : ""; };
+  f.addEventListener("input", merHint); merHint();
   if (!exists) f.querySelector("#b-name").focus({ preventScroll: true });
 }
 const newBooking = (date, area, table) => ({ id: newId(), date, area, table: String(table || ""), name: "", guests: "", expected: "", phone: "", arrival: "", spent: "", status: "booket", notes: "", created: Date.now() });
