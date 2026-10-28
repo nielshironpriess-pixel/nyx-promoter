@@ -158,7 +158,7 @@ h2{font-size:13px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;
 [hidden]{display:none!important}
 /* tabbar (Nyx style pill) */
 nav.tabs{position:fixed;left:0;right:0;bottom:0;z-index:7;padding:0 max(12px,env(safe-area-inset-right,0px)) calc(10px + env(safe-area-inset-bottom,0px)) max(12px,env(safe-area-inset-left,0px));pointer-events:none}
-nav.tabs .in{pointer-events:auto;max-width:520px;margin:0 auto;display:grid;grid-template-columns:repeat(4,1fr);background:var(--surface);border:1px solid var(--line);border-radius:99px;padding:6px;box-shadow:0 8px 24px rgba(80,50,30,.14)}
+nav.tabs .in{pointer-events:auto;max-width:520px;margin:0 auto;display:grid;grid-template-columns:repeat(5,1fr);background:var(--surface);border:1px solid var(--line);border-radius:99px;padding:6px;box-shadow:0 8px 24px rgba(80,50,30,.14)}
 nav.tabs button{border:0;background:none;border-radius:99px;display:flex;flex-direction:column;align-items:center;gap:2px;padding:7px 0;font-size:12px;font-weight:700;color:var(--fg)}
 nav.tabs svg{width:22px;height:22px}
 nav.tabs button[aria-current="page"]{background:var(--bg);color:var(--teal)}
@@ -224,6 +224,7 @@ label.share small{color:var(--muted)}
 <nav class="tabs" aria-label="Sektioner"><div class="in">
   <button data-tab="events"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4M7 14h2M11 14h2M15 14h2M7 17h2M11 17h2"/></svg>Events</button>
   <button data-tab="borde"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14 3l7 7-9 9a3 3 0 0 1-4 0l-3-3a3 3 0 0 1 0-4z M16 5l3 3"/></svg>Borde</button>
+  <button data-tab="hive"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 2l8 4.6v9.2L12 22l-8-6.2V6.6z M12 8l3.5 2v4L12 16l-3.5-2v-4z"/></svg>Hive</button>
   <button data-tab="stats"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 20V11M10 20V5M16 20v-6M2 20h20"/></svg>Statistik</button>
   <button data-tab="noter"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-3.5 10.9c.6.4 1 1.1 1 1.9V16h5v-.2c0-.8.4-1.5 1-1.9A6 6 0 0 0 12 3z"/></svg>Noter</button>
 </div></nav>
@@ -262,6 +263,20 @@ const AREAS = [
     B("Bar 4", 317, 981, 266, 170), T("51", 231, 1442, 84, 102, "maks 12"), T("52", 231, 1557, 84, 102, "maks 12"), H(394, 1557, 103, 83, "DJ"), T("54", 585, 1452, 84, 100, "maks 12"), T("53", 585, 1567, 84, 100, "maks 12"),
   ]},
 ];
+/* Hive Copenhagen, tegnet efter deres bordkort (billedets koordinater omregnet til 920 bredde) */
+const HV = (x, y, w, h) => [Math.round((x - 120) * 1.21), Math.round((y - 270) * 1.21), Math.round(w * 1.21), Math.round(h * 1.21)];
+const HT = (id, x, y, w, h, cap) => T(id, ...HV(x, y, w, h), cap), HR = (id, x, y, w, h, cap) => R(id, ...HV(x, y, w, h), cap);
+const HB = (label, x, y, w, h, v) => B(label, ...HV(x, y, w, h), v), HH = (x, y, w, h, label) => H(...HV(x, y, w, h), label);
+const HIVE = { name: "Hive", y0: 0, h: 968, items: [
+  HB("Bar 1", 290, 280, 195, 115), HT("11", 135, 300, 70, 62, "8"),
+  HR("20", 336, 400, 44, 40, ""), HR("21", 394, 400, 44, 40, ""), HR("22", 336, 445, 44, 40, ""), HR("23", 394, 445, 44, 40, ""),
+  HT("7", 400, 560, 58, 48, "10-15"), HT("8", 452, 602, 54, 46, "10-15"), HT("12", 445, 683, 60, 50, "10-12"),
+  HT("6", 140, 675, 80, 90, "20-25"), HT("5", 140, 805, 80, 90, "20-25"),
+  HH(255, 665, 180, 210, "Dansegulv"), HB("DJ", 322, 815, 60, 55),
+  HT("10", 303, 882, 88, 44, "6-7"), HT("9", 431, 882, 76, 44, "6-7"),
+  HT("4", 140, 932, 75, 52, "20-25"), HT("3", 185, 986, 75, 62, "20-25"), HT("2", 290, 978, 90, 72, "20-25"), HT("1", 415, 978, 105, 72, "20-25"),
+  HB("Bar 2", 525, 760, 190, 135), HB("Balkon", 742, 700, 30, 240, true), HT("41", 780, 720, 58, 70, "8-10"), HT("40", 780, 855, 58, 70, "8-10"),
+] };
 const DEFAULT_EVENTS = { 3: ["Onsdag", "22:00–03:00", ""], 4: ["Moon", "22:00–05:00", "18+"], 5: ["Friday", "17:30–05:00", "23+"], 6: ["Saturday", "17:30–05:00", "23+"] };
 const STATUS = { booket: "Booket", kom: "Kom", udeblev: "Udeblev", aflyst: "Aflyst" };
 
@@ -509,7 +524,7 @@ function render() {
   if (!S.ready) return;
   const y = window.scrollY;
   badge();
-  view.innerHTML = { events: vEvents, borde: vNight, night: vNight, stats: vStats, noter: vNoter }[ui.tab]();
+  view.innerHTML = { hive: vHive, events: vEvents, borde: vNight, night: vNight, stats: vStats, noter: vNoter }[ui.tab]();
   if (ui.keepScroll) window.scrollTo(0, y);
   ui.keepScroll = true;
 }
@@ -602,6 +617,26 @@ function vNight() {
     <div class="counts num"><span class="c-green" title="Booket">${cnt("booket")}</span><span class="c-blue" title="Kom">${cnt("kom")}</span><span class="c-red" title="Udeblev">${cnt("udeblev")}</span></div></div>
     <div class="map" style="aspect-ratio:920/${A.h}">${items}</div>
     <p class="maptip">Tryk på et bord for at booke det. Bordeaux er booket, oliven kom, rød udeblev.</p>`;
+}
+const hiveAt = (date, table) => S.bookings.find((b) => b.club === "Hive" && b.date === date && String(b.table) === String(table) && active(b));
+function vHive() {
+  const date = ui.hiveDate ||= nextNight(), A = HIVE;
+  const bs = S.bookings.filter((b) => b.club === "Hive" && b.date === date).sort((a, b) => num(a.table) - num(b.table));
+  const items = A.items.map((it) => {
+    const pos = `left:${it.x / 9.2}%;top:${(it.y - A.y0) / A.h * 100}%;width:${it.w / 9.2}%;height:${it.h / A.h * 100}%`;
+    if (it.k === "h") return `<div class="hatch" style="${pos}">${it.label || ""}</div>`;
+    if (it.k === "b") return `<div class="blk ${it.v ? "v" : ""}" style="${pos}"><span>${esc(it.label)}</span></div>`;
+    const b = hiveAt(date, it.id);
+    return `<button class="tb ${it.k === "r" ? "round" : ""} ${b ? b.status : ""}" style="${pos}" data-hive="${it.id}" aria-label="Hive bord ${it.id}${b ? ", " + esc(b.name) : ", ledigt"}"><b>${it.id}</b><small>${b ? esc(shortName(b.name)) : esc(it.cap)}</small></button>`;
+  }).join("");
+  const exp = bs.filter(active).reduce((a, b) => a + num(b.expected), 0);
+  return `<div class="top"><button class="pillbtn" data-hday="-1" aria-label="Dagen før">‹</button>
+    <div class="title"><span class="d">${dayLabel(date)}</span><br><span>Hive Copenhagen</span></div><button class="pillbtn right" data-hday="1" aria-label="Dagen efter">›</button></div>
+    <div class="addrow" style="margin-bottom:10px"><label class="f" style="flex:1"><span>Dato</span><input type="date" id="hiveDate" value="${date}"></label></div>
+    <div class="map" style="aspect-ratio:920/${A.h}">${items}</div>
+    <p class="maptip">Tryk på et bord for at booke det på Hive.${store.team ? " Det bliver delt med holdet, så de får besked og kan skrive tallene ind." : ""}</p>
+    <h2>${bs.filter(active).length} borde på Hive${exp ? " · " + kr(exp) : ""}</h2>
+    ${bs.length ? `<div class="list">${bs.map(bookingRow).join("")}</div>` : `<div class="empty">Ingen borde på Hive denne dag.</div>`}`;
 }
 function nextNight() { let x = todayISO(); for (let i = 0; i < 7; i++) { if ([4, 5, 6].includes(d(x).getDay())) return x; x = addDays(x, 1); } return todayISO(); }
 function bookingRow(b) {
@@ -768,7 +803,7 @@ function bookingSheet(b) {
   const exists = S.bookings.some((x) => x.id === b.id);
   const names = [...new Set(myBookings().map((x) => x.name).filter(Boolean))];
   const free = b.area === "Andet", other = b.club != null;
-  const f = openSheet(`<h3>${other ? "Bord på " + esc(b.club || "anden klub") : free ? "Bord" : esc(b.area) + ", bord " + esc(b.table)}</h3><p class="sh">${other ? "Booking uden for " + HOME : dayLabel(b.date) + " · " + esc(eventFor(b.date).name)}${!mine(b) ? " · delt af " + esc(memberName(ownerOf(b))) : ""}</p>
+  const f = openSheet(`<h3>${other ? "Bord" + (b.table ? " " + esc(b.table) : "") + " på " + esc(b.club || "anden klub") : free ? "Bord" : esc(b.area) + ", bord " + esc(b.table)}</h3><p class="sh">${other ? "Booking uden for " + HOME : dayLabel(b.date) + " · " + esc(eventFor(b.date).name)}${!mine(b) ? " · delt af " + esc(memberName(ownerOf(b))) : ""}</p>
   <form class="form">
     ${other ? `<label class="f">Klub<input id="b-club" list="clubs" value="${esc(b.club)}" required autocomplete="off"><datalist id="clubs">${clubNames().map((c) => `<option value="${esc(c)}">`).join("")}</datalist></label>
 ` : ""}
@@ -1001,6 +1036,7 @@ view.addEventListener("submit", (e) => {
   if (e.target.id === "ideaForm") { const t = e.target.querySelector("#ideaText").value.trim(); if (t) safe(store.put("notes", { id: newId(), kind: "ide", text: t, done: false, created: Date.now() })); }
 });
 view.addEventListener("change", (e) => {
+  if (e.target.id === "hiveDate" && e.target.value) { ui.hiveDate = e.target.value; return render(); }
   const id = e.target.dataset.done; if (!id) return;
   const n = S.notes.find((x) => x.id === id); if (n) safe(store.put("notes", { ...n, done: e.target.checked }));
 });
@@ -1011,6 +1047,8 @@ view.addEventListener("click", (e) => {
   if ((x = t("[data-mode]"))) { ui.mode = x.dataset.mode; return render(); }
   if ((x = t("[data-area]"))) { ui.area = (ui.area + Number(x.dataset.area) + AREAS.length) % AREAS.length; return render(); }
   if ((x = t("[data-gl]"))) { const inp = view.querySelector("#gl"); const nv = Math.max(0, num(inp.value) + Number(x.dataset.gl)); inp.value = nv; return setGuestlist(ui.date, nv); }
+  if ((x = t("[data-hive]"))) { const id = x.dataset.hive; return bookingSheet(hiveAt(ui.hiveDate, id) || { ...newBooking(ui.hiveDate, "Hive", id), club: "Hive" }); }
+  if ((x = t("[data-hday]"))) { ui.hiveDate = addDays(ui.hiveDate, Number(x.dataset.hday)); return render(); }
   if ((x = t("[data-table]"))) { const A = AREAS[ui.area]; return bookingSheet(bookingAt(ui.date, A.name, x.dataset.table) || newBooking(ui.date, A.name, x.dataset.table)); }
   if ((x = t("[data-news]"))) { try { localStorage.setItem(seenKey(), new Date().toISOString()); } catch {} const b = S.bookings.find((y) => y.id === x.dataset.news); render(); return b ? bookingSheet(b) : toast("Bordet er ikke delt mere"); }
   if ((x = t("[data-booking]"))) return bookingSheet(S.bookings.find((b) => b.id === x.dataset.booking));
