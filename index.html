@@ -1000,7 +1000,7 @@ function bookingSheet(b) {
 ` : ""}
     <label class="f full">Dato<input id="b-date" type="date" value="${esc(b.date)}" required></label>
     ${free ? `<label class="f full">Bord<input id="b-table" value="${esc(b.table)}" placeholder="Fx 12 eller Terrasse" required></label>` : ""}
-    <label class="f full">Kunde<input id="b-name" list="names" value="${esc(b.name)}" placeholder="Navn" autocomplete="off" required><datalist id="names">${names.map((n) => `<option value="${esc(n)}">`).join("")}</datalist></label>
+    <label class="f full">Kunde<input id="b-name" name="kunde-x" value="${esc(b.name)}" placeholder="Fx Chrille" autocomplete="off" autocorrect="off" autocapitalize="words" spellcheck="false" required><datalist id="names">${names.map((n) => `<option value="${esc(n)}">`).join("")}</datalist></label>
     <label class="f">Gæster<input id="b-guests" inputmode="numeric" value="${num(b.guests) || ""}"></label>
     <label class="f">Bordpris / minimum (kr.)<input id="b-expected" inputmode="numeric" data-money value="${fmtIn(b.expected)}"></label>
     <label class="f">Telefon<input id="b-phone" type="tel" value="${esc(b.phone)}"></label>
@@ -1036,7 +1036,10 @@ function bookingSheet(b) {
   });
   f.querySelector("[data-minonly]").addEventListener("click", () => { $("b-spent").value = fmtIn(v(f, "b-expected")); $("b-extra").value = "0"; merHint(); });
   merHint();
-  if (!exists) f.querySelector("#b-name").focus({ preventScroll: true });
+  // Navneforslag vises først, når man er begyndt at skrive
+  const nm = f.querySelector("#b-name");
+  const syncList = () => (nm.value.trim() ? nm.setAttribute("list", "names") : nm.removeAttribute("list"));
+  syncList(); nm.addEventListener("input", syncList);
 }
 const newBooking = (date, area, table) => ({ id: newId(), date, area, table: String(table || ""), name: "", guests: "", expected: "", phone: "", arrival: "", spent: "", status: "booket", notes: "", created: Date.now() });
 
