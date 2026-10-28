@@ -248,7 +248,7 @@ const STATUS = { booket: "Booket", kom: "Kom", udeblev: "Udeblev", aflyst: "Afly
 
 /* ---------- state ---------- */
 const S = { bookings: [], nights: [], notes: [], settings: { pct: 0, goal: 0 }, ready: false };
-const ui = { tab: "events", date: null, area: 0, mode: "kort", month: todayISO().slice(0, 7), noteSeg: "selskaber", showPast: false };
+const ui = { tab: "events", date: null, area: 0, mode: "kort", month: null, noteSeg: "selskaber", showPast: false };
 
 /* ---------- helpers ---------- */
 function todayISO() { return new Date().toLocaleDateString("sv-SE"); }
@@ -261,6 +261,14 @@ const WD = ["søn", "man", "tir", "ons", "tor", "fre", "lør"];
 const wdClass = (iso) => ({ 4: "thu", 5: "fri", 6: "sat" }[d(iso).getDay()] || "other");
 const dayLabel = (iso) => `${WD[d(iso).getDay()]} ${d(iso).getDate()}. ${d(iso).toLocaleDateString("da-DK", { month: "short" }).replace(".", "")}`;
 const monthName = (ym) => d(ym + "-01").toLocaleDateString("da-DK", { month: "long", year: "numeric" });
+/* lønperiode: fra den 16. til den 15. i næste måned; ym = måneden perioden starter i */
+const PAY_DAY = 16;
+const payYm = (iso) => { const ym = iso.slice(0, 7); return Number(iso.slice(8, 10)) >= PAY_DAY ? ym : shiftMonth(ym, -1); };
+const payStart = (ym) => ym + "-" + String(PAY_DAY).padStart(2, "0");
+const payEnd = (ym) => addDays(payStart(shiftMonth(ym, 1)), -1);
+const inPay = (iso, ym) => !!iso && iso >= payStart(ym) && iso <= payEnd(ym);
+const mShort = (iso) => d(iso).toLocaleDateString("da-DK", { month: "short" }).replace(".", "");
+const payName = (ym) => `${d(payStart(ym)).getDate()}. ${mShort(payStart(ym))} – ${d(payEnd(ym)).getDate()}. ${mShort(payEnd(ym))} ${payEnd(ym).slice(0, 4)}`;
 const shiftMonth = (ym, k) => { const [y, m] = ym.split("-").map(Number); const t = new Date(y, m - 1 + k, 1); return t.getFullYear() + "-" + String(t.getMonth() + 1).padStart(2, "0"); };
 const newId = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
 const shortName = (n) => { const p = String(n || "").trim().split(/\s+/); return p.length > 1 ? p[0] + " " + p[p.length - 1][0] + "." : p[0] || ""; };
@@ -497,10 +505,10 @@ function bookingRow(b) {
 
 /* ---------- stats ---------- */
 function monthStats(ym) {
-  const bs = S.bookings.filter((b) => b.date && b.date.startsWith(ym));
+  const bs = S.bookings.filter((b) => inPay(b.date, ym));
   const act = bs.filter(active), came = bs.filter((b) => b.status === "kom"), withSpent = came.filter((b) => num(b.spent));
   const decided = bs.filter((b) => b.status === "kom" || b.status === "udeblev");
-  const nights = S.nights.filter((n) => n.id.startsWith(ym) && num(n.guestlist));
+  const nights = S.nights.filter((n) => inPay(n.id, ym) && num(n.guestlist));
   const expected = act.reduce((a, b) => a + num(b.expected), 0), soldSum = came.reduce((a, b) => a + num(b.spent), 0);
   return { bs, act, came, expected, sold: soldSum,
     avgExp: act.length ? expected / act.length : 0,
@@ -522,6 +530,7 @@ function merSection(m) {
   </div>`;
 }
 function vStats() {
+  ui.month ||= payYm(todayISO());
   const m = monthStats(ui.month);
   const max = Math.max(m.expected, m.sold, 1);
   const diff = m.sold - m.expOfCame;
@@ -534,7 +543,7 @@ function vStats() {
     return `<rect x="${cx - bw - 1}" y="${Hh - bot - he}" width="${bw}" height="${Math.max(he, 1)}" rx="3" fill="var(--stripe2)"/>
       <rect x="${cx + 1}" y="${Hh - bot - hs}" width="${bw}" height="${Math.max(hs, 1)}" rx="3" fill="var(--green)" opacity="${ym === ui.month ? 1 : .55}"/>
       ${ms[i].sold ? `<text class="val" x="${cx + 8}" y="${Hh - bot - hs - 5}" text-anchor="middle">${Math.round(ms[i].sold / 1000)}k</text>` : ""}
-      <text x="${cx}" y="${Hh - 6}" text-anchor="middle">${d(ym + "-01").toLocaleDateString("da-DK", { month: "short" }).replace(".", "")}</text>`;
+      <text x="${cx}" y="${Hh - 6}" text-anchor="middle">${mShort(payStart(ym))}–${mShort(payEnd(ym))}</text>`;
   }).join("");
   const byTable = {}, byName = {};
   S.bookings.filter((b) => b.status === "kom" && num(b.spent)).forEach((b) => {
@@ -547,7 +556,7 @@ function vStats() {
   const clubs = Object.entries(byClub).sort((a, b) => b[1].sold - a[1].sold);
   const topN = Object.values(byName).sort((a, b) => b.s - a.s).slice(0, 5);
   return `<div class="top"><span></span><div class="title"><b>Statistik</b></div><span></span></div>
-  <div class="monthsw"><button data-month="-1" aria-label="Forrige måned">‹</button><strong>${monthName(ui.month)}</strong><button data-month="1" aria-label="Næste måned">›</button></div>
+  <div class="monthsw"><button data-month="-1" aria-label="Forrige lønperiode">‹</button><strong>${payName(ui.month)}</strong><button data-month="1" aria-label="Næste lønperiode">›</button></div>
   <section class="cmp num">
     <div><div class="sub">Solgt for</div><div class="big" style="color:var(--green)">${kr(m.sold)}</div>
     <div class="sub">${m.came.length} borde kom${pct ? ` · din provision ${kr(m.sold * pct / 100)}` : ""}</div></div>
@@ -564,7 +573,7 @@ function vStats() {
     <div class="tile"><div class="v">${m.guests}</div><div class="k">på din gæsteliste</div></div>
     <div class="tile"><div class="v">${m.guestNights ? Math.round(m.guests / m.guestNights) : 0}</div><div class="k">på liste i snit pr. aften</div></div>
   </section>
-  <h2>Seneste 6 måneder</h2><div class="chart"><svg viewBox="0 0 ${W} ${Hh}" role="img" aria-label="Forventet og solgt pr. måned"><line x1="0" x2="${W}" y1="${Hh - bot}" y2="${Hh - bot}" stroke="var(--line)"/>${bars}</svg></div>
+  <h2>Seneste 6 lønperioder</h2><div class="chart"><svg viewBox="0 0 ${W} ${Hh}" role="img" aria-label="Forventet og solgt pr. lønperiode"><line x1="0" x2="${W}" y1="${Hh - bot}" y2="${Hh - bot}" stroke="var(--line)"/>${bars}</svg></div>
   <p class="note">Beige søjle er forventet, oliven er solgt.</p>
   ${clubs.some(([c]) => c !== HOME) ? `<h2>Pr. klub</h2><div class="list">${clubs.map(([c, x]) => `<div class="row"><span class="tag num">${x.n}</span><span class="mid"><span class="t">${esc(c)}</span><span class="s">forventet ${kr(x.exp)}</span></span><span class="right num">${kr(x.sold)}<small>solgt</small></span></div>`).join("")}</div>` : ""}
   <h2>Bedste borde</h2>${topT.length ? `<div class="list">${topT.map(([t, v]) => `<div class="row"><span class="tag kom num">${v.n}×</span><span class="mid"><span class="t">${esc(t)}</span><span class="s">${kr(v.s / v.n)} i snit</span></span><span class="right num">${kr(v.s)}</span></div>`).join("")}</div>` : `<div class="empty">Vises når du har skrevet, hvad dine borde har brugt.</div>`}
@@ -735,11 +744,11 @@ async function startScan() {
 }
 function reviewScan(rows, note) {
   if (!rows.length) { close(); return toast("Fandt ingen borde på billederne."); }
-  const anyPromoter = rows.some((r) => r.promoter);
+  const anyPromoter = rows.some((r) => r.promoter), from = payStart(payYm(todayISO()));
   const html = rows.map((r, i) => {
-    const m = r.date && matchBooking(r), on = !anyPromoter || isMe(r.promoter);
+    const m = r.date && matchBooking(r), old = r.date && r.date < from, on = (!anyPromoter || isMe(r.promoter)) && !old;
     return `<div class="scanrow ${on ? "" : "off"}" data-i="${i}">
-      <label class="chk"><input type="checkbox" data-pick ${on ? "checked" : ""}><span>${esc(r.promoter || "Ingen promoter")}${m ? " · findes, opdateres" : " · ny"}</span></label>
+      <label class="chk"><input type="checkbox" data-pick ${on ? "checked" : ""}><span>${esc(r.promoter || "Ingen promoter")}${old ? " · før lønperioden" : m ? " · findes, opdateres" : " · ny"}</span></label>
       <div class="sgrid">
         <label class="f">Dato<input type="date" data-k="date" value="${esc(r.date)}"></label>
         <label class="f">Bord<input data-k="table" value="${esc(r.table)}"></label>
@@ -750,7 +759,7 @@ function reviewScan(rows, note) {
       </div></div>`;
   }).join("");
   const f = openSheet(`<h3>Fundet ${rows.length} ${rows.length === 1 ? "bord" : "borde"}</h3>
-    <p class="sh">${anyPromoter ? `Dine borde (${ME}) er valgt.` : "Alle borde er valgt."} Ret tallene, hvis noget er læst forkert, og tryk Gem.${note ? "<br>" + esc(note) : ""}</p>
+    <p class="sh">${anyPromoter ? `Dine borde (${ME})` : "Alle borde"} fra ${d(from).getDate()}. ${mShort(from)} og frem er valgt. Ret tallene, hvis noget er læst forkert, og tryk Gem.${note ? "<br>" + esc(note) : ""}</p>
     <form class="form"><div class="full scanlist">${html}</div>
     <div class="full btns"><button type="button" class="btn" data-close>Annullér</button><button class="btn teal" type="submit">Gem valgte</button></div></form>`, (form) => {
     const picked = [...form.querySelectorAll(".scanrow")].filter((el) => el.querySelector("[data-pick]").checked).map((el) => {
