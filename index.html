@@ -252,7 +252,7 @@ label.share small{color:var(--muted)}
 .nav-label{font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);padding:16px 12px 4px}
 .me-card{margin-top:auto;display:flex;gap:12px;align-items:center;border:1px solid var(--line);background:var(--bg);border-radius:16px;padding:10px 12px;text-align:left}
 .me-card small{display:block;color:var(--muted);font-size:13px}
-body:has(#loginForm) .topbar,body:has(#loginForm) nav.tabs{display:none}
+body:has(#loginForm) .topbar,body:has(#loginForm) nav.tabs,body:has(#newPassForm) .topbar,body:has(#newPassForm) nav.tabs{display:none}
 @media (min-width:900px){
   body{padding-left:300px}
   .side{transform:none;border-radius:0;box-shadow:none}
@@ -479,11 +479,14 @@ const store = {
     const cfg = await import("./js/config.js");
     if (!cfg.SUPABASE_URL || !cfg.SUPABASE_ANON_KEY) return this.startLocal("Demo: tallene gemmes kun i denne browser.");
     try {
+      var recovering = /type=recovery/.test(location.hash);
       const { createClient } = await import("https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.3/+esm");
       this.sb = createClient(cfg.SUPABASE_URL, cfg.SUPABASE_ANON_KEY, { auth: { persistSession: true, detectSessionInUrl: true } });
     } catch { setStatus("Kunne ikke forbinde. Tjek internettet og genindlæs."); return; }
     this.mode = "sky";
+    this.sb.auth.onAuthStateChange((ev) => { if (ev === "PASSWORD_RECOVERY") showNewPassword(); });
     const { data } = await this.sb.auth.getSession();
+    if (recovering && data.session) return showNewPassword();
     this.uid = data.session?.user?.id || null; this.email = data.session?.user?.email || "";
     if (!this.uid) return showLogin();
     await this.afterLogin();
@@ -597,8 +600,19 @@ function showLogin(signup) {
     <label class="f">Email<input id="l-email" type="email" autocomplete="email" required></label>
     <label class="f">Adgangskode<input id="l-pass" type="password" autocomplete="${signup ? "new-password" : "current-password"}" minlength="6" required></label>
     <p class="err" id="l-err"></p><button class="btn teal" type="submit">${signup ? "Opret konto" : "Log ind"}</button>
-    <button class="btn" type="button" id="l-toggle">${signup ? "Jeg har en konto" : "Opret ny konto"}</button></form>`;
+    <button class="btn" type="button" id="l-toggle">${signup ? "Jeg har en konto" : "Opret ny konto"}</button>
+    ${signup ? "" : `<button class="linkbtn" type="button" id="l-forgot" style="margin-top:6px">Glemt adgangskode?</button>`}</form>`;
   view.querySelector("#l-toggle").addEventListener("click", () => showLogin(!signup));
+  const fg = view.querySelector("#l-forgot");
+  if (fg) fg.addEventListener("click", async () => {
+    const em = view.querySelector("#l-email"), err = view.querySelector("#l-err"), email = em.value.trim();
+    if (!email) { err.textContent = "Skriv din email ovenfor først, og tryk så igen."; em.focus(); return; }
+    fg.disabled = true; fg.textContent = "Sender…";
+    const { error } = await store.sb.auth.resetPasswordForEmail(email, { redirectTo: location.origin + location.pathname });
+    fg.disabled = false; fg.textContent = "Glemt adgangskode?";
+    err.style.color = error ? "" : "var(--green)";
+    err.textContent = error ? "Kunne ikke sende mail: " + error.message : "Tjek din mail (også spam). Tryk på linket, så kan du vælge en ny kode.";
+  });
   view.querySelector("#loginForm").addEventListener("submit", async (e) => {
     e.preventDefault(); e.stopPropagation();
     const f = e.target, email = f.querySelector("#l-email").value.trim(), pass = f.querySelector("#l-pass").value;
@@ -612,6 +626,24 @@ function showLogin(signup) {
       }
       view.innerHTML = '<p class="note" style="padding-top:24px">Henter dine bookinger…</p>'; await store.signIn(email, pass);
     } catch (err) { showLogin(signup); view.querySelector("#l-err").textContent = err.message; }
+  });
+}
+function showNewPassword() {
+  if (document.getElementById("newPassForm")) return;
+  document.querySelector("nav.tabs").hidden = true;
+  view.innerHTML = `<form class="login" id="newPassForm">
+    <div class="logo">NIELS</div><p style="margin:0;font-weight:700;letter-spacing:.2em;color:var(--muted)">BORDBOG</p>
+    <p class="note">Vælg en ny adgangskode. Den gælder også i Goon.</p>
+    <label class="f">Ny adgangskode<input id="n-pass" type="password" autocomplete="new-password" minlength="6" required></label>
+    <p class="err" id="n-err"></p><button class="btn teal" type="submit">Gem og log ind</button></form>`;
+  view.querySelector("#newPassForm").addEventListener("submit", async (e) => {
+    e.preventDefault(); e.stopPropagation();
+    const b = e.target.querySelector("button"); b.disabled = true; b.textContent = "Gemmer…";
+    const { data, error } = await store.sb.auth.updateUser({ password: e.target.querySelector("#n-pass").value });
+    if (error) { b.disabled = false; b.textContent = "Gem og log ind"; view.querySelector("#n-err").textContent = error.message; return; }
+    history.replaceState(null, "", location.pathname);
+    store.uid = data.user.id; store.email = data.user.email || ""; toast("Ny adgangskode gemt");
+    view.innerHTML = '<p class="note" style="padding-top:24px">Henter dine bookinger…</p>'; store.afterLogin();
   });
 }
 const setStatus = (t) => { document.getElementById("status").textContent = t; };
