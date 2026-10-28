@@ -197,6 +197,15 @@ label.f textarea{min-height:60px;resize:vertical}
 .sgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .sgrid .full{grid-column:1/-1}
 label.f small.mer{text-transform:none;letter-spacing:0;font-size:13px;color:var(--green);font-weight:700}
+.srow{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:10px;align-items:center}
+.srow input[type=checkbox]{width:22px;height:22px;accent-color:var(--teal)}
+.srow .right{display:flex;flex-direction:column;align-items:flex-end;gap:2px}
+.linkbtn{background:none;border:0;color:var(--teal);font-weight:700;font-size:13px;padding:2px 0}
+.scanrow .sgrid{margin-top:10px}
+.scanrow.off .srow .mid,.scanrow.off .srow .right{opacity:.6}
+.spentbox{display:grid;grid-template-columns:1fr 1fr;gap:10px;background:var(--bg);border:1px solid var(--line);border-radius:14px;padding:12px}
+.spentbox .sbh{grid-column:1/-1;font-family:var(--serif);font-size:17px;color:var(--teal)}
+.spentbox [data-minonly]{align-self:center}
 </style>
 </head>
 <body>
@@ -261,8 +270,8 @@ const WD = ["søn", "man", "tir", "ons", "tor", "fre", "lør"];
 const wdClass = (iso) => ({ 4: "thu", 5: "fri", 6: "sat" }[d(iso).getDay()] || "other");
 const dayLabel = (iso) => `${WD[d(iso).getDay()]} ${d(iso).getDate()}. ${d(iso).toLocaleDateString("da-DK", { month: "short" }).replace(".", "")}`;
 const monthName = (ym) => d(ym + "-01").toLocaleDateString("da-DK", { month: "long", year: "numeric" });
-/* lønperiode: fra den 15. til den 14. i næste måned; ym = måneden perioden starter i */
-const PAY_DAY = 15;
+/* lønperiode: fra den 16. til den 15. i næste måned; ym = måneden perioden starter i */
+const PAY_DAY = 16;
 const payYm = (iso) => { const ym = iso.slice(0, 7); return Number(iso.slice(8, 10)) >= PAY_DAY ? ym : shiftMonth(ym, -1); };
 const payStart = (ym) => ym + "-" + String(PAY_DAY).padStart(2, "0");
 const payEnd = (ym) => addDays(payStart(shiftMonth(ym, 1)), -1);
@@ -519,10 +528,20 @@ function monthStats(ym) {
     tableGuests: came.reduce((a, b) => a + num(b.guests), 0),
     withMer: withSpent.filter((b) => extra(b) > 0), noMer: withSpent.filter((b) => extra(b) <= 0), waiting: came.length - withSpent.length };
 }
+function periodTables(m) {
+  const rows = m.bs.filter(active).sort((a, b) => a.date.localeCompare(b.date) || String(a.table).localeCompare(String(b.table), "da", { numeric: true }));
+  if (!rows.length) return "";
+  return `<h2>Borde i lønperioden</h2><div class="list">${rows.map((b) => {
+    const sp = num(b.spent), mer = sp - num(b.expected), wait = b.status === "kom" && !sp;
+    return `<button class="row" data-booking="${esc(b.id)}"><span class="tag num ${b.status}">${esc(b.table || "?")}</span>
+      <span class="mid"><span class="t">${esc(b.name || "Uden navn")}</span><span class="s">${dayLabel(b.date)}${b.club ? " · " + esc(b.club) : ""} · pris ${kr(b.expected)}</span></span>
+      <span class="right num">${sp ? kr(sp) : wait ? "Skriv" : STATUS[b.status]}<small ${sp && mer > 0 ? 'style="color:var(--green)"' : ""}>${sp ? (mer > 0 ? "+" + kr(mer) + " mer" : "kun minimum") : wait ? "brugt" : ""}</small></span></button>`;
+  }).join("")}</div>`;
+}
 function merSection(m) {
   const sum = (arr, f) => arr.reduce((a, b) => a + f(b), 0);
   const w = m.withMer, n = m.noMer, mer = sum(w, extra);
-  if (!w.length && !n.length) return `<h2>Bordsalg</h2><div class="empty">Når du har skrevet, hvad dine borde brugte, kan du se her, hvilke der lavede merspend.</div>`;
+  if (!w.length && !n.length && !m.waiting) return `<h2>Bordsalg</h2><div class="empty">Når du har skrevet, hvad dine borde brugte, kan du se her, hvilke der lavede merspend.</div>`;
   return `<h2>Bordsalg</h2><div class="list">
     <div class="row"><span class="tag kom num">${w.length}</span><span class="mid"><span class="t">Med merspend</span><span class="s">pris ${kr(sum(w, (b) => num(b.expected)))} + merspend ${kr(mer)}</span></span><span class="right num" style="color:var(--green)">+${kr(mer)}<small>${kr(w.length ? mer / w.length : 0)} i snit</small></span></div>
     <div class="row"><span class="tag num">${n.length}</span><span class="mid"><span class="t">Uden merspend</span><span class="s">brugte kun bordprisen${n.some((b) => extra(b) < 0) ? " eller mindre" : ""}</span></span><span class="right num">${kr(sum(n, (b) => num(b.spent)))}<small>solgt</small></span></div>
@@ -565,6 +584,7 @@ function vStats() {
     ${m.expOfCame ? `<div class="sub">De borde der kom, brugte <b style="color:${diff >= 0 ? "var(--green)" : "var(--red)"}">${diff >= 0 ? "+" : "−"}${kr(Math.abs(diff))}</b> i forhold til hvad du regnede med.</div>` : ""}
   </section>
   ${merSection(m)}
+  ${periodTables(m)}
   <section class="tiles num">
     <div class="tile"><div class="v">${kr(m.avgExp)}</div><div class="k">forventet i snit pr. bord</div></div>
     <div class="tile"><div class="v" style="color:var(--green)">${kr(m.avgSold)}</div><div class="k">solgt i snit pr. bord</div></div>
@@ -618,6 +638,7 @@ const close = () => { root.innerHTML = ""; };
 document.addEventListener("keydown", (e) => { if (e.key === "Escape") close(); });
 const v = (f, id) => f.querySelector("#" + id).value.trim();
 
+function nextTodo() { return S.bookings.filter((b) => ((b.date <= todayISO() && b.status === "kom" && !num(b.spent)) || (b.date < todayISO() && b.status === "booket")) && !(ui.todoDone && ui.todoDone.has(b.id))).sort((a, b) => a.date.localeCompare(b.date))[0]; }
 function bookingSheet(b) {
   const exists = S.bookings.some((x) => x.id === b.id);
   const names = [...new Set(S.bookings.map((x) => x.name).filter(Boolean))];
@@ -625,29 +646,43 @@ function bookingSheet(b) {
   const f = openSheet(`<h3>${other ? "Bord på " + esc(b.club || "anden klub") : free ? "Bord" : esc(b.area) + ", bord " + esc(b.table)}</h3><p class="sh">${other ? "Booking uden for " + HOME : dayLabel(b.date) + " · " + esc(eventFor(b.date).name)}</p>
   <form class="form">
     ${other ? `<label class="f">Klub<input id="b-club" list="clubs" value="${esc(b.club)}" required autocomplete="off"><datalist id="clubs">${clubNames().map((c) => `<option value="${esc(c)}">`).join("")}</datalist></label>
-    <label class="f">Dato<input id="b-date" type="date" value="${esc(b.date)}" required></label>` : ""}
+` : ""}
+    <label class="f full">Dato<input id="b-date" type="date" value="${esc(b.date)}" required></label>
     ${free ? `<label class="f full">Bord<input id="b-table" value="${esc(b.table)}" placeholder="Fx 12 eller Terrasse" required></label>` : ""}
     <label class="f full">Kunde<input id="b-name" list="names" value="${esc(b.name)}" placeholder="Navn" autocomplete="off" required><datalist id="names">${names.map((n) => `<option value="${esc(n)}">`).join("")}</datalist></label>
     <label class="f">Gæster<input id="b-guests" inputmode="numeric" value="${num(b.guests) || ""}"></label>
-    <label class="f">Forventet pris (kr.)<input id="b-expected" inputmode="numeric" value="${num(b.expected) || ""}"></label>
+    <label class="f">Bordpris / minimum (kr.)<input id="b-expected" inputmode="numeric" value="${num(b.expected) || ""}"></label>
     <label class="f">Telefon<input id="b-phone" type="tel" value="${esc(b.phone)}"></label>
     <label class="f">Ankomst<input id="b-arrival" type="time" value="${esc(b.arrival)}"></label>
     <label class="f full">Kundens fødselsdag<input id="b-bday" type="date" value="${esc(b.bday || bdayOf(b.name))}"></label>
     <div class="full"><div class="status" role="group" aria-label="Status">${Object.entries(STATUS).map(([k, l]) => `<button type="button" class="${k}" data-st="${k}" aria-pressed="${b.status === k}">${l}</button>`).join("")}</div></div>
-    <label class="f full">Brugt i alt (kr.)<input id="b-spent" inputmode="numeric" value="${num(b.spent) || ""}" placeholder="Skriv det efter aftenen"><small class="mer" id="b-mer"></small></label>
+    <div class="full spentbox"><div class="sbh">Efter aftenen</div>
+      <label class="f">Merspend (kr.)<input id="b-extra" inputmode="numeric" value="${num(b.spent) && num(b.spent) > num(b.expected) ? num(b.spent) - num(b.expected) : ""}" placeholder="0"></label>
+      <label class="f">Brugt i alt (kr.)<input id="b-spent" inputmode="numeric" value="${num(b.spent) || ""}" placeholder="Ikke skrevet"></label>
+      <button type="button" class="btn" data-minonly>Kun minimum</button><small class="mer" id="b-mer"></small></div>
     <label class="f full">Noter<textarea id="b-notes" placeholder="Fx flasker, fødselsdag">${esc(b.notes)}</textarea></label>
     <div class="full btns">${exists ? `<button type="button" class="btn danger" data-del>Slet</button>` : `<button type="button" class="btn" data-close>Annullér</button>`}<button class="btn teal" type="submit">Gem</button></div>
   </form>`, (f) => {
     const o = { ...b, name: v(f, "b-name"), guests: num(v(f, "b-guests")), expected: num(v(f, "b-expected")), phone: v(f, "b-phone"), arrival: v(f, "b-arrival"),
       spent: num(v(f, "b-spent")), notes: v(f, "b-notes"), bday: v(f, "b-bday"), status: f.querySelector("[data-st][aria-pressed=true]").dataset.st };
     if (free) o.table = v(f, "b-table");
-    if (other) { o.club = v(f, "b-club") || "Anden klub"; o.date = v(f, "b-date") || o.date; }
+    o.date = v(f, "b-date") || o.date;
+    if (other) o.club = v(f, "b-club") || "Anden klub";
     if (o.spent && o.status === "booket") o.status = "kom";
     safe(store.put("bookings", o), "Gemt");
+    if (ui.todoRun && o.spent) { (ui.todoDone ||= new Set()).add(o.id); setTimeout(() => { const n = nextTodo(); if (n) bookingSheet(n); else ui.todoRun = false; }, 250); }
   }, () => safe(store.del("bookings", b.id), "Slettet"));
   f.querySelectorAll("[data-st]").forEach((x) => x.addEventListener("click", () => f.querySelectorAll("[data-st]").forEach((y) => y.setAttribute("aria-pressed", y === x))));
-  const merHint = () => { const sp = num(v(f, "b-spent")), ex = num(v(f, "b-expected")); f.querySelector("#b-mer").textContent = sp && ex ? (sp > ex ? "Merspend: +" + kr(sp - ex) : "Ingen merspend") : ""; };
-  f.addEventListener("input", merHint); merHint();
+  const $ = (id) => f.querySelector("#" + id);
+  const merHint = () => { const sp = num(v(f, "b-spent")), ex = num(v(f, "b-expected")); $("b-mer").textContent = sp ? (sp > ex ? "Merspend +" + kr(sp - ex) : "Ingen merspend") : ""; };
+  f.addEventListener("input", (e) => {
+    const ex = num(v(f, "b-expected"));
+    if (e.target.id === "b-extra") $("b-spent").value = v(f, "b-extra") === "" ? "" : ex + num(v(f, "b-extra"));
+    if (e.target.id === "b-spent" || e.target.id === "b-expected") { const sp = num(v(f, "b-spent")); $("b-extra").value = sp > ex ? sp - ex : sp ? 0 : ""; }
+    merHint();
+  });
+  f.querySelector("[data-minonly]").addEventListener("click", () => { $("b-spent").value = num(v(f, "b-expected")) || ""; $("b-extra").value = 0; merHint(); });
+  merHint();
   if (!exists) f.querySelector("#b-name").focus({ preventScroll: true });
 }
 const newBooking = (date, area, table) => ({ id: newId(), date, area, table: String(table || ""), name: "", guests: "", expected: "", phone: "", arrival: "", spent: "", status: "booket", notes: "", created: Date.now() });
@@ -750,10 +785,9 @@ function startScan() { scanInput.value = ""; scanInput.click(); }
       const blobs = await Promise.all(files.map(shrink));
       const out = await scanEngine.read(blobs, scanPrompt(blobs.length));
       const rows = (Array.isArray(out) ? out : out && out.rows || []).map((r) => {
-        const date = /^\d{4}-\d{2}-\d{2}$/.test(r.date || "") ? r.date : "", amount = num(r.amount), extraA = Math.min(num(r.extra), amount);
-        const came = num(r.arrived) > 0 && (!date || date <= todayISO());
+        const date = /^\d{4}-\d{2}-\d{2}$/.test(r.date || "") ? r.date : "";
         return { date, area: String(r.area || "").trim(), table: String(r.table ?? "").trim(), name: String(r.name || "").trim(),
-          guests: num(r.arrived) || num(r.booked), price: amount - (came ? extraA : 0), spent: came ? amount : 0,
+          guests: num(r.arrived) || num(r.booked), price: num(r.amount), came: num(r.arrived) > 0 && (!date || date <= todayISO()),
           note: String(r.note || "").trim(), promoter: String(r.promoter || "").trim() };
       });
       reviewScan(rows, out && out.note);
@@ -765,31 +799,35 @@ function reviewScan(rows, note) {
   const anyPromoter = rows.some((r) => r.promoter), from = payStart(payYm(todayISO()));
   const html = rows.map((r, i) => {
     const m = r.date && matchBooking(r), old = r.date && r.date < from, on = (!anyPromoter || isMe(r.promoter)) && !old;
+    const tag = old ? "før lønperioden" : m ? "opdateres" : "ny";
     return `<div class="scanrow ${on ? "" : "off"}" data-i="${i}">
-      <label class="chk"><input type="checkbox" data-pick ${on ? "checked" : ""}><span>${esc(r.promoter || "Ingen promoter")}${old ? " · før lønperioden" : m ? " · findes, opdateres" : " · ny"}</span></label>
-      <div class="sgrid">
+      <div class="srow"><input type="checkbox" data-pick ${on ? "checked" : ""} aria-label="Gem bord ${esc(r.table)}">
+        <span class="mid"><span class="t">${esc(r.table ? "Bord " + r.table : "Bord ?")} · ${esc(r.name || "Uden navn")}</span>
+        <span class="s">${r.date ? dayLabel(r.date) : "Mangler dato"} · ${r.guests || 0} gæster${r.came ? " · kom" : ""} · ${tag}</span></span>
+        <span class="right num">${r.price ? kr(r.price) : "–"}<button type="button" class="linkbtn" data-edit>Ret</button></span></div>
+      <div class="sgrid" hidden>
         <label class="f">Dato<input type="date" data-k="date" value="${esc(r.date)}"></label>
         <label class="f">Bord<input data-k="table" value="${esc(r.table)}"></label>
         <label class="f full">Kunde<input data-k="name" value="${esc(r.name)}"></label>
-        <label class="f full">Gæster<input data-k="guests" inputmode="numeric" value="${r.guests || ""}"></label>
+        <label class="f">Gæster<input data-k="guests" inputmode="numeric" value="${r.guests || ""}"></label>
         <label class="f">Bordpris (kr.)<input data-k="price" inputmode="numeric" value="${r.price || ""}"></label>
-        <label class="f">Solgt i alt (kr.)<input data-k="spent" inputmode="numeric" value="${r.spent || ""}" placeholder="Efter aftenen"></label>
         ${r.note ? `<p class="full note" style="margin:0">${esc(r.note)}</p>` : ""}
       </div></div>`;
   }).join("");
   const f = openSheet(`<h3>Fundet ${rows.length} ${rows.length === 1 ? "bord" : "borde"}</h3>
-    <p class="sh">${anyPromoter ? `Dine borde (${ME})` : "Alle borde"} fra ${d(from).getDate()}. ${mShort(from)} og frem er valgt. Ret tallene, hvis noget er læst forkert, og tryk Gem.${note ? "<br>" + esc(note) : ""}</p>
+    <p class="sh">${anyPromoter ? `Dine borde (${ME})` : "Alle borde"} fra ${d(from).getDate()}. ${mShort(from)} og frem er valgt. Tryk Ret, hvis noget er læst forkert. Hvad de brugte, skriver du bagefter under Statistik.${note ? "<br>" + esc(note) : ""}</p>
     <form class="form"><div class="full scanlist">${html}</div>
     <div class="full btns"><button type="button" class="btn" data-close>Annullér</button><button class="btn teal" type="submit">Gem valgte</button></div></form>`, (form) => {
     const picked = [...form.querySelectorAll(".scanrow")].filter((el) => el.querySelector("[data-pick]").checked).map((el) => {
       const g = (k) => el.querySelector(`[data-k="${k}"]`).value.trim(), r = rows[el.dataset.i];
-      return { ...r, date: g("date"), table: g("table"), name: g("name"), guests: num(g("guests")), price: num(g("price")), spent: num(g("spent")) };
+      return { ...r, date: g("date"), table: g("table"), name: g("name"), guests: num(g("guests")), price: num(g("price")) };
     });
     const bad = picked.find((r) => !r.date);
     if (bad) { toast("Et valgt bord mangler dato."); return false; }
     importScan(picked);
   });
   f.querySelectorAll("[data-pick]").forEach((c) => c.addEventListener("change", () => c.closest(".scanrow").classList.toggle("off", !c.checked)));
+  f.querySelectorAll("[data-edit]").forEach((x) => x.addEventListener("click", () => { const g = x.closest(".scanrow").querySelector(".sgrid"); g.hidden = !g.hidden; x.textContent = g.hidden ? "Ret" : "Skjul"; }));
 }
 function scanMsg(title, text) {
   root.innerHTML = `<div class="scrim" id="scrim"><div class="sheet" role="dialog" aria-modal="true"><h3>${esc(title)}</h3><p class="sh" style="user-select:text">${esc(text)}</p><div class="btns" style="justify-content:flex-end"><button class="btn teal" data-close>OK</button></div></div></div>`;
@@ -805,12 +843,12 @@ async function importScan(rows) {
       if (r.name && !b.name) b.name = r.name;
       if (r.guests) b.guests = r.guests;
       if (r.price) b.expected = r.price;
-      if (r.spent) { b.spent = r.spent; b.status = "kom"; if (!num(b.expected)) b.expected = r.spent; }
+      if (r.came && b.status === "booket") b.status = "kom";
       if (!old) b.notes = [r.note, area === "Andet" && r.area ? r.area : ""].filter(Boolean).join(" · ") || "Fra Nyx";
       await store.put("bookings", b); old ? nUpd++ : nNew++;
     }
-    const sum = rows.reduce((a, r) => a + num(r.spent), 0);
-    scanMsg(rows.length ? "Gemt" : "Intet valgt", rows.length ? `${nNew} nye og ${nUpd} opdaterede borde. Solgt for ${kr(sum)} i alt. De står under Statistik i lønperioden for deres dato.` : "Du skal sætte flueben ved de borde, der skal gemmes.");
+    const sum = rows.reduce((a, r) => a + num(r.price), 0);
+    scanMsg(rows.length ? "Gemt" : "Intet valgt", rows.length ? `${nNew} nye og ${nUpd} opdaterede borde, ${kr(sum)} i bordpriser. Gå til Statistik → Borde i lønperioden og skriv, hvad de brugte, når du ved det.` : "Du skal sætte flueben ved de borde, der skal gemmes.");
   } catch (e) { scanMsg("Kunne ikke gemme", `${nNew + nUpd} af ${rows.length} borde blev gemt. Fejl: ${(e && (e.message || e.code)) || "ukendt"}`); }
 }
 /* ---------- /scan ---------- */
@@ -867,7 +905,7 @@ view.addEventListener("click", (e) => {
   if (act === "newparty") partySheet({ id: newId(), title: "", date: "", people: "", contact: "", expected: "", stage: "ide", text: "", created: Date.now() });
   if (act === "showpast") { ui.showPast = true; render(); }
   if (act === "addnight") { const dt = view.querySelector("#addDate").value; if (dt) go("night", { date: dt }); }
-  if (act === "todo") { const b = S.bookings.filter((b) => b.date < todayISO() && (b.status === "booket" || (b.status === "kom" && !num(b.spent)))).sort((a, b) => b.date.localeCompare(a.date))[0]; if (b) bookingSheet(b); }
+  if (act === "todo") { ui.todoRun = true; ui.todoDone = new Set(); const b = nextTodo(); if (b) bookingSheet(b); }
 });
 
 render();
