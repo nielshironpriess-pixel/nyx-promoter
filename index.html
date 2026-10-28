@@ -28,6 +28,8 @@
 }
 *{box-sizing:border-box}
 [hidden]{display:none!important}
+body:not(.crew) .crew-only{display:none!important}
+body.crew [data-act=scan],body.crew [data-tab=hive],body.crew [data-tab=hivesalg],body.crew [data-tab-go=hive],body.crew [data-tab-go=hivesalg],body.crew .hive-only,body.crew .genvej-scan{display:none!important}
 html,body,button,a,input,select,textarea,label{touch-action:manipulation}
 html,body{background:var(--bg);color:var(--fg)}
 body{font-family:var(--f);font-size:15px;line-height:1.4;margin:0;min-height:100vh;
@@ -440,7 +442,7 @@ button:active,.ev:active,.kpi:active,.qa:active,.hero:active,a.cbtn:active{trans
     <button data-tab="events"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>Events</button>
     <button data-tab="liste"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6h11M9 12h11M9 18h11M4 6h.01M4 12h.01M4 18h.01"/></svg>Gæsteliste</button>    <button data-tab="borde"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3l7 7-9 9a3 3 0 0 1-4 0l-3-3a3 3 0 0 1 0-4z M16 5l3 3"/></svg>Bordkort</button>
     <button data-tab="stats"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V11M10 20V5M16 20v-6M2 20h20"/></svg>Salg og statistik</button>
-    <div class="nav-label">Hive</div>
+    <div class="nav-label hive-only">Hive</div>
     <button data-tab="hive"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l8 4.6v9.2L12 22l-8-6.2V6.6z M12 8l3.5 2v4L12 16l-3.5-2v-4z"/></svg>Hive bordkort</button>
     <button data-tab="hivesalg"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V11M10 20V5M16 20v-6M2 20h20"/><circle cx="19" cy="5" r="2"/></svg>Hive salg</button>
     <div class="nav-label">Andet</div>
@@ -453,6 +455,7 @@ button:active,.ev:active,.kpi:active,.qa:active,.hero:active,a.cbtn:active{trans
   <button data-tab="home"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg>Overblik</button>
   <button data-tab="events"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>Events</button>
   <button data-tab="hive"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l8 4.6v9.2L12 22l-8-6.2V6.6z M12 8l3.5 2v4L12 16l-3.5-2v-4z"/></svg>Hive</button>
+  <button data-tab="liste" class="crew-only"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6h11M9 12h11M9 18h11M4 6h.01M4 12h.01M4 18h.01"/></svg>Liste</button>
   <button data-tab="stats"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V11M10 20V5M16 20v-6M2 20h20"/></svg>Salg</button>
   <button data-open-side><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>Mere</button>
 </div></nav>
@@ -803,8 +806,10 @@ function badge() {
   el.textContent = n > 9 ? "9+" : n;
 }
 function render() {
+  if (isCrew() && (ui.tab === "hive" || ui.tab === "hivesalg")) ui.tab = "home";
   const cur = ui.tab === "night" ? "borde" : ui.tab;
   { const cb = document.querySelector('.snav [data-tab="crew"]'); if (cb) cb.hidden = !(isBoss() && store.crewOk); }
+  document.body.classList.toggle("crew", isCrew());
   document.querySelectorAll("nav.tabs [data-tab], .snav [data-tab]").forEach((b) => b.setAttribute("aria-current", b.dataset.tab === cur || (cur === "borde" && b.dataset.tab === "events" && b.closest("nav.tabs")) || (cur === "hivesalg" && b.dataset.tab === "hive" && b.closest("nav.tabs")) ? "page" : "false"));
   const ini = esc(initials(profile().name || meNyx()));
   ["topAvatar", "sideAvatar"].forEach((id) => { const el = document.getElementById(id); if (el) el.innerHTML = ini; });
@@ -944,7 +949,7 @@ function profileSheet() {
     <label class="f" ${isCrew() ? "hidden" : ""}>Provision Søpavillonen (%)<input id="pf-pct" inputmode="decimal" value="${num(S.settings.pct) || ""}" placeholder="Fx 10"></label>
     <label class="f" ${isCrew() ? "hidden" : ""}>Provision Hive (%)<input id="pf-hpct" inputmode="decimal" value="${num(S.settings.hivePct) || ""}" placeholder="Fx 10"></label>
     ${isCrew() ? `<p class="full note" style="margin:0">Du booker borde for <b>${esc(store.boss.name)}</b>. De får besked, når du booker eller retter et bord.</p>` : store.mode === "sky" && store.crewOk && !(store.crew || []).length ? `<div class="full genvej"><b>Har du en kode fra din promoter?</b><input id="pf-code" placeholder="Fx 9E546A" autocapitalize="characters" style="background:rgba(255,255,255,.6);border:1px solid var(--line);border-radius:10px;padding:10px 12px;font-size:16px"><button type="button" class="btn" data-joincode>Tilslut</button></div>` : ""}
-    ${store.mode === "sky" ? `<div class="full genvej"><b>iPhone-genvej</b><span class="note">Del screenshots fra Nyx direkte til Bordbog. Kopiér din adresse og sæt den ind i genvejen.</span><button type="button" class="btn" data-genvej>Kopiér genvejs-adresse</button></div>` : ""}
+    ${store.mode === "sky" ? `<div class="full genvej genvej-scan"><b>iPhone-genvej</b><span class="note">Del screenshots fra Nyx direkte til Bordbog. Kopiér din adresse og sæt den ind i genvejen.</span><button type="button" class="btn" data-genvej>Kopiér genvejs-adresse</button></div>` : ""}
     ${store.team ? `<p class="full note" style="margin:0">Hold: <b>${esc(store.team.name)}</b> · kode <b>${esc(store.team.code)}</b></p>` : ""}
     <div class="full btns">${store.mode === "sky" ? `<button type="button" class="btn" data-logout>Log ud</button>` : `<button type="button" class="btn" data-close>Luk</button>`}<button class="btn teal" type="submit">Gem</button></div></form>`, (f) => {
     const np = { ...pr, name: v(f, "pf-name"), nyx: v(f, "pf-nyx") || "Niels Priess", phone: v(f, "pf-phone") };
@@ -1004,6 +1009,8 @@ function vHome() {
     <div class="quick">
       <button class="qa" data-act="scan">${svgI("scan")}Scan Nyx</button>
       <button class="qa" data-tab-go="hive">${svgI("hive")}Book Hive</button>
+      <button class="qa crew-only" data-tab-go="events"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>Book bord</button>
+      <button class="qa crew-only" data-tab-go="liste"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6h11M9 12h11M9 18h11M4 6h.01M4 12h.01M4 18h.01"/></svg>Gæsteliste</button>
       <button class="qa" data-act="newparty">${svgI("noter")}Nyt selskab</button>
     </div>
     <h2>${payName(ym)}</h2>
@@ -1014,7 +1021,7 @@ function vHome() {
       <div class="kpi"><div class="l">Merspend</div><div class="v">${kr(mer)}</div><div class="s">${nBorde(so.withMer.length + hv.withMer.length)} brugte mere</div></div>
     </div>
     ${todo.length ? `<h2>Til dig</h2><div class="list">${todo.join("")}</div>` : ""}
-    ${hiveNext.length ? `<h2>Kommende på Hive</h2><div class="list">${hiveNext.slice(0, 3).map(bookingRow).join("")}</div>` : ""}
+    ${hiveNext.length && !isCrew() ? `<h2>Kommende på Hive</h2><div class="list">${hiveNext.slice(0, 3).map(bookingRow).join("")}</div>` : ""}
     ${upcoming.length ? `<h2>Senere på Søpavillonen</h2>${upcoming.map(eventCard).join("")}` : ""}`;
 }
 const SVGS = {
@@ -1262,7 +1269,7 @@ function slideSegs() {
     if (prev !== i) requestAnimationFrame(() => requestAnimationFrame(() => el.style.setProperty("--i", i)));
   });
   const nav = document.querySelector("nav.tabs .in");
-  if (nav) { const bs = [...nav.querySelectorAll("button")]; const i = bs.findIndex((b) => b.getAttribute("aria-current") === "page"); nav.style.setProperty("--on", i < 0 ? 0 : 1); if (i >= 0) nav.style.setProperty("--i", i); }
+  if (nav) { const bs = [...nav.querySelectorAll("button")].filter((b) => getComputedStyle(b).display !== "none"); const i = bs.findIndex((b) => b.getAttribute("aria-current") === "page"); nav.style.setProperty("--on", i < 0 ? 0 : 1); if (i >= 0) nav.style.setProperty("--i", i); }
 }
 function enterAnim(prevTab) {
   const TAB_ORDER = ["home", "events", "borde", "night", "stats", "hive", "hivesalg", "kunder", "noter"];
@@ -1781,7 +1788,7 @@ view.addEventListener("click", (e) => {
   view.addEventListener("touchend", (e) => {
     if (!ok) return; const t = e.changedTouches[0], dx = t.clientX - sx, dy = t.clientY - sy;
     if (Math.abs(dx) < 80 || Math.abs(dy) > 45 || sx < 24) return;
-    const SWIPE_TABS = ["home", "events", "hive", "stats"];
+    const SWIPE_TABS = isCrew() ? ["home", "events", "liste", "stats"] : ["home", "events", "hive", "stats"];
     const cur = SWIPE_TABS.indexOf(ui.tab === "hivesalg" ? "hive" : ui.tab); if (cur < 0) return;
     const nx = SWIPE_TABS[cur + (dx < 0 ? 1 : -1)]; if (nx) go(nx);
   }, { passive: true });
