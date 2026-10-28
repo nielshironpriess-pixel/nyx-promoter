@@ -25,6 +25,9 @@
   "functions": {
     "api/scan.js": {
       "maxDuration": 60
+    },
+    "api/genvej.js": {
+      "maxDuration": 60
     }
   }
 }

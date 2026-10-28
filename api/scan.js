@@ -1,37 +1,7 @@
 // Læser screenshots fra Nyx med Claude og sender bordene tilbage som JSON.
 // Kræver ANTHROPIC_API_KEY under Vercel → Settings → Environment Variables.
-import Anthropic from "@anthropic-ai/sdk";
 import { SUPABASE_URL, SUPABASE_ANON_KEY } from "../js/config.js";
-
-const SCHEMA = {
-  type: "object",
-  properties: {
-    rows: {
-      type: "array",
-      items: {
-        type: "object",
-        properties: {
-          date: { type: "string", description: "YYYY-MM-DD" },
-          area: { type: "string" },
-          table: { type: "string" },
-          name: { type: "string" },
-          arrived: { type: "integer" },
-          booked: { type: "integer" },
-          amount: { type: "integer" },
-          extra: { type: "integer" },
-          note: { type: "string" },
-          promoter: { type: "string" },
-        },
-        required: ["date", "area", "table", "name", "arrived", "booked", "amount", "extra", "note", "promoter"],
-        additionalProperties: false,
-      },
-    },
-    note: { type: "string" },
-  },
-  required: ["rows", "note"],
-  additionalProperties: false,
-};
-const TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"];
+import { TYPES, readScreens, scanError } from "../lib/scan-core.js";
 
 export default async function handler(req, res) {
   if (req.method !== "POST") return res.status(405).json({ error: "Brug POST." });
@@ -49,25 +19,10 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: "Et af billederne kunne ikke læses." });
 
   try {
-    const client = new Anthropic();
-    const msg = await client.messages.create({
-      model: "claude-opus-5-5",
-      max_tokens: 8000,
-      output_config: { format: { type: "json_schema", schema: SCHEMA } },
-      messages: [{
-        role: "user",
-        content: [
-          ...images.map((i) => ({ type: "image", source: { type: "base64", media_type: i.type, data: i.data } })),
-          { type: "text", text: prompt.slice(0, 8000) },
-        ],
-      }],
-    });
-    if (msg.stop_reason === "refusal") return res.status(422).json({ error: "Billederne kunne ikke læses." });
-    const text = msg.content.filter((b) => b.type === "text").map((b) => b.text).join("");
-    return res.status(200).json(JSON.parse(text));
+    return res.status(200).json(await readScreens(images, prompt));
   } catch (e) {
     console.error(e);
-    const busy = e?.status === 429 || e?.status === 529;
-    return res.status(502).json({ error: busy ? "For mange scanninger lige nu. Prøv igen om lidt." : "Scanningen fejlede. Prøv igen." });
+    const [code, error] = scanError(e);
+    return res.status(code).json({ error });
   }
 }

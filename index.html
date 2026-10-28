@@ -310,6 +310,7 @@ details.more:not([open]){padding-bottom:0}
 details.more:not([open]) summary{padding-bottom:14px}
 .hseg button{border:0;background:none;border-radius:9px;padding:9px 0;font-weight:700;color:var(--muted)}
 .hseg button[aria-pressed="true"]{background:var(--surface);color:var(--teal);box-shadow:0 1px 3px rgba(60,30,20,.1)}
+.genvej{display:flex;flex-direction:column;gap:6px;background:rgba(255,255,255,.5);border:1px solid rgba(120,80,60,.14);border-radius:14px;padding:12px}
 /* ---------- glas-look (Apple-agtig) ---------- */
 :root{
   --glass:rgba(255,251,245,.58); --glass-hi:rgba(255,252,247,.74); --glass-line:rgba(255,255,255,.62);
@@ -389,6 +390,40 @@ button:active,.ev:active,.kpi:active,.qa:active,.hero:active,a.cbtn:active{trans
 @supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
   .list,.ev,.cmp,.tile,.chart,.kpi,.qa,.empty,details.more,.me-card,.side,.sheet,nav.tabs .in{background:var(--surface)}
 }
+/* ---------- glas v2: mere gennemsigtigt + glidende markører ---------- */
+:root{--glass:rgba(255,251,245,.38);--glass-line:rgba(255,255,255,.55)}
+html{background:
+  radial-gradient(55vmax 45vmax at -5% -5%,rgba(123,36,51,.30),transparent 60%),
+  radial-gradient(50vmax 42vmax at 105% 15%,rgba(232,207,154,.60),transparent 62%),
+  radial-gradient(55vmax 45vmax at 20% 105%,rgba(92,107,46,.24),transparent 60%),
+  radial-gradient(40vmax 35vmax at 90% 95%,rgba(196,90,110,.22),transparent 60%),
+  var(--bg) fixed}
+.topbar,.top{background:rgba(245,239,227,.38)}
+nav.tabs .in{background:rgba(255,251,245,.34)}
+.side{background:rgba(255,251,245,.46)}
+.sheet{background:rgba(255,251,245,.66)}
+label.f input,label.f select,label.f textarea,.status button,.spentbox,label.share,.scanrow{background:rgba(255,255,255,.42)}
+/* glidende markør i faner og bundmenu */
+.seg.slide,.hseg.slide{position:relative;gap:0}
+.seg.slide::before,.hseg.slide::before,nav.tabs .in::before{content:"";position:absolute;top:4px;bottom:4px;left:4px;
+  width:calc((100% - 8px) / var(--n,2));transform:translateX(calc(var(--i,0) * 100%));transition:transform .45s var(--spring);
+  background:rgba(255,255,255,.82);border-radius:10px;box-shadow:0 1px 0 #fff inset,0 3px 10px rgba(92,40,30,.14)}
+.seg.slide button,.hseg.slide button{position:relative;z-index:1}
+.seg.slide button[aria-pressed="true"],.hseg.slide button[aria-pressed="true"]{background:none!important;box-shadow:none!important}
+nav.tabs .in{position:relative}
+nav.tabs .in::before{top:6px;bottom:6px;left:6px;width:calc((100% - 12px) / 5);border-radius:99px;opacity:var(--on,1)}
+nav.tabs button{position:relative;z-index:1}
+nav.tabs button[aria-current="page"]{background:none!important;box-shadow:none!important}
+/* sider glider ind fra siden */
+#view.enter-r{animation:slideR .42s var(--spring)}
+#view.enter-l{animation:slideL .42s var(--spring)}
+@keyframes slideR{from{opacity:0;transform:translateX(28px)}}
+@keyframes slideL{from{opacity:0;transform:translateX(-28px)}}
+/* fjedrende tryk */
+button,.ev,.kpi,.qa,.hero,a.cbtn{transition:transform .35s var(--spring),background .25s var(--ease),box-shadow .25s var(--ease)}
+button:active,.ev:active,.kpi:active,.qa:active,.hero:active,a.cbtn:active{transform:scale(.95);transition-duration:.12s}
+.sheet.drag{transition:none!important;animation:none!important}
+.sheet.back{transition:transform .35s var(--spring)}
 </style>
 </head>
 <body>
@@ -592,6 +627,7 @@ const store = {
     this.later = later; this.listenTeam();
     document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") this.loadAll(); });
     setStatus("Gemt i din konto og opdateres live på alle dine enheder.");
+    checkHashScan();
   },
   async loadAll() {
     let res = await this.sb.from("nyx_docs").select("col,id,data,owner,team");
@@ -754,7 +790,8 @@ function render() {
   const y = window.scrollY;
   badge();
   view.innerHTML = { home: vHome, hivesalg: vHiveSales, hive: vHive, events: vEvents, borde: vNight, night: vNight, stats: vStats, noter: vNoter, kunder: vKunder }[ui.tab]();
-  if (ui.tab !== ui._lastTab) { view.classList.remove("enter"); void view.offsetWidth; view.classList.add("enter"); ui._lastTab = ui.tab; }
+  if (ui.tab !== ui._lastTab) { enterAnim(ui._lastTab); ui._lastTab = ui.tab; }
+  slideSegs();
   if (ui.keepScroll) window.scrollTo(0, y);
   ui.keepScroll = true;
 }
@@ -882,6 +919,7 @@ function profileSheet() {
     <label class="f full">Telefon<input id="pf-phone" type="tel" value="${esc(pr.phone || "")}"></label>
     <label class="f">Provision Søpavillonen (%)<input id="pf-pct" inputmode="decimal" value="${num(S.settings.pct) || ""}" placeholder="Fx 10"></label>
     <label class="f">Provision Hive (%)<input id="pf-hpct" inputmode="decimal" value="${num(S.settings.hivePct) || ""}" placeholder="Fx 10"></label>
+    ${store.mode === "sky" ? `<div class="full genvej"><b>iPhone-genvej</b><span class="note">Del screenshots fra Nyx direkte til Bordbog. Kopiér din adresse og sæt den ind i genvejen.</span><button type="button" class="btn" data-genvej>Kopiér genvejs-adresse</button></div>` : ""}
     ${store.team ? `<p class="full note" style="margin:0">Hold: <b>${esc(store.team.name)}</b> · kode <b>${esc(store.team.code)}</b></p>` : ""}
     <div class="full btns">${store.mode === "sky" ? `<button type="button" class="btn" data-logout>Log ud</button>` : `<button type="button" class="btn" data-close>Luk</button>`}<button class="btn teal" type="submit">Gem</button></div></form>`, (f) => {
     const np = { ...pr, name: v(f, "pf-name"), nyx: v(f, "pf-nyx") || "Niels Priess", phone: v(f, "pf-phone") };
@@ -889,6 +927,18 @@ function profileSheet() {
     if (store.team && store.sb && np.name) store.sb.from("nyx_members").update({ name: np.name }).eq("user_id", store.uid).then(() => store.loadTeam && store.loadTeam().then(render));
   });
   const lo = root.querySelector("[data-logout]"); if (lo) lo.addEventListener("click", () => store.signOut());
+  const gv = root.querySelector("[data-genvej]");
+  if (gv) gv.addEventListener("click", async () => {
+    gv.disabled = true; gv.textContent = "Henter…";
+    try {
+      const { data } = await store.sb.auth.getSession();
+      const res = await fetch("/api/genvej?n=" + encodeURIComponent(meNyx()), { headers: { Authorization: "Bearer " + (data.session?.access_token || "") } });
+      const out = await res.json().catch(() => ({}));
+      if (!res.ok || !out.url) throw new Error(out.error || "Kunne ikke hente adressen.");
+      await copyText(out.url); gv.textContent = "Kopieret ✓";
+    } catch (e) { gv.textContent = "Prøv igen"; toast(e.message); }
+    gv.disabled = false;
+  });
 }
 /* ---------- forside ---------- */
 const hiveB = (b) => b.club === "Hive";
@@ -1169,6 +1219,25 @@ function prePlus(key) {
   safe(store.put("notes", { ...n, pre: num(n.pre) + 1, lastPre: todayISO(), type: n.type === "bord" ? "begge" : n.type || "pre" }), c.name + " +1 på pre");
 }
 
+/* ---------- glidende markører, swipe mellem faner og træk ark ned ---------- */
+function slideSegs() {
+  ui._segPrev ||= {};
+  view.querySelectorAll(".seg, .hseg").forEach((el, k) => {
+    const bs = [...el.children].filter((x) => x.tagName === "BUTTON"); const i = bs.findIndex((b) => b.getAttribute("aria-pressed") === "true");
+    if (i < 0) return;
+    const key = ui.tab + ":" + k, prev = ui._segPrev[key] ?? i; ui._segPrev[key] = i;
+    el.classList.add("slide"); el.style.setProperty("--n", bs.length); el.style.setProperty("--i", prev);
+    if (prev !== i) requestAnimationFrame(() => requestAnimationFrame(() => el.style.setProperty("--i", i)));
+  });
+  const nav = document.querySelector("nav.tabs .in");
+  if (nav) { const bs = [...nav.querySelectorAll("button")]; const i = bs.findIndex((b) => b.getAttribute("aria-current") === "page"); nav.style.setProperty("--on", i < 0 ? 0 : 1); if (i >= 0) nav.style.setProperty("--i", i); }
+}
+function enterAnim(prevTab) {
+  const TAB_ORDER = ["home", "events", "borde", "night", "stats", "hive", "hivesalg", "kunder", "noter"];
+  const a = TAB_ORDER.indexOf(prevTab), b = TAB_ORDER.indexOf(ui.tab);
+  view.classList.remove("enter", "enter-r", "enter-l"); void view.offsetWidth;
+  view.classList.add(prevTab == null ? "enter" : b >= a ? "enter-r" : "enter-l");
+}
 /* ---------- notes ---------- */
 const NSTAGE = { ide: "Idé", kontakt: "Kontaktet", booket: "Booket" };
 function vNoter() {
@@ -1353,16 +1422,30 @@ function startScan() { scanInput.value = ""; scanInput.click(); }
     try {
       const blobs = await Promise.all(files.map(shrink));
       const out = await scanEngine.read(blobs, scanPrompt(blobs.length));
-      const rows = (Array.isArray(out) ? out : out && out.rows || []).map((r) => {
-        const date = /^\d{4}-\d{2}-\d{2}$/.test(r.date || "") ? r.date : "";
-        return { date, area: String(r.area || "").trim(), table: String(r.table ?? "").trim(), name: String(r.name || "").trim(),
-          guests: num(r.arrived) || num(r.booked), price: num(r.amount), came: num(r.arrived) > 0 && (!date || date <= todayISO()),
-          note: String(r.note || "").trim(), promoter: String(r.promoter || "").trim() };
-      });
-      reviewScan(rows, out && out.note);
+      reviewScan(normScan(out), out && out.note);
     } catch (e) { scanMsg("Scanningen virkede ikke", e.message || "Ukendt fejl."); }
   });
 }
+function normScan(out) {
+  return (Array.isArray(out) ? out : out && out.rows || []).map((r) => {
+    const date = /^\d{4}-\d{2}-\d{2}$/.test(r.date || "") ? r.date : "";
+    return { date, area: String(r.area || "").trim(), table: String(r.table ?? "").trim(), name: String(r.name || "").trim(),
+      guests: num(r.arrived) || num(r.booked), price: num(r.amount), came: num(r.arrived) > 0 && (!date || date <= todayISO()),
+      note: String(r.note || "").trim(), promoter: String(r.promoter || "").trim() };
+  });
+}
+/* iPhone-genvejen åbner appen med #scan=… når den har læst screenshots */
+function checkHashScan() {
+  const m = location.hash.match(/^#scan=([\w-]+)$/); if (!m) return;
+  history.replaceState(null, "", location.pathname);
+  try {
+    const raw = atob(m[1].replace(/-/g, "+").replace(/_/g, "/"));
+    const j = JSON.parse(new TextDecoder().decode(Uint8Array.from(raw, (c) => c.charCodeAt(0))));
+    const rows = (j.r || []).map((a) => ({ date: a[0], area: a[1], table: a[2], name: a[3], arrived: a[4], booked: a[5], amount: a[6], extra: a[7], note: a[8], promoter: a[9] }));
+    reviewScan(normScan({ rows }), j.n);
+  } catch { toast("Kunne ikke læse scanningen fra genvejen"); }
+}
+window.addEventListener("hashchange", () => { if (store.uid) checkHashScan(); });
 function reviewScan(rows, note) {
   if (!rows.length) return scanMsg("Ingen af dine borde fundet", (note ? note + " " : "") + "Tjek at der står Niels Priess på bordene, og at billederne er fra Tables → List i Nyx.");
   const anyPromoter = rows.some((r) => r.promoter), from = payStart(payYm(todayISO()));
@@ -1384,7 +1467,7 @@ function reviewScan(rows, note) {
       </div></div>`;
   }).join("");
   const f = openSheet(`<h3>Fundet ${rows.length} ${rows.length === 1 ? "bord" : "borde"}</h3>
-    <p class="sh">${anyPromoter ? `Dine borde (${meNyx()})` : "Alle borde"} fra ${d(from).getDate()}. ${mShort(from)} og frem er valgt. Tryk Ret, hvis noget er læst forkert. Hvad de brugte, skriver du bagefter under Statistik.${note ? "<br>" + esc(note) : ""}</p>
+    <p class="sh">${anyPromoter ? `Dine borde (${meNyx()})` : "Alle borde"} fra ${d(from).getDate()}. ${mShort(from)} og frem er valgt. Tryk Ret, hvis noget er læst forkert. Hvad de brugte, skriver du bagefter under Salg.${note ? "<br>" + esc(note) : ""}</p>
     <form class="form"><div class="full scanlist">${html}</div>
     <div class="full btns"><button type="button" class="btn" data-close>Annullér</button><button class="btn teal" type="submit">Gem valgte</button></div></form>`, (form) => {
     const picked = [...form.querySelectorAll(".scanrow")].filter((el) => el.querySelector("[data-pick]").checked).map((el) => {
@@ -1503,6 +1586,36 @@ view.addEventListener("click", (e) => {
   if (act === "addnight") { const dt = view.querySelector("#addDate").value; if (dt) go("night", { date: dt }); }
   if (act === "todo") { ui.todoRun = true; ui.todoDone = new Set(); const b = nextTodo(); if (b) bookingSheet(b); }
 });
+
+/* swipe mellem faner og træk ark ned */
+{
+  let sx = 0, sy = 0, ok = false;
+  view.addEventListener("touchstart", (e) => {
+    const t = e.touches[0]; sx = t.clientX; sy = t.clientY;
+    ok = e.touches.length === 1 && !e.target.closest(".map, .chart, input, textarea, select, .fchips") && !root.querySelector(".scrim");
+  }, { passive: true });
+  view.addEventListener("touchend", (e) => {
+    if (!ok) return; const t = e.changedTouches[0], dx = t.clientX - sx, dy = t.clientY - sy;
+    if (Math.abs(dx) < 80 || Math.abs(dy) > 45 || sx < 24) return;
+    const SWIPE_TABS = ["home", "events", "hive", "stats"];
+    const cur = SWIPE_TABS.indexOf(ui.tab === "hivesalg" ? "hive" : ui.tab); if (cur < 0) return;
+    const nx = SWIPE_TABS[cur + (dx < 0 ? 1 : -1)]; if (nx) go(nx);
+  }, { passive: true });
+  // træk et ark ned for at lukke det
+  let dy0 = null, sh = null, last = 0;
+  root.addEventListener("touchstart", (e) => {
+    sh = e.target.closest(".sheet"); if (!sh || sh.scrollTop > 0 || e.target.closest("input, textarea, select")) { sh = null; return; }
+    dy0 = e.touches[0].clientY; last = 0;
+  }, { passive: true });
+  root.addEventListener("touchmove", (e) => {
+    if (!sh || dy0 == null) return; last = Math.max(0, e.touches[0].clientY - dy0);
+    if (last > 0 && sh.scrollTop <= 0) { sh.classList.add("drag"); sh.style.transform = `translateY(${last}px)`; }
+  }, { passive: true });
+  root.addEventListener("touchend", () => {
+    if (!sh) return; const s = sh; sh = null; dy0 = null; s.classList.remove("drag");
+    if (last > 110) { s.style.transform = ""; close(); } else { s.classList.add("back"); s.style.transform = ""; setTimeout(() => s.classList.remove("back"), 360); }
+  }, { passive: true });
+}
 
 render();
 store.start();
