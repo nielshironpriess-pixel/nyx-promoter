@@ -216,6 +216,9 @@ label.share input{width:22px;height:22px;accent-color:var(--teal);margin-top:2px
 label.share small{color:var(--muted)}
 .cmp.pool{margin-bottom:12px}
 #l-toggle{margin-top:6px}
+.avatar{justify-self:end;width:38px;height:38px;border-radius:99px;border:0;background:var(--teal);color:var(--green-ink);font-weight:800;font-size:14px;display:grid;place-items:center;letter-spacing:.02em}
+.avatar.big{width:56px;height:56px;font-size:20px;flex:none}
+.phead{display:flex;gap:14px;align-items:center}
 </style>
 </head>
 <body>
@@ -376,14 +379,14 @@ const store = {
     } catch { setStatus("Kunne ikke forbinde. Tjek internettet og genindlæs."); return; }
     this.mode = "sky";
     const { data } = await this.sb.auth.getSession();
-    this.uid = data.session?.user?.id || null;
+    this.uid = data.session?.user?.id || null; this.email = data.session?.user?.email || "";
     if (!this.uid) return showLogin();
     await this.afterLogin();
   },
   async signIn(email, password) {
     const { data, error } = await this.sb.auth.signInWithPassword({ email, password });
     if (error) throw new Error(DK_ERR[error.message] || error.message);
-    this.uid = data.user.id;
+    this.uid = data.user.id; this.email = data.user.email || "";
     await this.afterLogin();
   },
   async signOut() { if (this.sb) await this.sb.auth.signOut(); location.reload(); },
@@ -546,7 +549,7 @@ function vEvents() {
   const upcoming = [...set].sort();
   const past = [...new Set([...S.bookings.filter((b) => !b.club).map((b) => b.date), ...S.nights.map((n) => n.id)])].filter((x) => x && x < today).sort().reverse();
   const todo = S.bookings.filter((b) => b.date < today && (b.status === "booket" || (b.status === "kom" && !num(b.spent))));
-  return `<div class="top"><span></span><div class="title"><b>Events</b></div><span></span></div>
+  return `<div class="top"><span></span><div class="title"><b>Events</b></div>${avatar()}</div>
   <button class="btn teal scanbtn" data-act="scan">Scan screenshots fra Nyx</button>
   ${todo.length ? `<button class="ev todo" data-act="todo"><div class="r1"><span class="wd thu">Mangler beløb</span></div><div class="r2"><span class="name">${todo.length} ${todo.length === 1 ? "bord" : "borde"} mangler hvad de brugte</span><span class="stats">Udfyld</span></div></button>` : ""}
   ${newsSection()}${followSection(today)}${bdaySection(today)}
@@ -637,6 +640,27 @@ function vHive() {
     <p class="maptip">Tryk på et bord for at booke det på Hive.${store.team ? " Det bliver delt med holdet, så de får besked og kan skrive tallene ind." : ""}</p>
     <h2>${bs.filter(active).length} borde på Hive${exp ? " · " + kr(exp) : ""}</h2>
     ${bs.length ? `<div class="list">${bs.map(bookingRow).join("")}</div>` : `<div class="empty">Ingen borde på Hive denne dag.</div>`}`;
+}
+/* ---------- profil ---------- */
+const profile = () => (S.settings && S.settings.profile) || {};
+const initials = (n) => String(n || "").trim().split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0].toUpperCase()).join("") || "?";
+const avatar = () => `<button class="avatar" data-act="profile" aria-label="Din profil">${esc(initials(profile().name || meNyx()))}</button>`;
+function profileSheet() {
+  const pr = profile(), email = store.email || "";
+  openSheet(`<div class="phead"><span class="avatar big">${esc(initials(pr.name || meNyx()))}</span><div><h3 style="margin:0">${esc(pr.name || "Din profil")}</h3><p class="sh" style="margin:0">${esc(email || (store.mode === "sky" ? "Logget ind" : "Gemmes på denne enhed"))}</p></div></div>
+    <form class="form" style="margin-top:14px">
+    <label class="f full">Dit navn<input id="pf-name" value="${esc(pr.name || "")}" placeholder="Fx Niels" autocomplete="name"></label>
+    <label class="f full">Dit navn i Nyx<input id="pf-nyx" value="${esc(pr.nyx || meNyx())}" placeholder="Som det står ved dine borde"></label>
+    <p class="full note" style="margin:-6px 0 0">Scanneren vælger de borde, hvor dette navn står som promoter.</p>
+    <label class="f">Telefon<input id="pf-phone" type="tel" value="${esc(pr.phone || "")}"></label>
+    <label class="f">Provision af bordsalg (%)<input id="pf-pct" inputmode="decimal" value="${num(S.settings.pct) || ""}" placeholder="Fx 10"></label>
+    ${store.team ? `<p class="full note" style="margin:0">Hold: <b>${esc(store.team.name)}</b> · kode <b>${esc(store.team.code)}</b></p>` : ""}
+    <div class="full btns">${store.mode === "sky" ? `<button type="button" class="btn" data-logout>Log ud</button>` : `<button type="button" class="btn" data-close>Luk</button>`}<button class="btn teal" type="submit">Gem</button></div></form>`, (f) => {
+    const np = { ...pr, name: v(f, "pf-name"), nyx: v(f, "pf-nyx") || "Niels Priess", phone: v(f, "pf-phone") };
+    safe(store.settings({ ...S.settings, pct: num(v(f, "pf-pct")), profile: np }), "Profil gemt");
+    if (store.team && store.sb && np.name) store.sb.from("nyx_members").update({ name: np.name }).eq("user_id", store.uid).then(() => store.loadTeam && store.loadTeam().then(render));
+  });
+  const lo = root.querySelector("[data-logout]"); if (lo) lo.addEventListener("click", () => store.signOut());
 }
 function nextNight() { let x = todayISO(); for (let i = 0; i < 7; i++) { if ([4, 5, 6].includes(d(x).getDay())) return x; x = addDays(x, 1); } return todayISO(); }
 function bookingRow(b) {
@@ -732,7 +756,7 @@ function vStats() {
   m.bs.forEach((b) => { const c = (byClub[clubOf(b)] ||= { n: 0, exp: 0, sold: 0 }); if (active(b)) { c.n++; c.exp += num(b.expected); } c.sold += sold(b); });
   const clubs = Object.entries(byClub).sort((a, b) => b[1].sold - a[1].sold);
   const topN = Object.values(byName).sort((a, b) => b.s - a.s).slice(0, 5);
-  return `<div class="top"><span></span><div class="title"><b>Statistik</b></div><span></span></div>
+  return `<div class="top"><span></span><div class="title"><b>Statistik</b></div>${avatar()}</div>
   <div class="monthsw"><button data-month="-1" aria-label="Forrige lønperiode">‹</button><strong>${payName(ui.month)}</strong><button data-month="1" aria-label="Næste lønperiode">›</button></div>
   ${poolSection()}
   <section class="cmp num">
@@ -769,7 +793,7 @@ function vStats() {
 const NSTAGE = { ide: "Idé", kontakt: "Kontaktet", booket: "Booket" };
 function vNoter() {
   const seg = ui.noteSeg;
-  const head = `<div class="top"><span></span><div class="title"><b>Noter</b></div><span></span></div>
+  const head = `<div class="top"><span></span><div class="title"><b>Noter</b></div>${avatar()}</div>
     <div class="seg" style="margin-bottom:14px"><button data-nseg="selskaber" aria-pressed="${seg === "selskaber"}">Selskaber</button><button data-nseg="ideer" aria-pressed="${seg === "ideer"}">Idéer</button></div>`;
   if (seg === "ideer") {
     const ideas = S.notes.filter((n) => n.kind === "ide").sort((a, b) => (a.done - b.done) || (b.created || 0) - (a.created || 0));
@@ -890,7 +914,7 @@ const scanEngine = {
 /* ---------- /scan-motor ---------- */
 /* ---------- scan screenshots fra Nyx ---------- */
 const AREA_OF = {}; AREAS.forEach((A) => A.items.forEach((it) => { if (it.k === "t" || it.k === "r") AREA_OF[it.id] = A.name; }));
-const ME = "Niels Priess";
+const meNyx = () => ((S.settings && S.settings.profile) || {}).nyx || "Niels Priess";
 function scanPrompt(n) {
   return `Du får ${n} screenshot(s) fra Nyx, natklubben ${HOME}s personale-app (fanen Tables, visningen List). I dag er ${todayISO()}.
 Øverst på hvert billede står aftenens dato (fx "Thu, Oct 22, 2026") og eventets navn. Listen er delt i områder med en overskrift (fx "SØ Main", "SØ Main Back", "Buffer").
@@ -899,7 +923,7 @@ Hver booking ser sådan ud:
 - højre, øverst: gæster som "ankommet / booket" (fx "30 / 6" betyder 30 ankommet og 6 booket). Står der kun ét tal, er det booket, og ankommet er 0.
 - højre, midt: beløbet i kroner (fx "21,000" = 21000; komma er tusindtalsseparator). "No min." betyder 0.
 - højre, nederst: promoterens navn.
-Tag KUN bookinger, hvor promoteren er ${ME}. Spring bookinger fra andre promotere, ledige borde ("Available") og rækker med "Linked to table" over. Samme booking kan stå på flere billeder: tag den kun med én gang.
+Tag KUN bookinger, hvor promoteren er ${meNyx()}. Spring bookinger fra andre promotere, ledige borde ("Available") og rækker med "Linked to table" over. Samme booking kan stå på flere billeder: tag den kun med én gang.
 For hver booking:
 - date: aftenens dato som YYYY-MM-DD
 - area: områdets overskrift
@@ -912,7 +936,7 @@ For hver booking:
 - note: noten som den står
 - promoter: promoterens navn
 Gæt ikke tal du ikke kan se. Svar KUN med JSON:
-{"rows":[{"date":"2026-10-08","area":"SØ Main","table":"42","name":"Asger Vilstrup","arrived":30,"booked":6,"amount":21000,"extra":6000,"note":"Pakke 4 + 6k spend","promoter":"${ME}"}],"note":"kort note på dansk hvis noget var uklart, ellers tom"}`;
+{"rows":[{"date":"2026-10-08","area":"SØ Main","table":"42","name":"Asger Vilstrup","arrived":30,"booked":6,"amount":21000,"extra":6000,"note":"Pakke 4 + 6k spend","promoter":"${meNyx()}"}],"note":"kort note på dansk hvis noget var uklart, ellers tom"}`;
 }
 async function shrink(file) {
   try {
@@ -922,7 +946,7 @@ async function shrink(file) {
     return await new Promise((ok) => c.toBlob((b) => ok(b || file), "image/jpeg", 0.85));
   } catch { return file; }
 }
-const isMe = (p) => /priess|niels/i.test(String(p || ""));
+const isMe = (p) => { const x = String(p || "").toLowerCase(); return meNyx().toLowerCase().split(/\s+/).filter((w) => w.length > 2).some((w) => x.includes(w)); };
 function matchBooking(r) {
   const on = S.bookings.filter((b) => b.date === r.date && !b.club);
   return (r.table && on.find((b) => String(b.table) === String(r.table))) || (r.name && on.find((b) => key(b.name) === key(r.name))) || null;
@@ -977,7 +1001,7 @@ function reviewScan(rows, note) {
       </div></div>`;
   }).join("");
   const f = openSheet(`<h3>Fundet ${rows.length} ${rows.length === 1 ? "bord" : "borde"}</h3>
-    <p class="sh">${anyPromoter ? `Dine borde (${ME})` : "Alle borde"} fra ${d(from).getDate()}. ${mShort(from)} og frem er valgt. Tryk Ret, hvis noget er læst forkert. Hvad de brugte, skriver du bagefter under Statistik.${note ? "<br>" + esc(note) : ""}</p>
+    <p class="sh">${anyPromoter ? `Dine borde (${meNyx()})` : "Alle borde"} fra ${d(from).getDate()}. ${mShort(from)} og frem er valgt. Tryk Ret, hvis noget er læst forkert. Hvad de brugte, skriver du bagefter under Statistik.${note ? "<br>" + esc(note) : ""}</p>
     <form class="form"><div class="full scanlist">${html}</div>
     <div class="full btns"><button type="button" class="btn" data-close>Annullér</button><button class="btn teal" type="submit">Gem valgte</button></div></form>`, (form) => {
     const picked = [...form.querySelectorAll(".scanrow")].filter((el) => el.querySelector("[data-pick]").checked).map((el) => {
@@ -1070,6 +1094,7 @@ view.addEventListener("click", (e) => {
   if (act === "seenall") { try { localStorage.setItem(seenKey(), new Date().toISOString()); } catch {} return render(); }
   if (act === "allnews") { ui.allNews = true; return render(); }
   if (act === "back") go("events");
+  if (act === "profile") return profileSheet();
   if (act === "scan") startScan();
   if (act === "editnight") nightSheet(ui.date);
   if (act === "newfree") bookingSheet(newBooking(ui.date, "Andet", ""));
