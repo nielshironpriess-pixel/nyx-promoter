@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>Nyx Promoter</title>
-  <meta name="theme-color" content="#0d0a14">
+  <meta name="theme-color" content="#1c1f26">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -12,35 +12,664 @@
   <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="assets/icon-192.png">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@600;800&family=Manrope:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css">
+  <style>
+/* Layout: phone app modelled on the Nyx staff app. Dark only on purpose: same navy, teal and green as Nyx so it feels familiar. */
+:root{
+  color-scheme:dark;
+  --bg:#1c1f26; --surface:#252932; --raise:#2e333d; --line:#363b46; --mapbg:#20232b;
+  --fg:#dcdfe5; --muted:#949aa6; --faint:#666c78;
+  --teal:#7cc4b9; --pink:#e39ab9; --green:#93c9a2; --green-ink:#1b2a20;
+  --blue:#8eaedb; --blue-ink:#1c2533; --red:#d99595; --red-ink:#2e1d1d; --purple:#b3a2d6;
+  --free:#3b414d; --free-ink:#d5d9e0; --stripe1:#262a33; --stripe2:#2b3039;
+  --f:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",Roboto,sans-serif;
+}
+*{box-sizing:border-box}
+html,body{background:var(--bg);color:var(--fg)}
+body{font-family:var(--f);font-size:15px;line-height:1.4;margin:0;min-height:100vh;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));
+  padding-block:0 calc(96px + env(safe-area-inset-bottom,0px))}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--bg)}
+.wrap{max-width:640px;margin:0 auto}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--teal);outline-offset:2px}
+.num{font-variant-numeric:tabular-nums}
+
+/* top bar */
+.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:8px;padding:12px 0}
+.top .title{text-align:center;line-height:1.2}
+.top .title b{display:block;font-size:17px}
+.top .title .d{color:var(--pink);font-weight:600}
+.top .title span{color:var(--muted);font-size:15px}
+.pillbtn{justify-self:start;display:inline-flex;align-items:center;gap:6px;background:var(--surface);border:1px solid var(--line);border-radius:99px;padding:8px 14px;font-weight:600}
+.top .right{justify-self:end}
+h2{font-size:13px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin:22px 0 8px}
+
+/* events */
+.ev{display:block;width:100%;text-align:left;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:12px 14px;margin-bottom:8px}
+.ev.today{border-color:var(--teal)}
+.ev .r1,.ev .r2{display:flex;justify-content:space-between;gap:10px;align-items:baseline}
+.ev .wd{font-size:13px;font-weight:700;letter-spacing:.04em;text-transform:uppercase}
+.wd.thu{color:var(--pink)}.wd.fri{color:var(--pink)}.wd.sat{color:var(--blue)}.wd.other{color:var(--fg)}
+.ev .t{font-size:13px;color:var(--muted)}
+.ev .name{font-weight:600;margin-top:2px}
+.ev .stats{font-size:13px;color:var(--muted);text-align:right}
+.ev .stats b{color:var(--green);font-weight:700}
+.addrow{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+
+/* night */
+.seg{display:grid;grid-template-columns:1fr 1fr;border-bottom:1px solid var(--line);margin:0 calc(-1 * max(16px,env(safe-area-inset-left,0px)))}
+.seg button{background:none;border:0;padding:12px 0;font-size:16px;color:var(--muted);border-bottom:3px solid transparent}
+.seg button[aria-pressed="true"]{color:var(--fg);border-bottom-color:var(--teal)}
+.glist{display:flex;align-items:center;justify-content:space-between;gap:12px;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:10px 14px;margin-top:14px}
+.glist .k{font-size:13px;color:var(--muted)}
+.step{display:flex;align-items:center;gap:10px}
+.step button{width:38px;height:38px;border-radius:99px;border:1px solid var(--line);background:var(--raise);font-size:20px;line-height:1}
+.step input{width:56px;text-align:center;font-size:22px;font-weight:700;background:none;border:0}
+.areabar{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:14px 0 8px}
+.areabar .nav{display:flex;align-items:center;gap:6px;min-width:0}
+.areabar .nav button{width:34px;height:34px;border-radius:99px;border:1px solid var(--line);background:var(--surface)}
+.areabar .nm{font-size:17px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.counts{display:flex;gap:10px;font-size:18px;font-weight:600}
+.c-green{color:var(--green)}.c-blue{color:var(--blue)}.c-red{color:var(--red)}
+
+.map{position:relative;container-type:inline-size;background:var(--mapbg);border-top:1px solid var(--line);border-bottom:1px solid var(--line);margin:0 calc(-1 * max(16px,env(safe-area-inset-left,0px)))}
+.map > *{position:absolute}
+.blk{background:var(--surface);border:1px solid var(--line);border-radius:4px;display:grid;place-items:center;font-size:2.3cqw;color:var(--fg);text-align:center}
+.blk.v span{transform:rotate(90deg);white-space:nowrap}
+.hatch{border:1px solid var(--line);border-radius:4px;background:repeating-linear-gradient(135deg,var(--stripe1) 0 1.6cqw,var(--stripe2) 1.6cqw 3.2cqw);display:grid;place-items:center;font-size:2.3cqw}
+.tb{border:0;border-radius:4px;background:var(--free);color:var(--free-ink);display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;line-height:1.15;padding:.4cqw;font-size:2.4cqw;overflow:hidden}
+.tb b{font-size:2.9cqw}
+.tb small{font-size:2.2cqw;max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tb.round{border-radius:99px}
+.tb.booket{background:var(--green);color:var(--green-ink)}
+.tb.kom{background:var(--blue);color:var(--blue-ink)}
+.tb.udeblev{background:var(--red);color:var(--red-ink)}
+.maptip{font-size:13px;color:var(--muted);margin-top:8px}
+
+/* lists */
+.list{display:flex;flex-direction:column;background:var(--surface);border:1px solid var(--line);border-radius:14px;overflow:hidden}
+.row{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:12px;align-items:center;padding:12px 14px;border:0;border-top:1px solid var(--line);background:none;text-align:left;width:100%}
+.row:first-child{border-top:0}
+.tag{min-width:44px;height:44px;border-radius:8px;display:grid;place-items:center;font-weight:800;background:var(--free);color:var(--free-ink);padding:0 6px}
+.tag.booket{background:var(--green);color:var(--green-ink)}.tag.kom{background:var(--blue);color:var(--blue-ink)}.tag.udeblev{background:var(--red);color:var(--red-ink)}.tag.aflyst{background:var(--raise);color:var(--muted)}
+.mid{min-width:0;display:flex;flex-direction:column;gap:2px}
+.mid .t{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mid .s{font-size:13px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.right{text-align:right;font-weight:700}
+.right small{display:block;font-weight:500;font-size:12px;color:var(--muted)}
+.empty{padding:20px 16px;text-align:center;color:var(--muted);font-size:14px;background:var(--surface);border:1px dashed var(--line);border-radius:14px}
+.btn{border:1px solid var(--line);background:var(--raise);border-radius:12px;padding:10px 14px;font-weight:600}
+.btn.teal{background:var(--teal);color:var(--green-ink);border-color:var(--teal)}
+.btn.danger{color:var(--red)}
+.btns{display:flex;flex-wrap:wrap;gap:8px}
+.note{font-size:13px;color:var(--muted)}
+
+/* stats */
+.monthsw{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:6px}
+.monthsw strong{font-size:17px;text-transform:capitalize}
+.monthsw button{width:36px;height:36px;border-radius:99px;border:1px solid var(--line);background:var(--surface)}
+.cmp{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:12px;margin-top:12px}
+.cmp .line{display:grid;grid-template-columns:84px 1fr auto;gap:10px;align-items:center;font-size:14px}
+.cmp .bar{height:12px;border-radius:99px;background:var(--raise);overflow:hidden}
+.cmp .bar i{display:block;height:100%;border-radius:99px}
+.cmp .big{font-size:34px;font-weight:800;line-height:1}
+.cmp .sub{font-size:13px;color:var(--muted)}
+.tiles{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:8px}
+.tile{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:12px 14px;min-width:0}
+.tile .v{font-size:24px;font-weight:800}
+.tile .k{font-size:12px;color:var(--muted)}
+.chart{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:12px 8px 4px}
+.chart svg{display:block;width:100%;height:auto}
+.chart text{fill:var(--muted);font-family:var(--f);font-size:11px}
+.chart .val{fill:var(--fg);font-weight:600}
+.todo{border-color:var(--pink)}
+
+/* notes */
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.chip{border:1px solid var(--line);background:var(--surface);border-radius:99px;padding:6px 12px;font-size:14px;color:var(--muted)}
+.chip[aria-pressed="true"]{border-color:var(--teal);color:var(--fg)}
+.idea{display:flex;gap:10px;align-items:flex-start;padding:12px 14px;border-top:1px solid var(--line)}
+.idea:first-child{border-top:0}
+.idea input[type=checkbox]{width:20px;height:20px;margin-top:1px;accent-color:var(--teal)}
+.idea p{margin:0;flex:1;min-width:0;overflow-wrap:anywhere}
+.idea.done p{color:var(--faint);text-decoration:line-through}
+.idea button{background:none;border:0;color:var(--faint);font-size:18px;line-height:1;padding:0 2px}
+.quick{display:flex;gap:8px;margin-bottom:10px}
+.quick input{flex:1;min-width:0;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px 12px;font-size:16px}
+
+.fu{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;align-items:center;padding:12px 14px;border-top:1px solid var(--line)}
+.fu:first-child{border-top:0}
+.fu .acts{display:flex;gap:6px}
+.fu .acts button{border:1px solid var(--line);background:var(--raise);border-radius:10px;padding:7px 10px;font-size:13px;font-weight:600}
+.fu .acts button.ok{background:var(--teal);color:var(--green-ink);border-color:var(--teal)}
+.login{max-width:380px;margin:12vh auto 0;display:flex;flex-direction:column;gap:14px}
+.login .logo{font-weight:800;font-size:56px;letter-spacing:.14em;color:var(--teal);line-height:1}
+.login .err{color:var(--red);font-size:14px;min-height:1.2em;margin:0}
+[hidden]{display:none!important}
+/* tabbar (Nyx style pill) */
+nav.tabs{position:fixed;left:0;right:0;bottom:0;z-index:7;padding:0 max(12px,env(safe-area-inset-right,0px)) calc(10px + env(safe-area-inset-bottom,0px)) max(12px,env(safe-area-inset-left,0px));pointer-events:none}
+nav.tabs .in{pointer-events:auto;max-width:520px;margin:0 auto;display:grid;grid-template-columns:repeat(4,1fr);background:var(--surface);border:1px solid var(--line);border-radius:99px;padding:6px;box-shadow:0 8px 24px rgba(0,0,0,.35)}
+nav.tabs button{border:0;background:none;border-radius:99px;display:flex;flex-direction:column;align-items:center;gap:2px;padding:7px 0;font-size:12px;font-weight:700;color:var(--fg)}
+nav.tabs svg{width:22px;height:22px}
+nav.tabs button[aria-current="page"]{background:var(--bg);color:var(--teal)}
+
+/* sheet */
+.scrim{position:fixed;inset:0;background:rgba(10,12,16,.7);z-index:20;display:flex;align-items:flex-end;justify-content:center}
+.sheet{background:var(--surface);border:1px solid var(--line);border-bottom:0;border-radius:20px 20px 0 0;width:100%;max-width:560px;max-height:92vh;overflow:auto;
+  padding:18px max(16px,env(safe-area-inset-right,0px)) calc(18px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px))}
+.sheet h3{font-size:22px;margin:0 0 4px}
+.sheet .sh{color:var(--muted);font-size:14px;margin:0 0 14px}
+.form{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.form .full{grid-column:1/-1}
+label.f{display:flex;flex-direction:column;gap:5px;font-size:12px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);min-width:0}
+label.f input,label.f select,label.f textarea{background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:10px 12px;font-size:16px;text-transform:none;letter-spacing:0;font-weight:400;width:100%;min-width:0;color:var(--fg)}
+label.f textarea{min-height:60px;resize:vertical}
+.status{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.status button{border:1px solid var(--line);background:var(--bg);border-radius:10px;padding:9px 0;font-size:13px;font-weight:700;color:var(--muted)}
+.status button[aria-pressed="true"].booket{background:var(--green);color:var(--green-ink);border-color:var(--green)}
+.status button[aria-pressed="true"].kom{background:var(--blue);color:var(--blue-ink);border-color:var(--blue)}
+.status button[aria-pressed="true"].udeblev{background:var(--red);color:var(--red-ink);border-color:var(--red)}
+.status button[aria-pressed="true"].aflyst{background:var(--raise);color:var(--fg)}
+.sheet .btns{margin-top:16px;justify-content:space-between}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(100px + env(safe-area-inset-bottom,0px));z-index:30;background:var(--fg);color:var(--bg);padding:10px 16px;border-radius:99px;font-weight:600;font-size:14px}
+.foot{font-size:12px;color:var(--faint);text-align:center;padding-top:18px}
+@media (prefers-reduced-motion:no-preference){.sheet{animation:up .2s ease-out}@keyframes up{from{transform:translateY(24px);opacity:.6}}}
+</style>
 </head>
 <body>
-<header><div class="hrow">
-  <div class="brand"><b>NYX</b><span>Promoter</span></div>
-  <div class="month">
-    <button id="mPrev" aria-label="Forrige måned">‹</button>
-    <strong id="mLabel" class="num">–</strong>
-    <button id="mNext" aria-label="Næste måned">›</button>
-  </div>
-</div></header>
-
-<div class="wrap"><main id="view"><div class="empty">Henter dine tal…</div></main>
-<p class="status" id="status"></p></div>
-
-<button class="fab" id="fab" hidden></button>
+<div class="wrap"><main id="view"><p class="note" style="padding-top:24px">Henter dine bookinger…</p></main><p class="foot" id="status"></p></div>
 
 <nav class="tabs" aria-label="Sektioner"><div class="in">
-  <button data-tab="overblik"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>Overblik</button>
-  <button data-tab="naetter"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/></svg>Nætter</button>
-  <button data-tab="borde"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3h8l-1 7a3 3 0 0 1-6 0L8 3zM12 13v7M8 21h8"/></svg>Borde</button>
-  <button data-tab="indstillinger"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-2.9 1.2V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-2.9-1.2l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0-1.2-2.9H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.2-2.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 2.9-1.2V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 2.9 1.2l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0 1.2 2.9H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>Indstillinger</button>
+  <button data-tab="events"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4M7 14h2M11 14h2M15 14h2M7 17h2M11 17h2"/></svg>Events</button>
+  <button data-tab="borde"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14 3l7 7-9 9a3 3 0 0 1-4 0l-3-3a3 3 0 0 1 0-4z M16 5l3 3"/></svg>Borde</button>
+  <button data-tab="stats"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 20V11M10 20V5M16 20v-6M2 20h20"/></svg>Statistik</button>
+  <button data-tab="noter"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-3.5 10.9c.6.4 1 1.1 1 1.9V16h5v-.2c0-.8.4-1.5 1-1.9A6 6 0 0 0 12 3z"/></svg>Noter</button>
 </div></nav>
-
 <div id="sheetRoot"></div>
 
-<script type="module" src="js/app.js"></script>
+<script type="module">
+(() => {
+"use strict";
+/* ---------- bordkort, kopieret fra Nyx (koordinater i skærmens 920 px bredde) ---------- */
+const T = (id, x, y, w, h, cap) => ({ k: "t", id, x, y, w, h, cap });
+const R = (id, x, y, w, h, cap) => ({ k: "r", id, x, y, w, h, cap });
+const B = (label, x, y, w, h, v) => ({ k: "b", label, x, y, w, h, v });
+const H = (x, y, w, h, label) => ({ k: "h", x, y, w, h, label });
+const AREAS = [
+  { name: "SØ Main", y0: 600, h: 1080, items: [
+    B("Podie", 0, 617, 95, 93), T("2", 116, 617, 94, 93, ""), T("1", 0, 733, 95, 93, ""), H(432, 617, 170, 218, "Bar 2"), H(882, 617, 38, 142),
+    R("900", 183, 808, 74, 74, "ståbord"), R("800", 796, 846, 74, 74, "ståbord"),
+    H(231, 857, 46, 46), H(393, 895, 38, 38), H(719, 942, 38, 38), H(719, 1163, 38, 38), H(126, 1327, 36, 46), H(796, 1374, 38, 38),
+    T("3", 768, 1001, 122, 122, "maks 25"), B("Bar 1", 0, 981, 124, 390, true), T("4", 758, 1221, 132, 64, "maks 15"), T("5", 758, 1298, 132, 64, "maks 15"),
+    H(346, 1317, 247, 112, "DJ"), R("500", 87, 1383, 74, 74, "ståbord"), R("600", 585, 1393, 74, 74, "ståbord"), R("700", 729, 1393, 74, 74, "ståbord"),
+    H(0, 1499, 37, 150), T("41", 58, 1499, 132, 132, "maks 25"), H(212, 1499, 46, 150), T("42", 279, 1499, 132, 132, "maks 25"), H(432, 1499, 75, 96),
+    T("45", 432, 1598, 75, 70, "VIP"), T("43", 528, 1499, 132, 132, "maks 25"), H(681, 1499, 38, 150), T("44", 739, 1499, 132, 132, "maks 25"), H(891, 1499, 29, 150),
+  ]},
+  { name: "SØ Main Back", y0: 600, h: 1080, items: [
+    H(0, 617, 383, 16), H(509, 617, 411, 16), H(0, 633, 18, 375), H(902, 633, 18, 375),
+    T("33", 30, 656, 141, 93, "maks 8"), H(183, 656, 46, 93), T("34", 240, 656, 142, 93, "maks 8"), T("35", 509, 656, 141, 93, "maks 8"), H(671, 656, 56, 93), T("36", 749, 656, 141, 93, "maks 8"),
+    T("32", 30, 895, 141, 93, "maks 8"), H(183, 895, 46, 93), T("31", 240, 895, 142, 93, "maks 8"), T("38", 509, 895, 141, 93, "maks 8"), H(671, 886, 56, 102), T("37", 749, 895, 141, 93, "maks 8"),
+    H(0, 1010, 411, 46), H(499, 1010, 421, 46),
+    B("bor", 0, 1077, 76, 75), T("23", 116, 1077, 94, 75, ""), T("24", 288, 1077, 94, 75, "maks 8"), T("25", 528, 1077, 94, 75, ""), T("26", 681, 1077, 94, 75, "maks 8"), B("Mini Bar", 815, 1077, 94, 94),
+    T("22", 107, 1336, 93, 74, "maks 6"), T("21", 212, 1336, 93, 74, "maks 6"), T("28", 624, 1327, 93, 74, "maks 6"), T("27", 729, 1327, 93, 74, "maks 6"), T("777", 845, 1327, 75, 74, ""),
+    R("100", 116, 1489, 74, 74, ""), R("200", 700, 1423, 74, 74, "ståbord"), R("300", 700, 1503, 74, 74, "ståbord"), R("400", 700, 1589, 74, 74, "ståbord"),
+    B("Bar 2", 356, 1356, 218, 312),
+  ]},
+  { name: "Moon", y0: 680, h: 1000, items: [
+    H(97, 712, 726, 8), R("55", 97, 809, 74, 102, "maks 10"), T("56", 212, 751, 84, 93, "maks 8"), T("57", 337, 751, 84, 93, "maks 8"), T("58", 461, 751, 84, 93, "maks 8"), T("59", 585, 751, 84, 93, "maks 8"), R("60", 710, 809, 74, 102, "maks 10"),
+    B("Bar 4", 317, 981, 266, 170), T("51", 231, 1442, 84, 102, "maks 12"), T("52", 231, 1557, 84, 102, "maks 12"), H(394, 1557, 103, 83, "DJ"), T("54", 585, 1452, 84, 100, "maks 12"), T("53", 585, 1567, 84, 100, "maks 12"),
+  ]},
+];
+const DEFAULT_EVENTS = { 3: ["Onsdag", "22:00–03:00", ""], 4: ["Moon", "22:00–05:00", "18+"], 5: ["Friday", "17:30–05:00", "23+"], 6: ["Saturday", "17:30–05:00", "23+"] };
+const STATUS = { booket: "Booket", kom: "Kom", udeblev: "Udeblev", aflyst: "Aflyst" };
+
+/* ---------- state ---------- */
+const S = { bookings: [], nights: [], notes: [], settings: { pct: 0, goal: 0 }, ready: false };
+const ui = { tab: "events", date: null, area: 0, mode: "kort", month: todayISO().slice(0, 7), noteSeg: "selskaber", showPast: false };
+
+/* ---------- helpers ---------- */
+function todayISO() { return new Date().toLocaleDateString("sv-SE"); }
+const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const kr = (n) => Math.round(n || 0).toLocaleString("da-DK") + " kr.";
+const num = (v) => { if (typeof v === "number") return isFinite(v) ? v : 0; const x = parseFloat(String(v ?? "").replace(/\./g, "").replace(",", ".")); return isFinite(x) ? x : 0; };
+const d = (iso) => new Date(iso + "T12:00:00");
+const addDays = (iso, n) => { const x = d(iso); x.setDate(x.getDate() + n); return x.toLocaleDateString("sv-SE"); };
+const WD = ["søn", "man", "tir", "ons", "tor", "fre", "lør"];
+const wdClass = (iso) => ({ 4: "thu", 5: "fri", 6: "sat" }[d(iso).getDay()] || "other");
+const dayLabel = (iso) => `${WD[d(iso).getDay()]} ${d(iso).getDate()}. ${d(iso).toLocaleDateString("da-DK", { month: "short" }).replace(".", "")}`;
+const monthName = (ym) => d(ym + "-01").toLocaleDateString("da-DK", { month: "long", year: "numeric" });
+const shiftMonth = (ym, k) => { const [y, m] = ym.split("-").map(Number); const t = new Date(y, m - 1 + k, 1); return t.getFullYear() + "-" + String(t.getMonth() + 1).padStart(2, "0"); };
+const newId = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+const shortName = (n) => { const p = String(n || "").trim().split(/\s+/); return p.length > 1 ? p[0] + " " + p[p.length - 1][0] + "." : p[0] || ""; };
+const nightOf = (date) => S.nights.find((n) => n.id === date);
+function eventFor(date) {
+  const n = nightOf(date), def = DEFAULT_EVENTS[d(date).getDay()] || ["Aften", "", ""];
+  return { name: (n && n.event) || def[0], time: (n && n.time) || def[1], age: def[2], guestlist: n ? num(n.guestlist) : 0 };
+}
+const active = (b) => b.status !== "aflyst";
+const bookingsOn = (date) => S.bookings.filter((b) => b.date === date);
+const sold = (b) => b.status === "kom" ? num(b.spent) : 0;
+
+/* ---------- kunder, fødselsdage og opfølgning ---------- */
+const key = (n) => String(n || "").trim().toLowerCase();
+function customers() {
+  const c = {};
+  S.bookings.slice().sort((a, b) => (a.date || "").localeCompare(b.date || "")).forEach((b) => {
+    const k = key(b.name); if (!k) return;
+    const x = (c[k] ||= { name: b.name.trim(), phone: "", bday: "", n: 0, spent: 0 });
+    if (b.phone) x.phone = b.phone; if (b.bday) x.bday = b.bday;
+    if (b.status === "kom") { x.n++; x.spent += num(b.spent); }
+  });
+  return c;
+}
+const bdayOf = (name) => (customers()[key(name)] || {}).bday || "";
+function nextBirthday(bday, today) {
+  const t = d(today), [, m, dd] = bday.split("-").map(Number);
+  let n = new Date(t.getFullYear(), m - 1, dd, 12); if (n < t) n = new Date(t.getFullYear() + 1, m - 1, dd, 12);
+  return { date: n.toLocaleDateString("sv-SE"), days: Math.round((n - t) / 864e5), age: n.getFullYear() - Number(bday.slice(0, 4)) };
+}
+function upcomingBirthdays(today, within = 30) {
+  return Object.values(customers()).filter((c) => /^\d{4}-\d\d-\d\d$/.test(c.bday)).map((c) => ({ ...c, ...nextBirthday(c.bday, today) }))
+    .filter((c) => c.days <= within).sort((a, b) => a.days - b.days);
+}
+const followups = (today) => S.bookings.filter((b) => b.date < today && b.date >= addDays(today, -14) && (b.status === "kom" || b.status === "udeblev") && !b.followed && b.name)
+  .sort((a, b) => b.date.localeCompare(a.date));
+async function copyText(t) {
+  try { await navigator.clipboard.writeText(t); toast("Beskeden er kopieret"); }
+  catch { openSheet(`<h3>Kopiér beskeden</h3><form class="form"><label class="f full">Markér og kopiér<textarea id="cp" style="min-height:140px">${esc(t)}</textarea></label><div class="full btns"><span></span><button class="btn teal">Luk</button></div></form>`, () => {}); root.querySelector("#cp").select(); }
+}
+const first = (n) => String(n || "").trim().split(/\s+/)[0];
+
+/* ---------- storage: Supabase med login (samme konto som Goon), ellers demo i browseren ---------- */
+const DK_ERR = { "Invalid login credentials": "Forkert email eller adgangskode", "Email not confirmed": "Din email er ikke bekræftet endnu" };
+const store = {
+  sb: null, mode: "venter", uid: null,
+  async start() {
+    const cfg = await import("./js/config.js");
+    if (!cfg.SUPABASE_URL || !cfg.SUPABASE_ANON_KEY) return this.startLocal("Demo: tallene gemmes kun i denne browser.");
+    try {
+      const { createClient } = await import("https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.3/+esm");
+      this.sb = createClient(cfg.SUPABASE_URL, cfg.SUPABASE_ANON_KEY, { auth: { persistSession: true, detectSessionInUrl: true } });
+    } catch { setStatus("Kunne ikke forbinde. Tjek internettet og genindlæs."); return; }
+    this.mode = "sky";
+    const { data } = await this.sb.auth.getSession();
+    this.uid = data.session?.user?.id || null;
+    if (!this.uid) return showLogin();
+    await this.afterLogin();
+  },
+  async signIn(email, password) {
+    const { data, error } = await this.sb.auth.signInWithPassword({ email, password });
+    if (error) throw new Error(DK_ERR[error.message] || error.message);
+    this.uid = data.user.id;
+    await this.afterLogin();
+  },
+  async signOut() { if (this.sb) await this.sb.auth.signOut(); location.reload(); },
+  async afterLogin() {
+    document.querySelector("nav.tabs").hidden = false;
+    await this.loadAll();
+    let t = null;
+    const later = () => { clearTimeout(t); t = setTimeout(() => this.loadAll(), 400); };
+    this.sb.channel("nyx-" + this.uid).on("postgres_changes", { event: "*", schema: "public", table: "nyx_docs", filter: "owner=eq." + this.uid }, later).subscribe();
+    document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") this.loadAll(); });
+    setStatus("Gemt i din konto og opdateres live på alle dine enheder.");
+  },
+  async loadAll() {
+    const { data, error } = await this.sb.from("nyx_docs").select("col,id,data");
+    if (error) { setStatus(/does not exist|schema cache/i.test(error.message) ? "Tabellen findes ikke endnu. Kør supabase/nyx.sql i Supabase." : "Kunne ikke hente dine tal: " + error.message); S.ready = true; render(); return; }
+    const by = { bookings: [], nights: [], notes: [] }; let settings = {};
+    data.forEach((r) => { if (r.col === "settings") settings = r.data; else if (by[r.col]) by[r.col].push({ ...r.data, id: r.id }); });
+    Object.assign(S, by, { settings: { pct: 0, ...settings }, ready: true });
+    render();
+  },
+  startLocal(msg) {
+    this.mode = "lokal";
+    try { const raw = JSON.parse(localStorage.getItem("nyx-promoter-2") || "null"); if (raw) Object.assign(S, raw); } catch {}
+    S.ready = true; setStatus(msg); render();
+  },
+  saveLocal() { try { localStorage.setItem("nyx-promoter-2", JSON.stringify({ bookings: S.bookings, nights: S.nights, notes: S.notes, settings: S.settings })); } catch {} },
+  local(col, obj, del) {
+    const arr = S[col], id = del ? obj : obj.id, i = arr.findIndex((x) => x.id === id);
+    if (del) { if (i >= 0) arr.splice(i, 1); } else i >= 0 ? (arr[i] = obj) : arr.push(obj);
+    if (this.mode !== "sky") this.saveLocal();
+    render();
+  },
+  async put(col, obj) {
+    if (this.mode === "sky") {
+      const { id, ...data } = obj;
+      const { error } = await this.sb.from("nyx_docs").upsert({ owner: this.uid, col, id, data, updated_at: new Date().toISOString() });
+      if (error) throw error;
+    }
+    this.local(col, obj);
+  },
+  async del(col, id) {
+    if (this.mode === "sky") { const { error } = await this.sb.from("nyx_docs").delete().match({ owner: this.uid, col, id }); if (error) throw error; }
+    this.local(col, id, true);
+  },
+  async settings(s) {
+    if (this.mode === "sky") { const { error } = await this.sb.from("nyx_docs").upsert({ owner: this.uid, col: "settings", id: "main", data: s, updated_at: new Date().toISOString() }); if (error) throw error; }
+    S.settings = s; if (this.mode !== "sky") this.saveLocal(); render();
+  },
+};
+
+/* ---------- login ---------- */
+function showLogin() {
+  document.querySelector("nav.tabs").hidden = true;
+  view.innerHTML = `<form class="login" id="loginForm">
+    <div class="logo">NYX</div><p class="note">Log ind med samme email og adgangskode som på Goon.</p>
+    <label class="f">Email<input id="l-email" type="email" autocomplete="email" required></label>
+    <label class="f">Adgangskode<input id="l-pass" type="password" autocomplete="current-password" required></label>
+    <p class="err" id="l-err"></p><button class="btn teal" type="submit">Log ind</button></form>`;
+  view.querySelector("#loginForm").addEventListener("submit", async (e) => {
+    e.preventDefault(); e.stopPropagation();
+    const f = e.target, b = f.querySelector("button"); b.disabled = true; b.textContent = "Logger ind…";
+    try { view.innerHTML = '<p class="note" style="padding-top:24px">Henter dine bookinger…</p>'; await store.signIn(f.querySelector("#l-email").value.trim(), f.querySelector("#l-pass").value); }
+    catch (err) { showLogin(); view.querySelector("#l-err").textContent = err.message; }
+  });
+}
+
+const setStatus = (t) => { document.getElementById("status").textContent = t; };
+async function safe(p, ok) { try { await p; if (ok) toast(ok); } catch (e) { toast(e && e.code === "quota_exceeded" ? "Databasen er fuld." : "Kunne ikke gemme. Prøv igen."); } }
+function toast(t) { const el = document.createElement("div"); el.className = "toast"; el.textContent = t; document.body.appendChild(el); setTimeout(() => el.remove(), 2000); }
+
+/* ---------- render ---------- */
+const view = document.getElementById("view");
+function render() {
+  document.querySelectorAll("nav.tabs button").forEach((b) => b.setAttribute("aria-current", b.dataset.tab === (ui.tab === "night" ? "borde" : ui.tab) ? "page" : "false"));
+  if (!S.ready) return;
+  const y = window.scrollY;
+  view.innerHTML = { events: vEvents, borde: vNight, night: vNight, stats: vStats, noter: vNoter }[ui.tab]();
+  if (ui.keepScroll) window.scrollTo(0, y);
+  ui.keepScroll = true;
+}
+const go = (tab, extra = {}) => { Object.assign(ui, extra, { tab }); ui.keepScroll = false; render(); window.scrollTo(0, 0); };
+
+/* ---------- events ---------- */
+function eventCard(date) {
+  const e = eventFor(date), bs = bookingsOn(date).filter(active), exp = bs.reduce((a, b) => a + num(b.expected), 0);
+  const stats = [bs.length ? `<b>${bs.length}</b> ${bs.length === 1 ? "bord" : "borde"}` : "Ingen borde", exp ? kr(exp) : "", e.guestlist ? e.guestlist + " på liste" : ""].filter(Boolean).join(" · ");
+  return `<button class="ev ${date === todayISO() ? "today" : ""}" data-night="${date}">
+    <div class="r1"><span class="wd ${wdClass(date)}">${dayLabel(date)}</span><span class="t">${esc(e.time)}</span></div>
+    <div class="r2"><span class="name">${esc(e.name)}</span><span class="stats num">${stats}</span></div></button>`;
+}
+function vEvents() {
+  const today = todayISO(), end = addDays(today, 28);
+  const set = new Set();
+  for (let i = 0; i <= 28; i++) { const x = addDays(today, i); if ([4, 5, 6].includes(d(x).getDay())) set.add(x); }
+  [...S.bookings.map((b) => b.date), ...S.nights.map((n) => n.id)].forEach((x) => x && x >= today && set.add(x));
+  const upcoming = [...set].sort();
+  const past = [...new Set([...S.bookings.map((b) => b.date), ...S.nights.map((n) => n.id)])].filter((x) => x && x < today).sort().reverse();
+  const todo = S.bookings.filter((b) => b.date < today && (b.status === "booket" || (b.status === "kom" && !num(b.spent))));
+  return `<div class="top"><span></span><div class="title"><b>Events</b></div><span></span></div>
+  ${todo.length ? `<button class="ev todo" data-act="todo"><div class="r1"><span class="wd thu">Mangler beløb</span></div><div class="r2"><span class="name">${todo.length} ${todo.length === 1 ? "bord" : "borde"} mangler hvad de brugte</span><span class="stats">Udfyld</span></div></button>` : ""}
+  ${followSection(today)}${bdaySection(today)}
+  <h2>Kommende</h2>${upcoming.map(eventCard).join("")}
+  <div class="addrow"><label class="f" style="flex:1"><span>Andet event</span><input type="date" id="addDate" min="${today}"></label><button class="btn" data-act="addnight" style="align-self:flex-end">Åbn</button></div>
+  ${past.length ? `<h2>Tidligere</h2>${(ui.showPast ? past : past.slice(0, 5)).map(eventCard).join("")}${past.length > 5 && !ui.showPast ? `<button class="btn" data-act="showpast">Vis alle ${past.length}</button>` : ""}` : ""}`;
+}
+
+function followSection(today) {
+  const f = followups(today); if (!f.length) return "";
+  return `<h2>Følg op efter aftenen</h2><div class="list">${f.slice(0, 8).map((b) => `<div class="fu"><span class="mid"><span class="t">${esc(b.name)}</span>
+    <span class="s">${dayLabel(b.date)} · ${b.status === "kom" ? (num(b.spent) ? kr(b.spent) : "kom") : "udeblev"}${b.phone ? " · " + esc(b.phone) : ""}</span></span>
+    <span class="acts"><button data-thank="${esc(b.id)}">${b.status === "kom" ? "Kopiér tak" : "Kopiér besked"}</button><button class="ok" data-followed="${esc(b.id)}">Klaret</button></span></div>`).join("")}</div>`;
+}
+function bdaySection(today) {
+  const list = upcomingBirthdays(today); if (!list.length) return "";
+  return `<h2>Fødselsdage de næste 30 dage</h2><div class="list">${list.map((c) => `<div class="fu"><span class="mid"><span class="t">${esc(c.name)} fylder ${c.age}</span>
+    <span class="s">${c.days === 0 ? "i dag" : c.days === 1 ? "i morgen" : "om " + c.days + " dage"} · ${dayLabel(c.date)}${c.phone ? " · " + esc(c.phone) : ""}${c.n ? " · " + c.n + " besøg" : ""}</span></span>
+    <span class="acts"><button data-bdmsg="${esc(key(c.name))}">Kopiér hilsen</button></span></div>`).join("")}</div>`;
+}
+
+/* ---------- night: map + list ---------- */
+function bookingAt(date, area, table) { return S.bookings.find((b) => b.date === date && b.area === area && String(b.table) === String(table) && active(b)); }
+function vNight() {
+  const date = ui.date || nextNight();
+  ui.date = date;
+  const e = eventFor(date), A = AREAS[ui.area], bs = bookingsOn(date);
+  const inArea = bs.filter((b) => b.area === A.name && active(b));
+  const cnt = (s) => inArea.filter((b) => b.status === s).length;
+  const top = `<div class="top"><button class="pillbtn" data-act="back">‹ Events</button>
+    <div class="title"><span class="d">${dayLabel(date)}</span><br><span>${esc(e.name)}</span></div><button class="pillbtn right" data-act="editnight">Ret</button></div>
+    <div class="seg"><button data-mode="liste" aria-pressed="${ui.mode === "liste"}">Liste</button><button data-mode="kort" aria-pressed="${ui.mode === "kort"}">Kort</button></div>
+    <div class="glist"><div><div style="font-weight:600">Din gæsteliste</div><div class="k">Antal du har sat på liste</div></div>
+    <div class="step"><button data-gl="-1" aria-label="Færre">−</button><input id="gl" class="num" inputmode="numeric" value="${e.guestlist}"><button data-gl="1" aria-label="Flere">+</button></div></div>`;
+  if (ui.mode === "liste") {
+    const rows = bs.slice().sort((a, b) => a.area.localeCompare(b.area) || num(a.table) - num(b.table));
+    const exp = rows.filter(active).reduce((a, b) => a + num(b.expected), 0), sp = rows.reduce((a, b) => a + sold(b), 0);
+    return top + `<h2>${rows.filter(active).length} borde · forventet ${kr(exp)}${sp ? " · solgt " + kr(sp) : ""}</h2>
+      ${rows.length ? `<div class="list">${rows.map(bookingRow).join("")}</div>` : `<div class="empty">Ingen borde denne aften endnu. Skift til <b>Kort</b> og tryk på et bord.</div>`}
+      <div class="btns" style="margin-top:12px"><button class="btn" data-act="newfree">+ Bord uden for kortet</button></div>`;
+  }
+  const items = A.items.map((it) => {
+    const pos = `left:${it.x / 9.2}%;top:${(it.y - A.y0) / A.h * 100}%;width:${it.w / 9.2}%;height:${it.h / A.h * 100}%`;
+    if (it.k === "h") return `<div class="hatch" style="${pos}">${it.label || ""}</div>`;
+    if (it.k === "b") return `<div class="blk ${it.v ? "v" : ""}" style="${pos}"><span>${esc(it.label)}</span></div>`;
+    const b = bookingAt(date, A.name, it.id);
+    return `<button class="tb ${it.k === "r" ? "round" : ""} ${b ? b.status : ""}" style="${pos}" data-table="${it.id}" aria-label="Bord ${it.id}${b ? ", " + esc(b.name) : ", ledigt"}"><b>${it.id}</b><small>${b ? esc(shortName(b.name)) : esc(it.cap)}</small></button>`;
+  }).join("");
+  return top + `<div class="areabar"><div class="nav"><button data-area="-1" aria-label="Forrige område">‹</button><span class="nm">${esc(A.name)} (${ui.area + 1}/${AREAS.length})</span><button data-area="1" aria-label="Næste område">›</button></div>
+    <div class="counts num"><span class="c-green" title="Booket">${cnt("booket")}</span><span class="c-blue" title="Kom">${cnt("kom")}</span><span class="c-red" title="Udeblev">${cnt("udeblev")}</span></div></div>
+    <div class="map" style="aspect-ratio:920/${A.h}">${items}</div>
+    <p class="maptip">Tryk på et bord for at booke det. Grøn er booket, blå kom, rød udeblev.</p>`;
+}
+function nextNight() { let x = todayISO(); for (let i = 0; i < 7; i++) { if ([4, 5, 6].includes(d(x).getDay())) return x; x = addDays(x, 1); } return todayISO(); }
+function bookingRow(b) {
+  const sub = [b.area !== "Andet" ? b.area : "", num(b.guests) ? num(b.guests) + " gæster" : "", b.arrival ? "kl. " + b.arrival : "", b.phone || ""].filter(Boolean).join(" · ");
+  return `<button class="row" data-booking="${esc(b.id)}"><span class="tag num ${b.status}">${esc(b.table || "?")}</span>
+    <span class="mid"><span class="t">${esc(b.name || "Uden navn")}</span><span class="s">${esc(sub)}</span></span>
+    <span class="right num">${b.status === "kom" && num(b.spent) ? kr(b.spent) : kr(b.expected)}<small>${b.status === "kom" && num(b.spent) ? "solgt" : STATUS[b.status]}</small></span></button>`;
+}
+
+/* ---------- stats ---------- */
+function monthStats(ym) {
+  const bs = S.bookings.filter((b) => b.date && b.date.startsWith(ym));
+  const act = bs.filter(active), came = bs.filter((b) => b.status === "kom"), withSpent = came.filter((b) => num(b.spent));
+  const decided = bs.filter((b) => b.status === "kom" || b.status === "udeblev");
+  const nights = S.nights.filter((n) => n.id.startsWith(ym) && num(n.guestlist));
+  const expected = act.reduce((a, b) => a + num(b.expected), 0), soldSum = came.reduce((a, b) => a + num(b.spent), 0);
+  return { bs, act, came, expected, sold: soldSum,
+    avgExp: act.length ? expected / act.length : 0,
+    avgSold: withSpent.length ? soldSum / withSpent.length : 0,
+    expOfCame: withSpent.reduce((a, b) => a + num(b.expected), 0),
+    show: decided.length ? Math.round(came.length / decided.length * 100) : null,
+    guests: nights.reduce((a, n) => a + num(n.guestlist), 0), guestNights: nights.length,
+    tableGuests: came.reduce((a, b) => a + num(b.guests), 0) };
+}
+function vStats() {
+  const m = monthStats(ui.month);
+  const max = Math.max(m.expected, m.sold, 1);
+  const diff = m.sold - m.expOfCame;
+  const pct = num(S.settings.pct);
+  const months = Array.from({ length: 6 }, (_, i) => shiftMonth(ui.month, i - 5));
+  const ms = months.map(monthStats), cmax = Math.max(...ms.map((x) => Math.max(x.sold, x.expected)), 1);
+  const W = 340, Hh = 150, top = 20, bot = 22, slot = W / 6, bw = 14;
+  const bars = months.map((ym, i) => {
+    const cx = slot * i + slot / 2, he = (Hh - top - bot) * ms[i].expected / cmax, hs = (Hh - top - bot) * ms[i].sold / cmax;
+    return `<rect x="${cx - bw - 1}" y="${Hh - bot - he}" width="${bw}" height="${Math.max(he, 1)}" rx="3" fill="var(--raise)" stroke="var(--line)"/>
+      <rect x="${cx + 1}" y="${Hh - bot - hs}" width="${bw}" height="${Math.max(hs, 1)}" rx="3" fill="var(--green)" opacity="${ym === ui.month ? 1 : .55}"/>
+      ${ms[i].sold ? `<text class="val" x="${cx + 8}" y="${Hh - bot - hs - 5}" text-anchor="middle">${Math.round(ms[i].sold / 1000)}k</text>` : ""}
+      <text x="${cx}" y="${Hh - 6}" text-anchor="middle">${d(ym + "-01").toLocaleDateString("da-DK", { month: "short" }).replace(".", "")}</text>`;
+  }).join("");
+  const byTable = {}, byName = {};
+  S.bookings.filter((b) => b.status === "kom" && num(b.spent)).forEach((b) => {
+    const t = (b.area === "Andet" ? "" : b.area + " ") + "bord " + b.table; (byTable[t] ||= { n: 0, s: 0 }); byTable[t].n++; byTable[t].s += num(b.spent);
+    const k = (b.name || "").trim().toLowerCase(); if (k) { (byName[k] ||= { name: b.name.trim(), n: 0, s: 0 }); byName[k].n++; byName[k].s += num(b.spent); }
+  });
+  const topT = Object.entries(byTable).sort((a, b) => b[1].s - a[1].s).slice(0, 3);
+  const topN = Object.values(byName).sort((a, b) => b.s - a.s).slice(0, 5);
+  return `<div class="top"><span></span><div class="title"><b>Statistik</b></div><span></span></div>
+  <div class="monthsw"><button data-month="-1" aria-label="Forrige måned">‹</button><strong>${monthName(ui.month)}</strong><button data-month="1" aria-label="Næste måned">›</button></div>
+  <section class="cmp num">
+    <div><div class="sub">Solgt for</div><div class="big" style="color:var(--green)">${kr(m.sold)}</div>
+    <div class="sub">${m.came.length} borde kom${pct ? ` · din provision ${kr(m.sold * pct / 100)}` : ""}</div></div>
+    <div class="line"><span>Forventet</span><span class="bar"><i style="width:${m.expected / max * 100}%;background:var(--muted)"></i></span><b>${kr(m.expected)}</b></div>
+    <div class="line"><span>Solgt</span><span class="bar"><i style="width:${m.sold / max * 100}%;background:var(--green)"></i></span><b>${kr(m.sold)}</b></div>
+    ${m.expOfCame ? `<div class="sub">De borde der kom, brugte <b style="color:${diff >= 0 ? "var(--green)" : "var(--red)"}">${diff >= 0 ? "+" : "−"}${kr(Math.abs(diff))}</b> i forhold til hvad du regnede med.</div>` : ""}
+  </section>
+  <section class="tiles num">
+    <div class="tile"><div class="v">${kr(m.avgExp)}</div><div class="k">forventet i snit pr. bord</div></div>
+    <div class="tile"><div class="v" style="color:var(--green)">${kr(m.avgSold)}</div><div class="k">solgt i snit pr. bord</div></div>
+    <div class="tile"><div class="v">${m.act.length}</div><div class="k">borde booket</div></div>
+    <div class="tile"><div class="v">${m.show === null ? "–" : m.show + " %"}</div><div class="k">mødte op</div></div>
+    <div class="tile"><div class="v">${m.guests}</div><div class="k">på din gæsteliste</div></div>
+    <div class="tile"><div class="v">${m.guestNights ? Math.round(m.guests / m.guestNights) : 0}</div><div class="k">på liste i snit pr. aften</div></div>
+  </section>
+  <h2>Seneste 6 måneder</h2><div class="chart"><svg viewBox="0 0 ${W} ${Hh}" role="img" aria-label="Forventet og solgt pr. måned"><line x1="0" x2="${W}" y1="${Hh - bot}" y2="${Hh - bot}" stroke="var(--line)"/>${bars}</svg></div>
+  <p class="note">Grå søjle er forventet, grøn er solgt.</p>
+  <h2>Bedste borde</h2>${topT.length ? `<div class="list">${topT.map(([t, v]) => `<div class="row"><span class="tag kom num">${v.n}×</span><span class="mid"><span class="t">${esc(t)}</span><span class="s">${kr(v.s / v.n)} i snit</span></span><span class="right num">${kr(v.s)}</span></div>`).join("")}</div>` : `<div class="empty">Vises når du har skrevet, hvad dine borde har brugt.</div>`}
+  <h2>Stamkunder</h2>${topN.length ? `<div class="list">${topN.map((c) => `<div class="row"><span class="tag num">${c.n}×</span><span class="mid"><span class="t">${esc(c.name)}</span><span class="s">${kr(c.s / c.n)} i snit</span></span><span class="right num">${kr(c.s)}</span></div>`).join("")}</div>` : `<div class="empty">Dine bedste kunder samles her.</div>`}
+  <h2>Indstillinger</h2>
+  <form class="form" id="setForm"><label class="f">Provision af bordsalg (%)<input id="s-pct" inputmode="decimal" value="${num(S.settings.pct) || ""}" placeholder="Fx 10"></label>
+  <div style="align-self:end"><button class="btn teal" type="submit">Gem</button></div></form>
+  ${store.mode === "sky" ? `<h2>Konto</h2><div class="btns"><button class="btn" data-act="logout">Log ud</button></div>
+  <p class="note">Læg appen på hjemmeskærmen: Safari → Del → Føj til hjemmeskærm.</p>` : ""}`;
+}
+
+/* ---------- notes ---------- */
+const NSTAGE = { ide: "Idé", kontakt: "Kontaktet", booket: "Booket" };
+function vNoter() {
+  const seg = ui.noteSeg;
+  const head = `<div class="top"><span></span><div class="title"><b>Noter</b></div><span></span></div>
+    <div class="seg" style="margin-bottom:14px"><button data-nseg="selskaber" aria-pressed="${seg === "selskaber"}">Selskaber</button><button data-nseg="ideer" aria-pressed="${seg === "ideer"}">Idéer</button></div>`;
+  if (seg === "ideer") {
+    const ideas = S.notes.filter((n) => n.kind === "ide").sort((a, b) => (a.done - b.done) || (b.created || 0) - (a.created || 0));
+    return head + `<form class="quick" id="ideaForm"><input id="ideaText" placeholder="Skriv en idé, fx tema-aften med..." autocomplete="off"><button class="btn teal">Tilføj</button></form>
+      ${ideas.length ? `<div class="list">${ideas.map((n) => `<div class="idea ${n.done ? "done" : ""}"><input type="checkbox" data-done="${esc(n.id)}" ${n.done ? "checked" : ""} aria-label="Færdig"><p>${esc(n.text)}</p><button data-delnote="${esc(n.id)}" aria-label="Slet">×</button></div>`).join("")}</div>` : `<div class="empty">Ingen idéer endnu. Skriv dem ned, når du får dem.</div>`}`;
+  }
+  const parties = S.notes.filter((n) => n.kind === "selskab").sort((a, b) => (a.date || "9999").localeCompare(b.date || "9999"));
+  return head + `<div class="btns" style="margin-bottom:12px"><button class="btn teal" data-act="newparty">+ Nyt selskab</button></div>
+    ${parties.length ? `<div class="list">${parties.map((p) => `<button class="row" data-party="${esc(p.id)}"><span class="tag num" style="font-size:12px;min-width:52px">${p.date ? d(p.date).getDate() + "/" + (d(p.date).getMonth() + 1) : "?"}</span>
+      <span class="mid"><span class="t">${esc(p.title)}</span><span class="s">${esc([num(p.people) ? num(p.people) + " pers." : "", p.contact, NSTAGE[p.stage]].filter(Boolean).join(" · "))}</span></span>
+      <span class="right num">${num(p.expected) ? kr(p.expected) : ""}</span></button>`).join("")}</div>` : `<div class="empty">Skriv firmafester, fødselsdage og grupper ned her, så du kan følge op på dem.</div>`}`;
+}
+
+/* ---------- sheets ---------- */
+const root = document.getElementById("sheetRoot");
+function openSheet(html, onSubmit, onDelete) {
+  root.innerHTML = `<div class="scrim" id="scrim"><div class="sheet" role="dialog" aria-modal="true">${html}</div></div>`;
+  const form = root.querySelector("form");
+  root.querySelector("#scrim").addEventListener("click", (e) => { if (e.target.id === "scrim" || e.target.closest("[data-close]")) close(); });
+  form.addEventListener("submit", (e) => { e.preventDefault(); if (onSubmit(form) !== false) close(); });
+  const del = root.querySelector("[data-del]");
+  if (del) del.addEventListener("click", () => { if (del.dataset.armed) { onDelete(); close(); } else { del.dataset.armed = "1"; del.textContent = "Tryk igen for at slette"; } });
+  return form;
+}
+const close = () => { root.innerHTML = ""; };
+document.addEventListener("keydown", (e) => { if (e.key === "Escape") close(); });
+const v = (f, id) => f.querySelector("#" + id).value.trim();
+
+function bookingSheet(b) {
+  const exists = S.bookings.some((x) => x.id === b.id);
+  const names = [...new Set(S.bookings.map((x) => x.name).filter(Boolean))];
+  const free = b.area === "Andet";
+  const f = openSheet(`<h3>${free ? "Bord" : esc(b.area) + ", bord " + esc(b.table)}</h3><p class="sh">${dayLabel(b.date)} · ${esc(eventFor(b.date).name)}</p>
+  <form class="form">
+    ${free ? `<label class="f full">Bord<input id="b-table" value="${esc(b.table)}" placeholder="Fx 12 eller Terrasse" required></label>` : ""}
+    <label class="f full">Kunde<input id="b-name" list="names" value="${esc(b.name)}" placeholder="Navn" autocomplete="off" required><datalist id="names">${names.map((n) => `<option value="${esc(n)}">`).join("")}</datalist></label>
+    <label class="f">Gæster<input id="b-guests" inputmode="numeric" value="${num(b.guests) || ""}"></label>
+    <label class="f">Forventet pris (kr.)<input id="b-expected" inputmode="numeric" value="${num(b.expected) || ""}"></label>
+    <label class="f">Telefon<input id="b-phone" type="tel" value="${esc(b.phone)}"></label>
+    <label class="f">Ankomst<input id="b-arrival" type="time" value="${esc(b.arrival)}"></label>
+    <label class="f full">Kundens fødselsdag<input id="b-bday" type="date" value="${esc(b.bday || bdayOf(b.name))}"></label>
+    <div class="full"><div class="status" role="group" aria-label="Status">${Object.entries(STATUS).map(([k, l]) => `<button type="button" class="${k}" data-st="${k}" aria-pressed="${b.status === k}">${l}</button>`).join("")}</div></div>
+    <label class="f full">Brugt i alt (kr.)<input id="b-spent" inputmode="numeric" value="${num(b.spent) || ""}" placeholder="Skriv det efter aftenen"></label>
+    <label class="f full">Noter<textarea id="b-notes" placeholder="Fx flasker, fødselsdag">${esc(b.notes)}</textarea></label>
+    <div class="full btns">${exists ? `<button type="button" class="btn danger" data-del>Slet</button>` : `<button type="button" class="btn" data-close>Annullér</button>`}<button class="btn teal" type="submit">Gem</button></div>
+  </form>`, (f) => {
+    const o = { ...b, name: v(f, "b-name"), guests: num(v(f, "b-guests")), expected: num(v(f, "b-expected")), phone: v(f, "b-phone"), arrival: v(f, "b-arrival"),
+      spent: num(v(f, "b-spent")), notes: v(f, "b-notes"), bday: v(f, "b-bday"), status: f.querySelector("[data-st][aria-pressed=true]").dataset.st };
+    if (free) o.table = v(f, "b-table");
+    if (o.spent && o.status === "booket") o.status = "kom";
+    safe(store.put("bookings", o), "Gemt");
+  }, () => safe(store.del("bookings", b.id), "Slettet"));
+  f.querySelectorAll("[data-st]").forEach((x) => x.addEventListener("click", () => f.querySelectorAll("[data-st]").forEach((y) => y.setAttribute("aria-pressed", y === x))));
+  if (!exists) f.querySelector("#b-name").focus({ preventScroll: true });
+}
+const newBooking = (date, area, table) => ({ id: newId(), date, area, table: String(table || ""), name: "", guests: "", expected: "", phone: "", arrival: "", spent: "", status: "booket", notes: "", created: Date.now() });
+
+function nightSheet(date) {
+  const e = eventFor(date), n = nightOf(date) || { id: date };
+  openSheet(`<h3>Ret aften</h3><p class="sh">${dayLabel(date)}</p><form class="form">
+    <label class="f full">Event<input id="n-event" value="${esc(e.name)}"></label>
+    <label class="f full">Tid<input id="n-time" value="${esc(e.time)}" placeholder="22:00–05:00"></label>
+    <label class="f full">Noter<textarea id="n-notes">${esc(n.notes)}</textarea></label>
+    <div class="full btns"><button type="button" class="btn" data-close>Annullér</button><button class="btn teal">Gem</button></div></form>`,
+  (f) => { safe(store.put("nights", { ...n, id: date, guestlist: num(n.guestlist), event: v(f, "n-event"), time: v(f, "n-time"), notes: v(f, "n-notes") }), "Gemt"); });
+}
+
+function partySheet(p) {
+  const exists = S.notes.some((x) => x.id === p.id);
+  openSheet(`<h3>${exists ? "Selskab" : "Nyt selskab"}</h3><p class="sh">Firmafest, fødselsdag eller gruppe du vil følge op på</p><form class="form">
+    <label class="f full">Hvem<input id="p-title" value="${esc(p.title)}" placeholder="Fx Novo afdelingsfest" required></label>
+    <label class="f">Dato<input id="p-date" type="date" value="${esc(p.date)}"></label>
+    <label class="f">Personer<input id="p-people" inputmode="numeric" value="${num(p.people) || ""}"></label>
+    <label class="f">Kontakt<input id="p-contact" value="${esc(p.contact)}" placeholder="Navn eller tlf."></label>
+    <label class="f">Forventet (kr.)<input id="p-expected" inputmode="numeric" value="${num(p.expected) || ""}"></label>
+    <label class="f full">Status<select id="p-stage">${Object.entries(NSTAGE).map(([k, l]) => `<option value="${k}" ${p.stage === k ? "selected" : ""}>${l}</option>`).join("")}</select></label>
+    <label class="f full">Noter<textarea id="p-text">${esc(p.text)}</textarea></label>
+    <div class="full btns">${exists ? `<button type="button" class="btn danger" data-del>Slet</button>` : `<button type="button" class="btn" data-close>Annullér</button>`}<button class="btn teal">Gem</button></div></form>`,
+  (f) => { safe(store.put("notes", { ...p, kind: "selskab", title: v(f, "p-title"), date: v(f, "p-date"), people: num(v(f, "p-people")), contact: v(f, "p-contact"), expected: num(v(f, "p-expected")), stage: v(f, "p-stage"), text: v(f, "p-text") }), "Gemt"); },
+  () => safe(store.del("notes", p.id), "Slettet"));
+}
+
+/* ---------- events wiring ---------- */
+document.querySelector("nav.tabs").addEventListener("click", (e) => {
+  const b = e.target.closest("[data-tab]"); if (!b) return;
+  if (b.dataset.tab === "borde") go("night", { date: ui.date || nextNight() }); else go(b.dataset.tab);
+});
+let glTimer = null;
+function setGuestlist(date, val) {
+  const n = nightOf(date) || { id: date, event: "", time: "", notes: "" };
+  n.guestlist = Math.max(0, val);
+  if (!nightOf(date)) S.nights.push(n);
+  clearTimeout(glTimer); glTimer = setTimeout(() => safe(store.put("nights", { ...n })), 600);
+}
+view.addEventListener("input", (e) => { if (e.target.id === "gl") setGuestlist(ui.date, num(e.target.value)); });
+view.addEventListener("submit", (e) => {
+  e.preventDefault();
+  if (e.target.id === "setForm") safe(store.settings({ ...S.settings, pct: num(e.target.querySelector("#s-pct").value) }), "Gemt");
+  if (e.target.id === "ideaForm") { const t = e.target.querySelector("#ideaText").value.trim(); if (t) safe(store.put("notes", { id: newId(), kind: "ide", text: t, done: false, created: Date.now() })); }
+});
+view.addEventListener("change", (e) => {
+  const id = e.target.dataset.done; if (!id) return;
+  const n = S.notes.find((x) => x.id === id); if (n) safe(store.put("notes", { ...n, done: e.target.checked }));
+});
+view.addEventListener("click", (e) => {
+  const t = (s) => e.target.closest(s);
+  let x;
+  if ((x = t("[data-night]"))) return go("night", { date: x.dataset.night });
+  if ((x = t("[data-mode]"))) { ui.mode = x.dataset.mode; return render(); }
+  if ((x = t("[data-area]"))) { ui.area = (ui.area + Number(x.dataset.area) + AREAS.length) % AREAS.length; return render(); }
+  if ((x = t("[data-gl]"))) { const inp = view.querySelector("#gl"); const nv = Math.max(0, num(inp.value) + Number(x.dataset.gl)); inp.value = nv; return setGuestlist(ui.date, nv); }
+  if ((x = t("[data-table]"))) { const A = AREAS[ui.area]; return bookingSheet(bookingAt(ui.date, A.name, x.dataset.table) || newBooking(ui.date, A.name, x.dataset.table)); }
+  if ((x = t("[data-booking]"))) return bookingSheet(S.bookings.find((b) => b.id === x.dataset.booking));
+  if ((x = t("[data-month]"))) { ui.month = shiftMonth(ui.month, Number(x.dataset.month)); return render(); }
+  if ((x = t("[data-nseg]"))) { ui.noteSeg = x.dataset.nseg; return render(); }
+  if ((x = t("[data-party]"))) return partySheet(S.notes.find((n) => n.id === x.dataset.party));
+  if ((x = t("[data-delnote]"))) return safe(store.del("notes", x.dataset.delnote));
+  if ((x = t("[data-followed]"))) { const b = S.bookings.find((y) => y.id === x.dataset.followed); return b && safe(store.put("bookings", { ...b, followed: true }), "Klaret"); }
+  if ((x = t("[data-thank]"))) { const b = S.bookings.find((y) => y.id === x.dataset.thank); if (!b) return;
+    return copyText(b.status === "kom" ? `Hej ${first(b.name)}! Tak fordi I kom forbi ${eventFor(b.date).name} ${dayLabel(b.date)}. Håber I havde en god aften. Skriv endelig, når I vil have et bord igen, så holder jeg et klar til jer.`
+      : `Hej ${first(b.name)}! Vi savnede jer ${dayLabel(b.date)}. Skal jeg holde et bord til jer en anden aften? Skriv bare, hvornår det passer.`); }
+  if ((x = t("[data-bdmsg]"))) { const c = customers()[x.dataset.bdmsg]; if (!c) return; const nb = nextBirthday(c.bday, todayISO());
+    return copyText(`Hej ${first(c.name)}! Du fylder snart ${nb.age}. Skal vi fejre det? Jeg kan holde et godt bord til dig og dine venner, bare sig hvilken aften.`); }
+  if (!(x = t("[data-act]"))) return;
+  const act = x.dataset.act;
+  if (act === "logout") return store.signOut();
+  if (act === "back") go("events");
+  if (act === "editnight") nightSheet(ui.date);
+  if (act === "newfree") bookingSheet(newBooking(ui.date, "Andet", ""));
+  if (act === "newparty") partySheet({ id: newId(), title: "", date: "", people: "", contact: "", expected: "", stage: "ide", text: "", created: Date.now() });
+  if (act === "showpast") { ui.showPast = true; render(); }
+  if (act === "addnight") { const dt = view.querySelector("#addDate").value; if (dt) go("night", { date: dt }); }
+  if (act === "todo") { const b = S.bookings.filter((b) => b.date < todayISO() && (b.status === "booket" || (b.status === "kom" && !num(b.spent)))).sort((a, b) => b.date.localeCompare(a.date))[0]; if (b) bookingSheet(b); }
+});
+
+render();
+store.start();
+if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(() => {});
+})();
+</script>
 </body>
 </html>

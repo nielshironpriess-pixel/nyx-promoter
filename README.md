@@ -1,6 +1,6 @@
 # Nyx Promoter
 
-Din egen app som promoter: log nætter, gæsteliste, billetter og bordbookinger, og se din provision pr. måned.
+Din egen app som promoter: bordkort fra Nyx, bookinger pr. aften, gæsteliste, statistik over forventet og solgt, fødselsdage, opfølgning og noter.
 Kan lægges på hjemmeskærmen som en app og opdateres live mellem telefon og computer.
 
 - **Frontend:** almindelig HTML/CSS/JavaScript (ingen build), hostes gratis på Vercel.
@@ -29,9 +29,5 @@ npm run dev
 - **iPhone:** åbn siden i Safari → Del → **Føj til hjemmeskærm**.
 - **Android:** menuen ⋮ → **Installer app**.
 
-## Sådan regnes provisionen
-Satserne sættes under **Indstillinger**:
-- kr. pr. gæst på din liste
-- % af billetomsætningen
-- % af bordsalget (brugt beløb, ellers minimumsforbrug), når bordet står som **Kom**
-- plus bonus/fast løn pr. nat
+## Data
+Alt ligger i én tabel, `nyx_docs` (bookinger, aftener, noter og indstillinger som JSON), låst så kun du kan se dine egne rækker.
