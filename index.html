@@ -261,8 +261,8 @@ const WD = ["søn", "man", "tir", "ons", "tor", "fre", "lør"];
 const wdClass = (iso) => ({ 4: "thu", 5: "fri", 6: "sat" }[d(iso).getDay()] || "other");
 const dayLabel = (iso) => `${WD[d(iso).getDay()]} ${d(iso).getDate()}. ${d(iso).toLocaleDateString("da-DK", { month: "short" }).replace(".", "")}`;
 const monthName = (ym) => d(ym + "-01").toLocaleDateString("da-DK", { month: "long", year: "numeric" });
-/* lønperiode: fra den 16. til den 15. i næste måned; ym = måneden perioden starter i */
-const PAY_DAY = 16;
+/* lønperiode: fra den 15. til den 14. i næste måned; ym = måneden perioden starter i */
+const PAY_DAY = 15;
 const payYm = (iso) => { const ym = iso.slice(0, 7); return Number(iso.slice(8, 10)) >= PAY_DAY ? ym : shiftMonth(ym, -1); };
 const payStart = (ym) => ym + "-" + String(PAY_DAY).padStart(2, "0");
 const payEnd = (ym) => addDays(payStart(shiftMonth(ym, 1)), -1);
@@ -695,19 +695,27 @@ const scanEngine = {
 const AREA_OF = {}; AREAS.forEach((A) => A.items.forEach((it) => { if (it.k === "t" || it.k === "r") AREA_OF[it.id] = A.name; }));
 const ME = "Niels Priess";
 function scanPrompt(n) {
-  return `Du får ${n} screenshot(s) fra Nyx, natklubben ${HOME}s personale-app. Promoteren hedder ${ME}. I dag er ${todayISO()}.
-Find hver bordbooking eller bordsalg der står på billederne. For hver booking, aflæs:
-- date: aftenens dato som YYYY-MM-DD. Står året ikke, så brug det år der giver en dato tættest på i dag. Står datoen kun øverst på skærmen, så brug den for alle rækker på det billede. null hvis den ikke står nogen steder.
-- table: bordnummeret præcis som det står (fx "41", "777", "33"). Tom streng hvis der ikke er et.
-- name: kundens/gæstens navn som det står. Tom streng hvis ukendt.
-- guests: antal gæster/personer/pax ved bordet som tal, eller null.
-- amount: beløbet i kroner som heltal uden punktum og "kr", eller null. Hvis der står både minimumsforbrug/pris og faktisk forbrug/omsætning, så brug det faktiske forbrug.
-- kind: "spent" hvis beløbet er hvad bordet faktisk har brugt/købt for (omsætning, betalt, total, solgt), "expected" hvis det er en pris, depositum eller minimumsforbrug, "unknown" hvis det ikke fremgår.
-- promoter: navnet på den promoter/sælger/booker der står på bookingen, ellers tom streng.
-- status: "kom" hvis der står at gæsterne er ankommet/checket ind, "udeblev" ved no-show, "aflyst" ved annulleret, ellers "booket".
-Tag KUN bookinger, hvor promoteren/sælgeren er ${ME} (står der kun "Niels" eller "Priess" ved en booking, så tag den også med). Spring bookinger fra andre promotere over. Lad være med at gætte tal du ikke kan se. Samme booking kan stå på flere billeder: tag den kun med én gang.
-Svar KUN med JSON i præcis dette format:
-{"rows":[{"date":"2026-10-31","table":"41","name":"Mikkel Jensen","guests":8,"amount":12000,"kind":"spent","promoter":"Niels","status":"kom"}],"note":"kort note på dansk hvis noget var uklart, ellers tom"}`;
+  return `Du får ${n} screenshot(s) fra Nyx, natklubben ${HOME}s personale-app (fanen Tables, visningen List). I dag er ${todayISO()}.
+Øverst på hvert billede står aftenens dato (fx "Thu, Oct 22, 2026") og eventets navn. Listen er delt i områder med en overskrift (fx "SØ Main", "SØ Main Back", "Buffer").
+Hver booking ser sådan ud:
+- venstre: bordnummer (fx 1, 41, 129) og kundens navn ved siden af. Under navnet står bordets type (fx "Maks 25 pax" eller "Betalings Bord") og derunder en note (fx "Pakke 4 + 6k spend").
+- højre, øverst: gæster som "ankommet / booket" (fx "30 / 6" betyder 30 ankommet og 6 booket). Står der kun ét tal, er det booket, og ankommet er 0.
+- højre, midt: beløbet i kroner (fx "21,000" = 21000; komma er tusindtalsseparator). "No min." betyder 0.
+- højre, nederst: promoterens navn.
+Tag KUN bookinger, hvor promoteren er ${ME}. Spring bookinger fra andre promotere, ledige borde ("Available") og rækker med "Linked to table" over. Samme booking kan stå på flere billeder: tag den kun med én gang.
+For hver booking:
+- date: aftenens dato som YYYY-MM-DD
+- area: områdets overskrift
+- table: bordnummeret som tekst
+- name: kundens navn
+- arrived: ankomne gæster (0 hvis intet)
+- booked: bookede gæster (0 hvis intet)
+- amount: beløbet som heltal (0 ved "No min.")
+- extra: merspend aftalt i noten, fx "+ 6k spend" = 6000 og "+ 2K spend" = 2000; ellers 0
+- note: noten som den står
+- promoter: promoterens navn
+Gæt ikke tal du ikke kan se. Svar KUN med JSON:
+{"rows":[{"date":"2026-10-08","area":"SØ Main","table":"42","name":"Asger Vilstrup","arrived":30,"booked":6,"amount":21000,"extra":6000,"note":"Pakke 4 + 6k spend","promoter":"${ME}"}],"note":"kort note på dansk hvis noget var uklart, ellers tom"}`;
 }
 async function shrink(file) {
   try {
@@ -733,10 +741,13 @@ async function startScan() {
     try {
       const blobs = await Promise.all(files.map(shrink));
       const out = await scanEngine.read(blobs, scanPrompt(blobs.length));
-      const rows = (Array.isArray(out) ? out : out && out.rows || []).map((r) => ({
-        date: /^\d{4}-\d{2}-\d{2}$/.test(r.date || "") ? r.date : "", table: String(r.table ?? "").trim(), name: String(r.name || "").trim(),
-        guests: num(r.guests), amount: num(r.amount), kind: ["spent", "expected"].includes(r.kind) ? r.kind : "spent",
-        promoter: String(r.promoter || "").trim(), status: STATUS[r.status] ? r.status : "booket" }));
+      const rows = (Array.isArray(out) ? out : out && out.rows || []).map((r) => {
+        const date = /^\d{4}-\d{2}-\d{2}$/.test(r.date || "") ? r.date : "", amount = num(r.amount), extraA = Math.min(num(r.extra), amount);
+        const came = num(r.arrived) > 0 && (!date || date <= todayISO());
+        return { date, area: String(r.area || "").trim(), table: String(r.table ?? "").trim(), name: String(r.name || "").trim(),
+          guests: num(r.arrived) || num(r.booked), price: amount - (came ? extraA : 0), spent: came ? amount : 0,
+          note: String(r.note || "").trim(), promoter: String(r.promoter || "").trim() };
+      });
       reviewScan(rows, out && out.note);
     } catch (e) { close(); toast(e.message || "Scanningen fejlede."); }
   });
@@ -753,9 +764,10 @@ function reviewScan(rows, note) {
         <label class="f">Dato<input type="date" data-k="date" value="${esc(r.date)}"></label>
         <label class="f">Bord<input data-k="table" value="${esc(r.table)}"></label>
         <label class="f full">Kunde<input data-k="name" value="${esc(r.name)}"></label>
-        <label class="f">Gæster<input data-k="guests" inputmode="numeric" value="${r.guests || ""}"></label>
-        <label class="f">Beløb (kr.)<input data-k="amount" inputmode="numeric" value="${r.amount || ""}"></label>
-        <label class="f full">Beløbet er<select data-k="kind"><option value="spent" ${r.kind === "spent" ? "selected" : ""}>Brugt (solgt)</option><option value="expected" ${r.kind === "expected" ? "selected" : ""}>Forventet pris</option></select></label>
+        <label class="f full">Gæster<input data-k="guests" inputmode="numeric" value="${r.guests || ""}"></label>
+        <label class="f">Bordpris (kr.)<input data-k="price" inputmode="numeric" value="${r.price || ""}"></label>
+        <label class="f">Solgt i alt (kr.)<input data-k="spent" inputmode="numeric" value="${r.spent || ""}" placeholder="Efter aftenen"></label>
+        ${r.note ? `<p class="full note" style="margin:0">${esc(r.note)}</p>` : ""}
       </div></div>`;
   }).join("");
   const f = openSheet(`<h3>Fundet ${rows.length} ${rows.length === 1 ? "bord" : "borde"}</h3>
@@ -764,7 +776,7 @@ function reviewScan(rows, note) {
     <div class="full btns"><button type="button" class="btn" data-close>Annullér</button><button class="btn teal" type="submit">Gem valgte</button></div></form>`, (form) => {
     const picked = [...form.querySelectorAll(".scanrow")].filter((el) => el.querySelector("[data-pick]").checked).map((el) => {
       const g = (k) => el.querySelector(`[data-k="${k}"]`).value.trim(), r = rows[el.dataset.i];
-      return { ...r, date: g("date"), table: g("table"), name: g("name"), guests: num(g("guests")), amount: num(g("amount")), kind: g("kind") };
+      return { ...r, date: g("date"), table: g("table"), name: g("name"), guests: num(g("guests")), price: num(g("price")), spent: num(g("spent")) };
     });
     const bad = picked.find((r) => !r.date);
     if (bad) { toast("Et valgt bord mangler dato."); return false; }
@@ -777,12 +789,13 @@ async function importScan(rows) {
   try {
     for (const r of rows) {
       const old = matchBooking(r);
-      const b = old ? { ...old } : newBooking(r.date, AREA_OF[r.table] || "Andet", r.table);
+      const area = AREA_OF[r.table] || (AREAS.some((A) => A.name === r.area) ? r.area : "Andet");
+      const b = old ? { ...old } : newBooking(r.date, area, r.table);
       if (r.name && !b.name) b.name = r.name;
       if (r.guests) b.guests = r.guests;
-      if (r.amount) { if (r.kind === "expected") b.expected = r.amount; else { b.spent = r.amount; if (!num(b.expected)) b.expected = r.amount; } }
-      if (r.kind === "spent" && r.amount) b.status = "kom"; else if (!old && r.status) b.status = r.status;
-      if (!old) b.notes = "Fra Nyx-scanning";
+      if (r.price) b.expected = r.price;
+      if (r.spent) { b.spent = r.spent; b.status = "kom"; if (!num(b.expected)) b.expected = r.spent; }
+      if (!old) b.notes = [r.note, area === "Andet" && r.area ? r.area : ""].filter(Boolean).join(" · ") || "Fra Nyx";
       await store.put("bookings", b); old ? nUpd++ : nNew++;
     }
     toast([nNew && nNew + " nye", nUpd && nUpd + " opdateret"].filter(Boolean).join(", ") || "Intet gemt");
