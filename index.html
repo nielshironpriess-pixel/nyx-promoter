@@ -29,7 +29,7 @@
 *{box-sizing:border-box}
 [hidden]{display:none!important}
 body:not(.crew) .crew-only{display:none!important}
-body.crew [data-act=scan],body.crew [data-tab=hive],body.crew [data-tab=hivesalg],body.crew [data-tab-go=hive],body.crew [data-tab-go=hivesalg],body.crew .hive-only,body.crew .genvej-scan{display:none!important}
+body.crew [data-act=scan],body.crew [data-tab=hive],body.crew [data-tab=hivesalg],body.crew [data-tab-go=hive],body.crew [data-tab-go=hivesalg],body.crew .hive-only,body.crew .genvej-scan,body.crew [data-act=newclub]{display:none!important}
 html,body,button,a,input,select,textarea,label{touch-action:manipulation}
 html,body{background:var(--bg);color:var(--fg)}
 body{font-family:var(--f);font-size:15px;line-height:1.4;margin:0;min-height:100vh;
@@ -726,6 +726,7 @@ const store = {
   async put(col, obj) {
     const isNew = col === "bookings" && !S.bookings.some((x) => x.id === obj.id);
     const isNew2 = col === "notes" && !S.notes.some((x) => x.id === obj.id);
+    const prevNote = col === "notes" ? S.notes.find((x) => x.id === obj.id) : null;
     if (col === "bookings") obj = { ...obj, at: new Date().toISOString() };
     if (this.mode === "sky") {
       const { id, ...data } = obj, m = this.meta[col + ":" + id], now = new Date().toISOString();
@@ -744,12 +745,14 @@ const store = {
     }
     this.local(col, obj);
     if (col === "bookings") notifyBoss(obj, isNew ? "ny" : "ret");
-    if (col === "notes" && obj.kind === "gaest" && isNew2) notifyList(obj.date);
+    if (col === "notes") notifyNote(obj, isNew2 ? "ny" : "ret", prevNote);
   },
   async del(col, id) {
     const gone = col === "bookings" && S.bookings.find((x) => x.id === id);
+    const goneNote = col === "notes" && S.notes.find((x) => x.id === id);
     if (this.mode === "sky") { const { error } = await this.sb.from("nyx_docs").delete().match({ owner: this.uid, col, id }); if (error) throw error; }
     if (gone) notifyBoss(gone, "slet");
+    if (goneNote) notifyNote(goneNote, "slet");
     this.local(col, id, true);
   },
   async settings(s) {
@@ -869,10 +872,10 @@ function vEvents() {
   <button class="btn teal scanbtn" data-act="scan">Scan screenshots fra Nyx</button>
   ${todo.length ? `<button class="ev todo" data-act="todo"><div class="r1"><span class="wd thu">Mangler beløb</span></div><div class="r2"><span class="name">${todo.length} ${todo.length === 1 ? "bord" : "borde"} mangler hvad de brugte</span><span class="stats">Udfyld</span></div></button>` : ""}
   ${newsSection()}${followSection(today)}${bdaySection(today)}
-  ${clubSection(today)}
+  ${isCrew() ? "" : clubSection(today)}
   <h2>Kommende på ${HOME}</h2>${upcoming.map(eventCard).join("")}
-  <h2>Andet event på ${HOME}</h2>
-  <div class="addrow"><label class="f" style="flex:1"><span>Dato</span><input type="date" id="addDate" min="${today}"></label><button class="btn" data-act="addnight" style="align-self:flex-end">Åbn</button></div>
+  ${isCrew() ? "" : `<h2>Andet event på ${HOME}</h2>
+  <div class="addrow"><label class="f" style="flex:1"><span>Dato</span><input type="date" id="addDate" min="${today}"></label><button class="btn" data-act="addnight" style="align-self:flex-end">Åbn</button></div>`}
   ${past.length ? `<h2>Tidligere</h2>${(ui.showPast ? past : past.slice(0, 5)).map(eventCard).join("")}${past.length > 5 && !ui.showPast ? `<button class="btn" data-act="showpast">Vis alle ${past.length}</button>` : ""}` : ""}`;
 }
 
@@ -1341,18 +1344,35 @@ function notifyBoss(b, what) {
     } catch {}
   }, 1500);
 }
-let listTimer = null;
-function notifyList(date) {
-  if (!isCrew() || store.mode !== "sky") return;
-  clearTimeout(listTimer);
-  listTimer = setTimeout(async () => {
-    const mine_ = S.notes.filter((n) => n.kind === "gaest" && n.date === date && noteOwner(n) === store.uid);
-    const tot = mine_.reduce((a, n) => a + (num(n.count) || 1), 0);
-    try {
-      const { data } = await store.sb.auth.getSession();
-      await fetch("/api/notify", { method: "POST", headers: { "Content-Type": "application/json", Authorization: "Bearer " + (data.session?.access_token || "") }, body: JSON.stringify({ title: `${first(profile().name || meNyx())} opdaterede gæstelisten`, body: `${eventFor(date).name} ${dayLabel(date)} · ${tot} ${tot === 1 ? "gæst" : "gæster"} på listen · ${vipUsed(date, store.uid)}/${VIP_MAX} VIP` }) });
-    } catch {}
-  }, 20000);
+async function pushBoss(title, body) {
+  try {
+    const { data } = await store.sb.auth.getSession();
+    await fetch("/api/notify", { method: "POST", headers: { "Content-Type": "application/json", Authorization: "Bearer " + (data.session?.access_token || "") }, body: JSON.stringify({ title, body }) });
+  } catch {}
+}
+const myFirst = () => first(profile().name || meNyx() || "Din underpromoter");
+let listTimer = null, listLog = {};
+function notifyNote(n, what, prev) {
+  if (!isCrew() || store.mode !== "sky" || !n) return;
+  if (n.kind === "gaest") {
+    const who = n.name + (gN(n) > 1 ? " +" + (gN(n) - 1) : "");
+    let line = what === "ny" ? (n.vip ? "★ VIP " : "") + who : what === "slet" ? "fjernede " + who : "";
+    if (what === "ret" && prev) line = n.came && !prev.came ? who + " kom" : !n.came && prev.came ? who + " (fortrudt kom)" : n.vip && !prev.vip ? who + " → VIP" : !n.vip && prev.vip ? who + " ikke VIP" : "rettede " + who;
+    (listLog[n.date] ||= []).push(line);
+    clearTimeout(listTimer);
+    listTimer = setTimeout(() => {
+      Object.entries(listLog).forEach(([date, lines]) => {
+        const tot = sumG(listOf(date).filter((x) => noteOwner(x) === store.uid && !x.vip));
+        pushBoss(`${myFirst()} · gæsteliste ${dayLabel(date)}`, `${lines.slice(0, 6).join(", ")}${lines.length > 6 ? " og " + (lines.length - 6) + " mere" : ""} · ${tot} på listen · ${vipUsed(date, store.uid)}/${VIP_MAX} VIP`);
+      });
+      listLog = {};
+    }, 6000);
+    return;
+  }
+  const kind = { kunde: "kunden", selskab: "selskabet", ide: "idéen" }[n.kind] || "noten";
+  const verb = what === "ny" ? "tilføjede" : what === "slet" ? "slettede" : "rettede";
+  clearTimeout(notifyTimers["n" + n.id]);
+  notifyTimers["n" + n.id] = setTimeout(() => pushBoss(`${myFirst()} ${verb} ${kind}`, n.name || n.title || n.text || ""), 1500);
 }
 async function joinCrew(code, name) {
   const { error } = await store.sb.rpc("nyx_crew_join", { p_code: code, p_name: name || profile().name || "" });
