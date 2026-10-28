@@ -248,7 +248,10 @@ function eventFor(date) {
   return { name: (n && n.event) || def[0], time: (n && n.time) || def[1], age: def[2], guestlist: n ? num(n.guestlist) : 0 };
 }
 const active = (b) => b.status !== "aflyst";
-const bookingsOn = (date) => S.bookings.filter((b) => b.date === date);
+const bookingsOn = (date) => S.bookings.filter((b) => b.date === date && !b.club);
+const HOME = "Søpavillonen";
+const clubOf = (b) => b.club || HOME;
+const clubNames = () => [...new Set(["Hive", ...S.bookings.map((b) => b.club).filter(Boolean)])];
 const sold = (b) => b.status === "kom" ? num(b.spent) : 0;
 
 /* ---------- kunder, fødselsdage og opfølgning ---------- */
@@ -396,18 +399,25 @@ function vEvents() {
   const today = todayISO(), end = addDays(today, 28);
   const set = new Set();
   for (let i = 0; i <= 28; i++) { const x = addDays(today, i); if ([4, 5, 6].includes(d(x).getDay())) set.add(x); }
-  [...S.bookings.map((b) => b.date), ...S.nights.map((n) => n.id)].forEach((x) => x && x >= today && set.add(x));
+  [...S.bookings.filter((b) => !b.club).map((b) => b.date), ...S.nights.map((n) => n.id)].forEach((x) => x && x >= today && set.add(x));
   const upcoming = [...set].sort();
-  const past = [...new Set([...S.bookings.map((b) => b.date), ...S.nights.map((n) => n.id)])].filter((x) => x && x < today).sort().reverse();
+  const past = [...new Set([...S.bookings.filter((b) => !b.club).map((b) => b.date), ...S.nights.map((n) => n.id)])].filter((x) => x && x < today).sort().reverse();
   const todo = S.bookings.filter((b) => b.date < today && (b.status === "booket" || (b.status === "kom" && !num(b.spent))));
   return `<div class="top"><span></span><div class="title"><b>Events</b></div><span></span></div>
   ${todo.length ? `<button class="ev todo" data-act="todo"><div class="r1"><span class="wd thu">Mangler beløb</span></div><div class="r2"><span class="name">${todo.length} ${todo.length === 1 ? "bord" : "borde"} mangler hvad de brugte</span><span class="stats">Udfyld</span></div></button>` : ""}
   ${followSection(today)}${bdaySection(today)}
-  <h2>Kommende</h2>${upcoming.map(eventCard).join("")}
-  <div class="addrow"><label class="f" style="flex:1"><span>Andet event</span><input type="date" id="addDate" min="${today}"></label><button class="btn" data-act="addnight" style="align-self:flex-end">Åbn</button></div>
+  ${clubSection(today)}
+  <h2>Kommende på ${HOME}</h2>${upcoming.map(eventCard).join("")}
+  <h2>Andet event på ${HOME}</h2>
+  <div class="addrow"><label class="f" style="flex:1"><span>Dato</span><input type="date" id="addDate" min="${today}"></label><button class="btn" data-act="addnight" style="align-self:flex-end">Åbn</button></div>
   ${past.length ? `<h2>Tidligere</h2>${(ui.showPast ? past : past.slice(0, 5)).map(eventCard).join("")}${past.length > 5 && !ui.showPast ? `<button class="btn" data-act="showpast">Vis alle ${past.length}</button>` : ""}` : ""}`;
 }
 
+function clubSection(today) {
+  const rows = S.bookings.filter((b) => b.club && (b.date >= today || (b.date >= addDays(today, -7)))).sort((a, b) => a.date.localeCompare(b.date));
+  return `<h2>Andre klubber</h2>${rows.length ? `<div class="list">${rows.map(bookingRow).join("")}</div>` : `<div class="empty">Borde du booker på fx Hive samles her.</div>`}
+  <div class="btns" style="margin-top:10px"><button class="btn teal" data-act="newclub">+ Bord på anden klub</button></div>`;
+}
 function followSection(today) {
   const f = followups(today); if (!f.length) return "";
   return `<h2>Følg op efter aftenen</h2><div class="list">${f.slice(0, 8).map((b) => `<div class="fu"><span class="mid"><span class="t">${esc(b.name)}</span>
@@ -455,7 +465,7 @@ function vNight() {
 }
 function nextNight() { let x = todayISO(); for (let i = 0; i < 7; i++) { if ([4, 5, 6].includes(d(x).getDay())) return x; x = addDays(x, 1); } return todayISO(); }
 function bookingRow(b) {
-  const sub = [b.area !== "Andet" ? b.area : "", num(b.guests) ? num(b.guests) + " gæster" : "", b.arrival ? "kl. " + b.arrival : "", b.phone || ""].filter(Boolean).join(" · ");
+  const sub = [b.club ? b.club + ", " + dayLabel(b.date) : b.area !== "Andet" ? b.area : "", num(b.guests) ? num(b.guests) + " gæster" : "", b.arrival ? "kl. " + b.arrival : "", b.phone || ""].filter(Boolean).join(" · ");
   return `<button class="row" data-booking="${esc(b.id)}"><span class="tag num ${b.status}">${esc(b.table || "?")}</span>
     <span class="mid"><span class="t">${esc(b.name || "Uden navn")}</span><span class="s">${esc(sub)}</span></span>
     <span class="right num">${b.status === "kom" && num(b.spent) ? kr(b.spent) : kr(b.expected)}<small>${b.status === "kom" && num(b.spent) ? "solgt" : STATUS[b.status]}</small></span></button>`;
@@ -493,10 +503,13 @@ function vStats() {
   }).join("");
   const byTable = {}, byName = {};
   S.bookings.filter((b) => b.status === "kom" && num(b.spent)).forEach((b) => {
-    const t = (b.area === "Andet" ? "" : b.area + " ") + "bord " + b.table; (byTable[t] ||= { n: 0, s: 0 }); byTable[t].n++; byTable[t].s += num(b.spent);
+    const t = (b.club ? b.club + " " : b.area === "Andet" ? "" : b.area + " ") + "bord " + b.table; (byTable[t] ||= { n: 0, s: 0 }); byTable[t].n++; byTable[t].s += num(b.spent);
     const k = (b.name || "").trim().toLowerCase(); if (k) { (byName[k] ||= { name: b.name.trim(), n: 0, s: 0 }); byName[k].n++; byName[k].s += num(b.spent); }
   });
   const topT = Object.entries(byTable).sort((a, b) => b[1].s - a[1].s).slice(0, 3);
+  const byClub = {};
+  m.bs.forEach((b) => { const c = (byClub[clubOf(b)] ||= { n: 0, exp: 0, sold: 0 }); if (active(b)) { c.n++; c.exp += num(b.expected); } c.sold += sold(b); });
+  const clubs = Object.entries(byClub).sort((a, b) => b[1].sold - a[1].sold);
   const topN = Object.values(byName).sort((a, b) => b.s - a.s).slice(0, 5);
   return `<div class="top"><span></span><div class="title"><b>Statistik</b></div><span></span></div>
   <div class="monthsw"><button data-month="-1" aria-label="Forrige måned">‹</button><strong>${monthName(ui.month)}</strong><button data-month="1" aria-label="Næste måned">›</button></div>
@@ -517,6 +530,7 @@ function vStats() {
   </section>
   <h2>Seneste 6 måneder</h2><div class="chart"><svg viewBox="0 0 ${W} ${Hh}" role="img" aria-label="Forventet og solgt pr. måned"><line x1="0" x2="${W}" y1="${Hh - bot}" y2="${Hh - bot}" stroke="var(--line)"/>${bars}</svg></div>
   <p class="note">Grå søjle er forventet, grøn er solgt.</p>
+  ${clubs.some(([c]) => c !== HOME) ? `<h2>Pr. klub</h2><div class="list">${clubs.map(([c, x]) => `<div class="row"><span class="tag num">${x.n}</span><span class="mid"><span class="t">${esc(c)}</span><span class="s">forventet ${kr(x.exp)}</span></span><span class="right num">${kr(x.sold)}<small>solgt</small></span></div>`).join("")}</div>` : ""}
   <h2>Bedste borde</h2>${topT.length ? `<div class="list">${topT.map(([t, v]) => `<div class="row"><span class="tag kom num">${v.n}×</span><span class="mid"><span class="t">${esc(t)}</span><span class="s">${kr(v.s / v.n)} i snit</span></span><span class="right num">${kr(v.s)}</span></div>`).join("")}</div>` : `<div class="empty">Vises når du har skrevet, hvad dine borde har brugt.</div>`}
   <h2>Stamkunder</h2>${topN.length ? `<div class="list">${topN.map((c) => `<div class="row"><span class="tag num">${c.n}×</span><span class="mid"><span class="t">${esc(c.name)}</span><span class="s">${kr(c.s / c.n)} i snit</span></span><span class="right num">${kr(c.s)}</span></div>`).join("")}</div>` : `<div class="empty">Dine bedste kunder samles her.</div>`}
   <h2>Indstillinger</h2>
@@ -562,9 +576,11 @@ const v = (f, id) => f.querySelector("#" + id).value.trim();
 function bookingSheet(b) {
   const exists = S.bookings.some((x) => x.id === b.id);
   const names = [...new Set(S.bookings.map((x) => x.name).filter(Boolean))];
-  const free = b.area === "Andet";
-  const f = openSheet(`<h3>${free ? "Bord" : esc(b.area) + ", bord " + esc(b.table)}</h3><p class="sh">${dayLabel(b.date)} · ${esc(eventFor(b.date).name)}</p>
+  const free = b.area === "Andet", other = b.club != null;
+  const f = openSheet(`<h3>${other ? "Bord på " + esc(b.club || "anden klub") : free ? "Bord" : esc(b.area) + ", bord " + esc(b.table)}</h3><p class="sh">${other ? "Booking uden for " + HOME : dayLabel(b.date) + " · " + esc(eventFor(b.date).name)}</p>
   <form class="form">
+    ${other ? `<label class="f">Klub<input id="b-club" list="clubs" value="${esc(b.club)}" required autocomplete="off"><datalist id="clubs">${clubNames().map((c) => `<option value="${esc(c)}">`).join("")}</datalist></label>
+    <label class="f">Dato<input id="b-date" type="date" value="${esc(b.date)}" required></label>` : ""}
     ${free ? `<label class="f full">Bord<input id="b-table" value="${esc(b.table)}" placeholder="Fx 12 eller Terrasse" required></label>` : ""}
     <label class="f full">Kunde<input id="b-name" list="names" value="${esc(b.name)}" placeholder="Navn" autocomplete="off" required><datalist id="names">${names.map((n) => `<option value="${esc(n)}">`).join("")}</datalist></label>
     <label class="f">Gæster<input id="b-guests" inputmode="numeric" value="${num(b.guests) || ""}"></label>
@@ -580,6 +596,7 @@ function bookingSheet(b) {
     const o = { ...b, name: v(f, "b-name"), guests: num(v(f, "b-guests")), expected: num(v(f, "b-expected")), phone: v(f, "b-phone"), arrival: v(f, "b-arrival"),
       spent: num(v(f, "b-spent")), notes: v(f, "b-notes"), bday: v(f, "b-bday"), status: f.querySelector("[data-st][aria-pressed=true]").dataset.st };
     if (free) o.table = v(f, "b-table");
+    if (other) { o.club = v(f, "b-club") || "Anden klub"; o.date = v(f, "b-date") || o.date; }
     if (o.spent && o.status === "booket") o.status = "kom";
     safe(store.put("bookings", o), "Gemt");
   }, () => safe(store.del("bookings", b.id), "Slettet"));
@@ -660,6 +677,7 @@ view.addEventListener("click", (e) => {
   if (act === "back") go("events");
   if (act === "editnight") nightSheet(ui.date);
   if (act === "newfree") bookingSheet(newBooking(ui.date, "Andet", ""));
+  if (act === "newclub") bookingSheet({ ...newBooking(nextNight(), "Andet", ""), club: clubNames().slice(-1)[0] || "Hive" });
   if (act === "newparty") partySheet({ id: newId(), title: "", date: "", people: "", contact: "", expected: "", stage: "ide", text: "", created: Date.now() });
   if (act === "showpast") { ui.showPast = true; render(); }
   if (act === "addnight") { const dt = view.querySelector("#addDate").value; if (dt) go("night", { date: dt }); }
