@@ -264,6 +264,14 @@ function todayISO() { return new Date().toLocaleDateString("sv-SE"); }
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 const kr = (n) => Math.round(n || 0).toLocaleString("da-DK") + " kr.";
 const num = (v) => { if (typeof v === "number") return isFinite(v) ? v : 0; const x = parseFloat(String(v ?? "").replace(/\./g, "").replace(",", ".")); return isFinite(x) ? x : 0; };
+/* beløb i felter vises med tusindtalspunktum: 12.000 */
+const fmtIn = (n) => { const x = Math.round(num(n)); return x ? x.toLocaleString("da-DK") : ""; };
+document.addEventListener("input", (e) => {
+  const el = e.target; if (!el.matches || !el.matches("input[data-money]")) return;
+  const digits = el.value.replace(/\D/g, ""), fromEnd = el.value.length - (el.selectionEnd ?? el.value.length);
+  el.value = digits ? Number(digits).toLocaleString("da-DK") : "";
+  const pos = Math.max(0, el.value.length - fromEnd); try { el.setSelectionRange(pos, pos); } catch {}
+}, true);
 const d = (iso) => new Date(iso + "T12:00:00");
 const addDays = (iso, n) => { const x = d(iso); x.setDate(x.getDate() + n); return x.toLocaleDateString("sv-SE"); };
 const WD = ["søn", "man", "tir", "ons", "tor", "fre", "lør"];
@@ -651,14 +659,14 @@ function bookingSheet(b) {
     ${free ? `<label class="f full">Bord<input id="b-table" value="${esc(b.table)}" placeholder="Fx 12 eller Terrasse" required></label>` : ""}
     <label class="f full">Kunde<input id="b-name" list="names" value="${esc(b.name)}" placeholder="Navn" autocomplete="off" required><datalist id="names">${names.map((n) => `<option value="${esc(n)}">`).join("")}</datalist></label>
     <label class="f">Gæster<input id="b-guests" inputmode="numeric" value="${num(b.guests) || ""}"></label>
-    <label class="f">Bordpris / minimum (kr.)<input id="b-expected" inputmode="numeric" value="${num(b.expected) || ""}"></label>
+    <label class="f">Bordpris / minimum (kr.)<input id="b-expected" inputmode="numeric" data-money value="${fmtIn(b.expected)}"></label>
     <label class="f">Telefon<input id="b-phone" type="tel" value="${esc(b.phone)}"></label>
     <label class="f">Ankomst<input id="b-arrival" type="time" value="${esc(b.arrival)}"></label>
     <label class="f full">Kundens fødselsdag<input id="b-bday" type="date" value="${esc(b.bday || bdayOf(b.name))}"></label>
     <div class="full"><div class="status" role="group" aria-label="Status">${Object.entries(STATUS).map(([k, l]) => `<button type="button" class="${k}" data-st="${k}" aria-pressed="${b.status === k}">${l}</button>`).join("")}</div></div>
     <div class="full spentbox"><div class="sbh">Efter aftenen</div>
-      <label class="f">Merspend (kr.)<input id="b-extra" inputmode="numeric" value="${num(b.spent) && num(b.spent) > num(b.expected) ? num(b.spent) - num(b.expected) : ""}" placeholder="0"></label>
-      <label class="f">Brugt i alt (kr.)<input id="b-spent" inputmode="numeric" value="${num(b.spent) || ""}" placeholder="Ikke skrevet"></label>
+      <label class="f">Merspend (kr.)<input id="b-extra" inputmode="numeric" data-money value="${num(b.spent) && num(b.spent) > num(b.expected) ? fmtIn(num(b.spent) - num(b.expected)) : ""}" placeholder="0"></label>
+      <label class="f">Brugt i alt (kr.)<input id="b-spent" inputmode="numeric" data-money value="${fmtIn(b.spent)}" placeholder="Ikke skrevet"></label>
       <button type="button" class="btn" data-minonly>Kun minimum</button><small class="mer" id="b-mer"></small></div>
     <label class="f full">Noter<textarea id="b-notes" placeholder="Fx flasker, fødselsdag">${esc(b.notes)}</textarea></label>
     <div class="full btns">${exists ? `<button type="button" class="btn danger" data-del>Slet</button>` : `<button type="button" class="btn" data-close>Annullér</button>`}<button class="btn teal" type="submit">Gem</button></div>
@@ -677,11 +685,11 @@ function bookingSheet(b) {
   const merHint = () => { const sp = num(v(f, "b-spent")), ex = num(v(f, "b-expected")); $("b-mer").textContent = sp ? (sp > ex ? "Merspend +" + kr(sp - ex) : "Ingen merspend") : ""; };
   f.addEventListener("input", (e) => {
     const ex = num(v(f, "b-expected"));
-    if (e.target.id === "b-extra") $("b-spent").value = v(f, "b-extra") === "" ? "" : ex + num(v(f, "b-extra"));
-    if (e.target.id === "b-spent" || e.target.id === "b-expected") { const sp = num(v(f, "b-spent")); $("b-extra").value = sp > ex ? sp - ex : sp ? 0 : ""; }
+    if (e.target.id === "b-extra") $("b-spent").value = v(f, "b-extra") === "" ? "" : fmtIn(ex + num(v(f, "b-extra")));
+    if (e.target.id === "b-spent" || e.target.id === "b-expected") { const sp = num(v(f, "b-spent")); $("b-extra").value = sp > ex ? fmtIn(sp - ex) : sp ? "0" : ""; }
     merHint();
   });
-  f.querySelector("[data-minonly]").addEventListener("click", () => { $("b-spent").value = num(v(f, "b-expected")) || ""; $("b-extra").value = 0; merHint(); });
+  f.querySelector("[data-minonly]").addEventListener("click", () => { $("b-spent").value = fmtIn(v(f, "b-expected")); $("b-extra").value = "0"; merHint(); });
   merHint();
   if (!exists) f.querySelector("#b-name").focus({ preventScroll: true });
 }
@@ -704,7 +712,7 @@ function partySheet(p) {
     <label class="f">Dato<input id="p-date" type="date" value="${esc(p.date)}"></label>
     <label class="f">Personer<input id="p-people" inputmode="numeric" value="${num(p.people) || ""}"></label>
     <label class="f">Kontakt<input id="p-contact" value="${esc(p.contact)}" placeholder="Navn eller tlf."></label>
-    <label class="f">Forventet (kr.)<input id="p-expected" inputmode="numeric" value="${num(p.expected) || ""}"></label>
+    <label class="f">Forventet (kr.)<input id="p-expected" inputmode="numeric" data-money value="${fmtIn(p.expected)}"></label>
     <label class="f full">Status<select id="p-stage">${Object.entries(NSTAGE).map(([k, l]) => `<option value="${k}" ${p.stage === k ? "selected" : ""}>${l}</option>`).join("")}</select></label>
     <label class="f full">Noter<textarea id="p-text">${esc(p.text)}</textarea></label>
     <div class="full btns">${exists ? `<button type="button" class="btn danger" data-del>Slet</button>` : `<button type="button" class="btn" data-close>Annullér</button>`}<button class="btn teal">Gem</button></div></form>`,
@@ -810,7 +818,7 @@ function reviewScan(rows, note) {
         <label class="f">Bord<input data-k="table" value="${esc(r.table)}"></label>
         <label class="f full">Kunde<input data-k="name" value="${esc(r.name)}"></label>
         <label class="f">Gæster<input data-k="guests" inputmode="numeric" value="${r.guests || ""}"></label>
-        <label class="f">Bordpris (kr.)<input data-k="price" inputmode="numeric" value="${r.price || ""}"></label>
+        <label class="f">Bordpris (kr.)<input data-k="price" inputmode="numeric" data-money value="${fmtIn(r.price)}"></label>
         ${r.note ? `<p class="full note" style="margin:0">${esc(r.note)}</p>` : ""}
       </div></div>`;
   }).join("");
