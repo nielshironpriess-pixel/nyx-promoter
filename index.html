@@ -219,17 +219,93 @@ label.share small{color:var(--muted)}
 .avatar{justify-self:end;width:38px;height:38px;border-radius:99px;border:0;background:var(--teal);color:var(--green-ink);font-weight:800;font-size:14px;display:grid;place-items:center;letter-spacing:.02em}
 .avatar.big{width:56px;height:56px;font-size:20px;flex:none}
 .phead{display:flex;gap:14px;align-items:center}
+
+/* ---------- skal: topbar, sidemenu og forside (som i Goon) ---------- */
+.topbar{position:sticky;top:env(safe-area-inset-top,0px);z-index:8;display:grid;grid-template-columns:44px 1fr 44px;align-items:center;padding:8px 0 6px;background:var(--bg);max-width:640px;margin:0 auto;box-sizing:border-box;width:100%}
+.topbar .brand{text-align:center}
+.brand{font-family:var(--serif);font-weight:700;font-size:22px;color:var(--teal);letter-spacing:.02em}
+.brand.big{font-size:30px}
+.brand-sub{color:var(--muted);font-size:13px;margin:2px 0 18px}
+.tb-menu{width:40px;height:40px;border-radius:12px;border:1px solid var(--line);background:var(--surface);display:grid;place-items:center}
+.tb-menu svg{width:22px;height:22px}
+.topbar .avatar{justify-self:end}
+.top{top:calc(56px + env(safe-area-inset-top,0px))}
+.top .avatar{display:none}
+.side{position:fixed;left:0;top:0;bottom:0;width:272px;z-index:30;background:var(--surface);border-right:1px solid var(--line);display:flex;flex-direction:column;
+  padding:calc(22px + env(safe-area-inset-top,0px)) 14px calc(16px + env(safe-area-inset-bottom,0px));transform:translateX(-105%);transition:transform .22s;overflow:auto;border-radius:0 24px 24px 0}
+.side.open{transform:none;box-shadow:0 0 40px rgba(60,30,20,.25)}
+.sidescrim{position:fixed;inset:0;background:rgba(40,20,15,.35);z-index:29;display:none}
+.sidescrim.open{display:block}
+.snav{display:flex;flex-direction:column;gap:2px}
+.snav button{display:flex;align-items:center;gap:12px;border:0;background:none;border-radius:12px;padding:12px 12px;font-size:16px;font-weight:600;text-align:left;color:var(--fg)}
+.snav button svg{width:22px;height:22px;color:var(--muted)}
+.snav button[aria-current="page"]{background:var(--raise);color:var(--teal)}
+.snav button[aria-current="page"] svg{color:var(--teal)}
+.nav-label{font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);padding:16px 12px 4px}
+.me-card{margin-top:auto;display:flex;gap:12px;align-items:center;border:1px solid var(--line);background:var(--bg);border-radius:16px;padding:10px 12px;text-align:left}
+.me-card small{display:block;color:var(--muted);font-size:13px}
+body:has(#loginForm) .topbar,body:has(#loginForm) nav.tabs{display:none}
+@media (min-width:900px){
+  body{padding-left:300px}
+  .side{transform:none;border-radius:0;box-shadow:none}
+  .sidescrim,.topbar{display:none!important}
+  .top{top:0}
+  nav.tabs{display:none}
+  body{padding-bottom:40px}
+  .wrap{max-width:760px}
+}
+/* forside */
+.hello-date{color:var(--muted);font-size:14px;margin-top:6px}
+.hello{font-family:var(--serif);font-weight:700;font-size:34px;line-height:1.1;color:var(--teal);margin:2px 0 16px}
+.hero{display:block;width:100%;text-align:left;background:var(--teal);color:var(--green-ink);border:0;border-radius:22px;padding:18px;box-shadow:0 10px 24px rgba(123,36,51,.25)}
+.hero .lab{font-size:12px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#e6c9c4}
+.hero .ttl{font-family:var(--serif);font-size:28px;font-weight:700;margin:4px 0 2px}
+.hero .sub{color:#f1dcd6;font-size:14px}
+.hero .chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}
+.hero .chip{color:inherit;border:0;font:inherit;font-size:13px;background:rgba(255,255,255,.14);border-radius:99px;padding:6px 10px;font-size:13px;font-weight:700}
+.kpis{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px}
+.kpi{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:14px;text-align:left;display:block;width:100%}
+.kpi .l{font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.kpi .v{font-family:var(--serif);font-size:24px;font-weight:700;color:var(--green);margin-top:6px;line-height:1.1}
+.kpi .s{font-size:13px;color:var(--muted);margin-top:4px}
+.quick{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:14px}
+.qa{display:flex;flex-direction:column;align-items:center;gap:6px;background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:14px 6px;font-weight:700;font-size:13px}
+.qa svg{width:24px;height:24px;color:var(--teal)}
+.todo-row .bub{width:36px;height:36px;border-radius:12px;display:grid;place-items:center;font-weight:800;color:var(--green-ink);background:var(--teal);font-size:14px}
+.todo-row .bub.olive{background:var(--green)}.todo-row .bub.gold{background:var(--gold);color:var(--fg)}
+.hseg{display:grid;grid-template-columns:1fr 1fr;gap:6px;background:var(--raise);border-radius:12px;padding:4px;margin:4px 0 12px}
+.hseg button{border:0;background:none;border-radius:9px;padding:9px 0;font-weight:700;color:var(--muted)}
+.hseg button[aria-pressed="true"]{background:var(--surface);color:var(--teal);box-shadow:0 1px 3px rgba(60,30,20,.1)}
 </style>
 </head>
 <body>
+<header class="topbar"><button class="tb-menu" data-open-side aria-label="Menu"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button><span class="brand">Bordbog</span><button class="avatar" data-act="profile" id="topAvatar" aria-label="Din profil">?</button></header>
 <div class="wrap"><main id="view"><p class="note" style="padding-top:24px">Henter dine bookinger…</p></main><p class="foot" id="status"></p></div>
 
+<div class="sidescrim" id="sideScrim"></div>
+<aside class="side" id="side" aria-label="Menu">
+  <div class="brand big">Bordbog</div><div class="brand-sub">Niels' promoterbog</div>
+  <nav class="snav">
+    <button data-tab="home"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg>Overblik</button>
+    <div class="nav-label">Søpavillonen</div>
+    <button data-tab="events"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>Events</button>
+    <button data-tab="borde"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3l7 7-9 9a3 3 0 0 1-4 0l-3-3a3 3 0 0 1 0-4z M16 5l3 3"/></svg>Bordkort</button>
+    <button data-tab="stats"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V11M10 20V5M16 20v-6M2 20h20"/></svg>Salg og statistik</button>
+    <div class="nav-label">Hive</div>
+    <button data-tab="hive"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l8 4.6v9.2L12 22l-8-6.2V6.6z M12 8l3.5 2v4L12 16l-3.5-2v-4z"/></svg>Hive bordkort</button>
+    <button data-tab="hivesalg"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V11M10 20V5M16 20v-6M2 20h20"/><circle cx="19" cy="5" r="2"/></svg>Hive salg</button>
+    <div class="nav-label">Andet</div>
+    <button data-tab="noter"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-3.5 10.9c.6.4 1 1.1 1 1.9V16h5v-.2c0-.8.4-1.5 1-1.9A6 6 0 0 0 12 3z"/></svg>Noter og selskaber</button>
+    <button data-act="scan"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8V5a1 1 0 0 1 1-1h3M16 4h3a1 1 0 0 1 1 1v3M20 16v3a1 1 0 0 1-1 1h-3M8 20H5a1 1 0 0 1-1-1v-3M7 12h10"/></svg>Scan fra Nyx</button>
+  </nav>
+  <button class="me-card" data-act="profile"><span class="avatar" id="sideAvatar">?</span><span><b id="sideName">Din profil</b><small>Rediger profil</small></span></button>
+</aside>
 <nav class="tabs" aria-label="Sektioner"><div class="in">
-  <button data-tab="events"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4M7 14h2M11 14h2M15 14h2M7 17h2M11 17h2"/></svg>Events</button>
-  <button data-tab="borde"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14 3l7 7-9 9a3 3 0 0 1-4 0l-3-3a3 3 0 0 1 0-4z M16 5l3 3"/></svg>Borde</button>
-  <button data-tab="hive"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 2l8 4.6v9.2L12 22l-8-6.2V6.6z M12 8l3.5 2v4L12 16l-3.5-2v-4z"/></svg>Hive</button>
-  <button data-tab="stats"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 20V11M10 20V5M16 20v-6M2 20h20"/></svg>Statistik</button>
-  <button data-tab="noter"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-3.5 10.9c.6.4 1 1.1 1 1.9V16h5v-.2c0-.8.4-1.5 1-1.9A6 6 0 0 0 12 3z"/></svg>Noter</button>
+  <button data-tab="home"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg>Overblik</button>
+  <button data-tab="events"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>Events</button>
+  <button data-tab="hive"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l8 4.6v9.2L12 22l-8-6.2V6.6z M12 8l3.5 2v4L12 16l-3.5-2v-4z"/></svg>Hive</button>
+  <button data-tab="stats"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V11M10 20V5M16 20v-6M2 20h20"/></svg>Salg</button>
+  <button data-open-side><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>Mere</button>
 </div></nav>
 <div id="sheetRoot"></div>
 
@@ -285,12 +361,13 @@ const STATUS = { booket: "Booket", kom: "Kom", udeblev: "Udeblev", aflyst: "Afly
 
 /* ---------- state ---------- */
 const S = { bookings: [], nights: [], notes: [], settings: { pct: 0, goal: 0 }, ready: false };
-const ui = { tab: "events", date: null, area: 0, mode: "kort", month: null, noteSeg: "selskaber", showPast: false };
+const ui = { tab: "home", date: null, area: 0, mode: "kort", month: null, noteSeg: "selskaber", showPast: false };
 
 /* ---------- helpers ---------- */
 function todayISO() { return new Date().toLocaleDateString("sv-SE"); }
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 const kr = (n) => Math.round(n || 0).toLocaleString("da-DK") + " kr.";
+const nBorde = (n) => n + (n === 1 ? " bord" : " borde");
 const num = (v) => { if (typeof v === "number") return isFinite(v) ? v : 0; const x = parseFloat(String(v ?? "").replace(/\./g, "").replace(",", ".")); return isFinite(x) ? x : 0; };
 /* beløb i felter vises med tusindtalspunktum: 12.000 */
 const fmtIn = (n) => { const x = Math.round(num(n)); return x ? x.toLocaleString("da-DK") : ""; };
@@ -523,11 +600,15 @@ function badge() {
   el.textContent = n > 9 ? "9+" : n;
 }
 function render() {
-  document.querySelectorAll("nav.tabs button").forEach((b) => b.setAttribute("aria-current", b.dataset.tab === (ui.tab === "night" ? "borde" : ui.tab) ? "page" : "false"));
+  const cur = ui.tab === "night" ? "borde" : ui.tab;
+  document.querySelectorAll("nav.tabs [data-tab], .snav [data-tab]").forEach((b) => b.setAttribute("aria-current", b.dataset.tab === cur || (cur === "borde" && b.dataset.tab === "events" && b.closest("nav.tabs")) || (cur === "hivesalg" && b.dataset.tab === "hive" && b.closest("nav.tabs")) ? "page" : "false"));
+  const ini = esc(initials(profile().name || meNyx()));
+  ["topAvatar", "sideAvatar"].forEach((id) => { const el = document.getElementById(id); if (el) el.innerHTML = ini; });
+  const sn = document.getElementById("sideName"); if (sn) sn.textContent = profile().name || "Din profil";
   if (!S.ready) return;
   const y = window.scrollY;
   badge();
-  view.innerHTML = { hive: vHive, events: vEvents, borde: vNight, night: vNight, stats: vStats, noter: vNoter }[ui.tab]();
+  view.innerHTML = { home: vHome, hivesalg: vHiveSales, hive: vHive, events: vEvents, borde: vNight, night: vNight, stats: vStats, noter: vNoter }[ui.tab]();
   if (ui.keepScroll) window.scrollTo(0, y);
   ui.keepScroll = true;
 }
@@ -549,7 +630,7 @@ function vEvents() {
   const upcoming = [...set].sort();
   const past = [...new Set([...S.bookings.filter((b) => !b.club).map((b) => b.date), ...S.nights.map((n) => n.id)])].filter((x) => x && x < today).sort().reverse();
   const todo = S.bookings.filter((b) => b.date < today && (b.status === "booket" || (b.status === "kom" && !num(b.spent))));
-  return `<div class="top"><span></span><div class="title"><b>Events</b></div>${avatar()}</div>
+  return `<div class="top"><span></span><div class="title"><b>Events</b></div><span></span></div>
   <button class="btn teal scanbtn" data-act="scan">Scan screenshots fra Nyx</button>
   ${todo.length ? `<button class="ev todo" data-act="todo"><div class="r1"><span class="wd thu">Mangler beløb</span></div><div class="r2"><span class="name">${todo.length} ${todo.length === 1 ? "bord" : "borde"} mangler hvad de brugte</span><span class="stats">Udfyld</span></div></button>` : ""}
   ${newsSection()}${followSection(today)}${bdaySection(today)}
@@ -633,7 +714,7 @@ function vHive() {
     return `<button class="tb ${it.k === "r" ? "round" : ""} ${b ? b.status : ""}" style="${pos}" data-hive="${it.id}" aria-label="Hive bord ${it.id}${b ? ", " + esc(b.name) : ", ledigt"}"><b>${it.id}</b><small>${b ? esc(shortName(b.name)) : esc(it.cap)}</small></button>`;
   }).join("");
   const exp = bs.filter(active).reduce((a, b) => a + num(b.expected), 0);
-  return `<div class="top"><button class="pillbtn" data-hday="-1" aria-label="Dagen før">‹</button>
+  return `${hiveTabs("hive")}<div class="top"><button class="pillbtn" data-hday="-1" aria-label="Dagen før">‹</button>
     <div class="title"><span class="d">${dayLabel(date)}</span><br><span>Hive Copenhagen</span></div><button class="pillbtn right" data-hday="1" aria-label="Dagen efter">›</button></div>
     <div class="addrow" style="margin-bottom:10px"><label class="f" style="flex:1"><span>Dato</span><input type="date" id="hiveDate" value="${date}"></label></div>
     <div class="map" style="aspect-ratio:920/${A.h}">${items}</div>
@@ -652,15 +733,93 @@ function profileSheet() {
     <label class="f full">Dit navn<input id="pf-name" value="${esc(pr.name || "")}" placeholder="Fx Niels" autocomplete="name"></label>
     <label class="f full">Dit navn i Nyx<input id="pf-nyx" value="${esc(pr.nyx || meNyx())}" placeholder="Som det står ved dine borde"></label>
     <p class="full note" style="margin:-6px 0 0">Scanneren vælger de borde, hvor dette navn står som promoter.</p>
-    <label class="f">Telefon<input id="pf-phone" type="tel" value="${esc(pr.phone || "")}"></label>
-    <label class="f">Provision af bordsalg (%)<input id="pf-pct" inputmode="decimal" value="${num(S.settings.pct) || ""}" placeholder="Fx 10"></label>
+    <label class="f full">Telefon<input id="pf-phone" type="tel" value="${esc(pr.phone || "")}"></label>
+    <label class="f">Provision Søpavillonen (%)<input id="pf-pct" inputmode="decimal" value="${num(S.settings.pct) || ""}" placeholder="Fx 10"></label>
+    <label class="f">Provision Hive (%)<input id="pf-hpct" inputmode="decimal" value="${num(S.settings.hivePct) || ""}" placeholder="Fx 10"></label>
     ${store.team ? `<p class="full note" style="margin:0">Hold: <b>${esc(store.team.name)}</b> · kode <b>${esc(store.team.code)}</b></p>` : ""}
     <div class="full btns">${store.mode === "sky" ? `<button type="button" class="btn" data-logout>Log ud</button>` : `<button type="button" class="btn" data-close>Luk</button>`}<button class="btn teal" type="submit">Gem</button></div></form>`, (f) => {
     const np = { ...pr, name: v(f, "pf-name"), nyx: v(f, "pf-nyx") || "Niels Priess", phone: v(f, "pf-phone") };
-    safe(store.settings({ ...S.settings, pct: num(v(f, "pf-pct")), profile: np }), "Profil gemt");
+    safe(store.settings({ ...S.settings, pct: num(v(f, "pf-pct")), hivePct: num(v(f, "pf-hpct")), profile: np }), "Profil gemt");
     if (store.team && store.sb && np.name) store.sb.from("nyx_members").update({ name: np.name }).eq("user_id", store.uid).then(() => store.loadTeam && store.loadTeam().then(render));
   });
   const lo = root.querySelector("[data-logout]"); if (lo) lo.addEventListener("click", () => store.signOut());
+}
+/* ---------- forside ---------- */
+const hiveB = (b) => b.club === "Hive";
+const allB = () => (typeof myBookings === "function" ? myBookings() : S.bookings);
+function greeting() { const h = new Date().getHours(); return h < 5 ? "God nat" : h < 10 ? "Godmorgen" : h < 17 ? "Hej" : "God aften"; }
+function vHome() {
+  ui.month ||= payYm(todayISO());
+  const today = todayISO(), ym = payYm(today), pr = profile();
+  const so = monthStats(ym), hv = monthStats(ym, hiveB);
+  const pctS = num(S.settings.pct), pctH = num(S.settings.hivePct);
+  const prov = so.sold * pctS / 100 + hv.sold * pctH / 100;
+  const mer = [...so.withMer, ...hv.withMer].reduce((a, b) => a + extra(b), 0);
+  const next = nextNight(), ne = eventFor(next), nb = bookingsOn(next).filter(active), nexp = nb.reduce((a, b) => a + num(b.expected), 0);
+  const days = Math.round((d(next) - d(today)) / 864e5), when = days <= 0 ? "I aften" : days === 1 ? "I morgen" : `Om ${days} dage`;
+  const hiveNext = allB().filter((b) => hiveB(b) && b.date >= today && active(b)).sort((a, b) => a.date.localeCompare(b.date));
+  const todo = [];
+  const waiting = allB().filter((b) => (b.date <= today && b.status === "kom" && !num(b.spent)) || (b.date < today && b.status === "booket"));
+  if (waiting.length) todo.push(`<button class="row todo-row" data-act="todo"><span class="bub">${waiting.length}</span><span class="mid"><span class="t">${waiting.length === 1 ? "Et bord mangler" : waiting.length + " borde mangler"} hvad de brugte</span><span class="s">Skriv merspend, så tallene passer</span></span><span class="right">›</span></button>`);
+  const un = typeof unread === "function" && store.team ? unread() : [];
+  if (un.length) todo.push(`<button class="row todo-row" data-tab-go="events"><span class="bub olive">${un.length}</span><span class="mid"><span class="t">Nyt fra holdet</span><span class="s">${esc(un[0].text)}</span></span><span class="right">›</span></button>`);
+  const fu = followups(today);
+  if (fu.length) todo.push(`<button class="row todo-row" data-tab-go="events"><span class="bub gold">${fu.length}</span><span class="mid"><span class="t">Skriv tak til ${fu.length === 1 ? esc(first(fu[0].name)) : fu.length + " kunder"}</span><span class="s">Fra de seneste aftener</span></span><span class="right">›</span></button>`);
+  const bd = upcomingBirthdays(today, 14);
+  if (bd.length) todo.push(`<button class="row todo-row" data-tab-go="events"><span class="bub gold">🎂</span><span class="mid"><span class="t">${esc(bd[0].name)} fylder ${bd[0].age}</span><span class="s">${bd[0].days === 0 ? "I dag" : "Om " + bd[0].days + " dage"}${bd.length > 1 ? " · og " + (bd.length - 1) + " mere" : ""}</span></span><span class="right">›</span></button>`);
+  const upcoming = [...new Set([next, ...[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((i) => addDays(today, i)).filter((x) => [4, 5, 6].includes(d(x).getDay()))])].filter((x) => x > next).slice(0, 3);
+  return `<div class="hello-date">${new Date().toLocaleDateString("da-DK", { weekday: "long", day: "numeric", month: "long" })}</div>
+    <h1 class="hello">${greeting()}, ${esc(first(pr.name || meNyx()))}</h1>
+    <button class="hero" data-night="${next}"><div class="lab">Næste aften · ${when}</div><div class="ttl">${esc(ne.name)}</div>
+      <div class="sub">${dayLabel(next)} · ${esc(ne.time)}${ne.age ? " · " + esc(ne.age) : ""}</div>
+      <div class="chips"><span class="chip">${nb.length} ${nb.length === 1 ? "bord" : "borde"}</span>${nexp ? `<span class="chip">${kr(nexp)}</span>` : ""}${ne.guestlist ? `<span class="chip">${ne.guestlist} på liste</span>` : ""}<span class="chip">Åbn bordkort ›</span></div></button>
+    <div class="quick">
+      <button class="qa" data-act="scan">${svgI("scan")}Scan Nyx</button>
+      <button class="qa" data-tab-go="hive">${svgI("hive")}Book Hive</button>
+      <button class="qa" data-act="newparty">${svgI("noter")}Nyt selskab</button>
+    </div>
+    <h2>${payName(ym)}</h2>
+    <div class="kpis num">
+      <button class="kpi" data-tab-go="stats"><div class="l">Søpavillonen</div><div class="v">${kr(so.sold)}</div><div class="s">${nBorde(so.came.length)} solgt</div></button>
+      <button class="kpi" data-tab-go="hivesalg"><div class="l">Hive</div><div class="v">${kr(hv.sold)}</div><div class="s">${nBorde(hv.came.length)} solgt</div></button>
+      <div class="kpi"><div class="l">Din provision</div><div class="v">${pctS || pctH ? kr(prov) : "–"}</div><div class="s">${pctS || pctH ? `${pctS} % / ${pctH} % på Hive` : "Sæt procent i din profil"}</div></div>
+      <div class="kpi"><div class="l">Merspend</div><div class="v">${kr(mer)}</div><div class="s">${nBorde(so.withMer.length + hv.withMer.length)} brugte mere</div></div>
+    </div>
+    ${todo.length ? `<h2>Til dig</h2><div class="list">${todo.join("")}</div>` : ""}
+    ${hiveNext.length ? `<h2>Kommende på Hive</h2><div class="list">${hiveNext.slice(0, 3).map(bookingRow).join("")}</div>` : ""}
+    ${upcoming.length ? `<h2>Senere på Søpavillonen</h2>${upcoming.map(eventCard).join("")}` : ""}`;
+}
+const SVGS = {
+  scan: '<path d="M4 8V5a1 1 0 0 1 1-1h3M16 4h3a1 1 0 0 1 1 1v3M20 16v3a1 1 0 0 1-1 1h-3M8 20H5a1 1 0 0 1-1-1v-3M7 12h10"/>',
+  hive: '<path d="M12 2l8 4.6v9.2L12 22l-8-6.2V6.6z M12 8l3.5 2v4L12 16l-3.5-2v-4z"/>',
+  noter: '<path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-3.5 10.9c.6.4 1 1.1 1 1.9V16h5v-.2c0-.8.4-1.5 1-1.9A6 6 0 0 0 12 3z"/>',
+};
+const svgI = (k) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${SVGS[k]}</svg>`;
+
+/* ---------- Hive salg ---------- */
+function hiveTabs(on) { return `<div class="hseg"><button data-tab-go="hive" aria-pressed="${on === "hive"}">Bordkort</button><button data-tab-go="hivesalg" aria-pressed="${on === "hivesalg"}">Salg og provision</button></div>`; }
+function vHiveSales() {
+  ui.month ||= payYm(todayISO());
+  const m = monthStats(ui.month, hiveB), pct = num(S.settings.hivePct), mer = m.withMer.reduce((a, b) => a + extra(b), 0);
+  const max = Math.max(m.expected, m.sold, 1);
+  return `<div class="top"><span></span><div class="title"><b>Hive</b><span>Salg og provision</span></div><span></span></div>
+    ${hiveTabs("hivesalg")}
+    <div class="monthsw"><button data-month="-1" aria-label="Forrige lønperiode">‹</button><strong>${payName(ui.month)}</strong><button data-month="1" aria-label="Næste lønperiode">›</button></div>
+    <section class="cmp num"><div><div class="sub">Solgt på Hive</div><div class="big" style="color:var(--green)">${kr(m.sold)}</div>
+      <div class="sub">${nBorde(m.came.length)} kom${pct ? ` · din provision ${kr(m.sold * pct / 100)}` : ""}</div></div>
+      <div class="line"><span>Forventet</span><span class="bar"><i style="width:${m.expected / max * 100}%;background:var(--muted)"></i></span><b>${kr(m.expected)}</b></div>
+      <div class="line"><span>Solgt</span><span class="bar"><i style="width:${m.sold / max * 100}%;background:var(--green)"></i></span><b>${kr(m.sold)}</b></div></section>
+    <div class="kpis num">
+      <div class="kpi"><div class="l">Provision</div><div class="v">${pct ? kr(m.sold * pct / 100) : "–"}</div><div class="s">${pct ? pct + " % af salget" : "Sæt procent herunder"}</div></div>
+      <div class="kpi"><div class="l">Merspend</div><div class="v">${kr(mer)}</div><div class="s">${nBorde(m.withMer.length)} brugte mere</div></div>
+      <div class="kpi"><div class="l">Borde booket</div><div class="v">${m.act.length}</div><div class="s">${kr(m.avgExp)} i snit</div></div>
+      <div class="kpi"><div class="l">Mødte op</div><div class="v">${m.show === null ? "–" : m.show + " %"}</div><div class="s">${m.tableGuests} gæster</div></div>
+    </div>
+    ${merSection(m)}
+    ${periodTables(m)}
+    <h2>Provision på Hive</h2>
+    <form class="form" id="hivePctForm"><label class="f">Procent af bordsalg (%)<input id="h-pct" inputmode="decimal" value="${pct || ""}" placeholder="Fx 10"></label>
+    <div style="align-self:end"><button class="btn teal" type="submit">Gem</button></div></form>`;
 }
 function nextNight() { let x = todayISO(); for (let i = 0; i < 7; i++) { if ([4, 5, 6].includes(d(x).getDay())) return x; x = addDays(x, 1); } return todayISO(); }
 function bookingRow(b) {
@@ -671,8 +830,8 @@ function bookingRow(b) {
 }
 
 /* ---------- stats ---------- */
-function monthStats(ym) {
-  const bs = myBookings().filter((b) => inPay(b.date, ym));
+function monthStats(ym, pred) {
+  const bs = myBookings().filter((b) => inPay(b.date, ym) && (pred ? pred(b) : !b.club));
   const act = bs.filter(active), came = bs.filter((b) => b.status === "kom"), withSpent = came.filter((b) => num(b.spent));
   const decided = bs.filter((b) => b.status === "kom" || b.status === "udeblev");
   const nights = S.nights.filter((n) => inPay(n.id, ym) && num(n.guestlist));
@@ -694,7 +853,7 @@ function poolSection() {
   if (!p) return `<section class="cmp"><div class="sub">Fælles pulje</div><p class="note">Kunne ikke hente holdets tal.</p></section>`;
   const tot = p.reduce((a, x) => a + num(x.sold), 0), mx = Math.max(...p.map((x) => num(x.sold)), 1);
   return `<section class="cmp num pool"><div><div class="sub">Fælles pulje · ${esc(store.team.name)}</div><div class="big" style="color:var(--green)">${kr(tot)}</div>
-    <div class="sub">${p.reduce((a, x) => a + x.came, 0)} borde kom · merspend ${kr(p.reduce((a, x) => a + num(x.mer), 0))}</div></div>
+    <div class="sub">${nBorde(p.reduce((a, x) => a + x.came, 0))} kom · merspend ${kr(p.reduce((a, x) => a + num(x.mer), 0))}</div></div>
     ${p.map((x) => `<div class="line"><span>${esc(first2(x.name))}${x.user_id === store.uid ? " (dig)" : ""}</span><span class="bar"><i style="width:${num(x.sold) / mx * 100}%;background:var(--green)"></i></span><b>${kr(x.sold)}</b></div>`).join("")}
   </section>`;
 }
@@ -737,7 +896,7 @@ function vStats() {
   const diff = m.sold - m.expOfCame;
   const pct = num(S.settings.pct);
   const months = Array.from({ length: 6 }, (_, i) => shiftMonth(ui.month, i - 5));
-  const ms = months.map(monthStats), cmax = Math.max(...ms.map((x) => Math.max(x.sold, x.expected)), 1);
+  const ms = months.map((x) => monthStats(x)), cmax = Math.max(...ms.map((x) => Math.max(x.sold, x.expected)), 1);
   const W = 340, Hh = 150, top = 20, bot = 22, slot = W / 6, bw = 14;
   const bars = months.map((ym, i) => {
     const cx = slot * i + slot / 2, he = (Hh - top - bot) * ms[i].expected / cmax, hs = (Hh - top - bot) * ms[i].sold / cmax;
@@ -747,7 +906,7 @@ function vStats() {
       <text x="${cx}" y="${Hh - 6}" text-anchor="middle">${mShort(payStart(ym))}–${mShort(payEnd(ym))}</text>`;
   }).join("");
   const byTable = {}, byName = {};
-  myBookings().filter((b) => b.status === "kom" && num(b.spent)).forEach((b) => {
+  myBookings().filter((b) => !b.club && b.status === "kom" && num(b.spent)).forEach((b) => {
     const t = (b.club ? b.club + " " : b.area === "Andet" ? "" : b.area + " ") + "bord " + b.table; (byTable[t] ||= { n: 0, s: 0 }); byTable[t].n++; byTable[t].s += num(b.spent);
     const k = (b.name || "").trim().toLowerCase(); if (k) { (byName[k] ||= { name: b.name.trim(), n: 0, s: 0 }); byName[k].n++; byName[k].s += num(b.spent); }
   });
@@ -756,12 +915,12 @@ function vStats() {
   m.bs.forEach((b) => { const c = (byClub[clubOf(b)] ||= { n: 0, exp: 0, sold: 0 }); if (active(b)) { c.n++; c.exp += num(b.expected); } c.sold += sold(b); });
   const clubs = Object.entries(byClub).sort((a, b) => b[1].sold - a[1].sold);
   const topN = Object.values(byName).sort((a, b) => b.s - a.s).slice(0, 5);
-  return `<div class="top"><span></span><div class="title"><b>Statistik</b></div>${avatar()}</div>
+  return `<div class="top"><span></span><div class="title"><b>Søpavillonen</b><span>Salg og statistik</span></div><span></span></div>
   <div class="monthsw"><button data-month="-1" aria-label="Forrige lønperiode">‹</button><strong>${payName(ui.month)}</strong><button data-month="1" aria-label="Næste lønperiode">›</button></div>
   ${poolSection()}
   <section class="cmp num">
     <div><div class="sub">${store.team ? "Du har solgt for" : "Solgt for"}</div><div class="big" style="color:var(--green)">${kr(m.sold)}</div>
-    <div class="sub">${m.came.length} borde kom${pct ? ` · din provision ${kr(m.sold * pct / 100)}` : ""}</div></div>
+    <div class="sub">${nBorde(m.came.length)} kom${pct ? ` · din provision ${kr(m.sold * pct / 100)}` : ""}</div></div>
     <div class="line"><span>Forventet</span><span class="bar"><i style="width:${m.expected / max * 100}%;background:var(--muted)"></i></span><b>${kr(m.expected)}</b></div>
     <div class="line"><span>Solgt</span><span class="bar"><i style="width:${m.sold / max * 100}%;background:var(--green)"></i></span><b>${kr(m.sold)}</b></div>
     ${m.expOfCame ? `<div class="sub">De borde der kom, brugte <b style="color:${diff >= 0 ? "var(--green)" : "var(--red)"}">${diff >= 0 ? "+" : "−"}${kr(Math.abs(diff))}</b> i forhold til hvad du regnede med.</div>` : ""}
@@ -793,7 +952,7 @@ function vStats() {
 const NSTAGE = { ide: "Idé", kontakt: "Kontaktet", booket: "Booket" };
 function vNoter() {
   const seg = ui.noteSeg;
-  const head = `<div class="top"><span></span><div class="title"><b>Noter</b></div>${avatar()}</div>
+  const head = `<div class="top"><span></span><div class="title"><b>Noter</b></div><span></span></div>
     <div class="seg" style="margin-bottom:14px"><button data-nseg="selskaber" aria-pressed="${seg === "selskaber"}">Selskaber</button><button data-nseg="ideer" aria-pressed="${seg === "ideer"}">Idéer</button></div>`;
   if (seg === "ideer") {
     const ideas = S.notes.filter((n) => n.kind === "ide").sort((a, b) => (a.done - b.done) || (b.created || 0) - (a.created || 0));
@@ -1040,8 +1199,15 @@ async function importScan(rows) {
 /* ---------- /scan ---------- */
 
 /* ---------- events wiring ---------- */
-document.querySelector("nav.tabs").addEventListener("click", (e) => {
+const setSide = (open) => { document.getElementById("side").classList.toggle("open", open); document.getElementById("sideScrim").classList.toggle("open", open); };
+document.addEventListener("click", (e) => {
+  if (e.target.closest("[data-open-side]")) return setSide(true);
+  if (e.target.id === "sideScrim") return setSide(false);
+  const inNav = e.target.closest("nav.tabs, #side, .topbar"); if (!inNav) return;
+  const a = e.target.closest("[data-act]");
+  if (a && !view.contains(a)) { setSide(false); if (a.dataset.act === "profile") return profileSheet(); if (a.dataset.act === "scan") return startScan(); }
   const b = e.target.closest("[data-tab]"); if (!b) return;
+  setSide(false);
   if (b.dataset.tab === "borde") go("night", { date: ui.date || nextNight() }); else go(b.dataset.tab);
 });
 let glTimer = null;
@@ -1056,6 +1222,7 @@ view.addEventListener("submit", (e) => {
   e.preventDefault();
   if (e.target.id === "teamNew") { const f = e.target; return safe(store.rpc("nyx_create_team", { p_team: f.querySelector("#t-name").value, p_name: f.querySelector("#t-me").value }).then(() => store.loadAll()), "Holdet er oprettet"); }
   if (e.target.id === "teamJoin") { const f = e.target; return store.rpc("nyx_join_team", { p_code: f.querySelector("#j-code").value, p_name: f.querySelector("#j-me").value }).then(() => store.loadAll()).then(() => toast("Du er på holdet"), (err) => toast(/findes ikke/.test(err.message) ? "Koden findes ikke" : /allerede/.test(err.message) ? "Du er allerede på et hold" : "Kunne ikke tilslutte")); }
+  if (e.target.id === "hivePctForm") return safe(store.settings({ ...S.settings, hivePct: num(e.target.querySelector("#h-pct").value) }), "Gemt");
   if (e.target.id === "setForm") safe(store.settings({ ...S.settings, pct: num(e.target.querySelector("#s-pct").value) }), "Gemt");
   if (e.target.id === "ideaForm") { const t = e.target.querySelector("#ideaText").value.trim(); if (t) safe(store.put("notes", { id: newId(), kind: "ide", text: t, done: false, created: Date.now() })); }
 });
@@ -1067,6 +1234,7 @@ view.addEventListener("change", (e) => {
 view.addEventListener("click", (e) => {
   const t = (s) => e.target.closest(s);
   let x;
+  if ((x = t("[data-tab-go]"))) return go(x.dataset.tabGo);
   if ((x = t("[data-night]"))) return go("night", { date: x.dataset.night });
   if ((x = t("[data-mode]"))) { ui.mode = x.dataset.mode; return render(); }
   if ((x = t("[data-area]"))) { ui.area = (ui.area + Number(x.dataset.area) + AREAS.length) % AREAS.length; return render(); }
