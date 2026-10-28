@@ -1,4 +1,4 @@
-# Nyx Promoter
+# Niels Bordbog
 
 Din egen app som promoter: bordkort fra Nyx, bookinger pr. aften, gæsteliste, statistik over forventet og solgt, fødselsdage, opfølgning og noter.
 Kan lægges på hjemmeskærmen som en app og opdateres live mellem telefon og computer.

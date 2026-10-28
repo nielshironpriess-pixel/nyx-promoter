@@ -3,12 +3,12 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <title>Nyx Promoter</title>
+  <title>Niels Bordbog</title>
   <meta name="theme-color" content="#1c1f26">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="Nyx">
+  <meta name="apple-mobile-web-app-title" content="Bordbog">
   <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="assets/icon-192.png">
@@ -359,7 +359,7 @@ const store = {
 function showLogin() {
   document.querySelector("nav.tabs").hidden = true;
   view.innerHTML = `<form class="login" id="loginForm">
-    <div class="logo">NYX</div><p class="note">Log ind med samme email og adgangskode som på Goon.</p>
+    <div class="logo">NIELS</div><p style="margin:0;font-weight:700;letter-spacing:.2em;color:var(--muted)">BORDBOG</p><p class="note">Log ind med samme email og adgangskode som på Goon.</p>
     <label class="f">Email<input id="l-email" type="email" autocomplete="email" required></label>
     <label class="f">Adgangskode<input id="l-pass" type="password" autocomplete="current-password" required></label>
     <p class="err" id="l-err"></p><button class="btn teal" type="submit">Log ind</button></form>`;
