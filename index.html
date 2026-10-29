@@ -1559,6 +1559,7 @@ function vListe() {
     ${wait.length ? `<div class="list">${wait.map(row).join("")}</div>` : ""}
     ${done.length ? `<div class="gsub"><span>Kommet</span><span>${sumG(done)}</span></div><div class="list">${done.map(row).join("")}</div>` : ""}`;
   }).join("");
+  const written = rows.filter((n) => n.nyx).length;
   const mine = vipUsed(date, store.uid), left = Math.max(0, VIP_MAX - mine);
   const hero = vip && isCrew()
     ? `<section class="shero vip num" style="padding:14px 18px"><div class="lab">Dine VIP-pladser</div><div class="amt" style="font-size:34px">${mine} / ${VIP_MAX}</div>
@@ -1566,7 +1567,6 @@ function vListe() {
     : `<section class="shero ${vip ? "vip" : ""} num" style="padding:14px 18px"><div class="lab">${vip ? "VIP-liste" : "På listen"}</div><div class="amt" style="font-size:34px">${total} ${total === 1 ? "gæst" : "gæster"}</div>
       <div class="row2"><span>${rows.length} ${rows.length === 1 ? "navn" : "navne"}${isCrew() && rows.length ? ` · ${written} skrevet på` : ""}</span><span>${came} kom · ${total - came} mangler</span></div></section>`;
   const full = vip && isCrew() && !left;
-  const written = rows.filter((n) => n.nyx).length;
   if (isCrew() && !ui.pushNow) pushState().then((st) => { ui.pushNow = st; if (ui.tab === "liste" && st !== "til") render(); });
   const pushBanner = isCrew() && ui.pushNow && ui.pushNow !== "til" && ui.pushNow !== "nej" ? `<div class="list" style="margin-top:12px"><div class="row todo-row"><span class="bub">🔔</span><span class="mid"><span class="t">Få besked når de er skrevet på</span><span class="s">${ui.pushNow === "afvist" ? "Slå notifikationer til under Indstillinger → Bordbog." : "Du får en notifikation, når " + esc(first(store.boss.name)) + " har skrevet dine gæster ind."}</span></span>${ui.pushNow === "afvist" ? "" : `<button class="btn teal" data-act="pushon" style="padding:8px 12px">Slå til</button>`}</div></div>` : "";
   return `<div class="top"><span></span><div class="title"><b>${vip ? "VIP-liste" : "Gæsteliste"}</b><span>${esc(ev.name)}</span></div><span></span></div>
