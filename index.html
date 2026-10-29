@@ -582,7 +582,8 @@ const shortName = (n) => { const p = String(n || "").trim().split(/\s+/); return
 const nightOf = (date) => S.nights.find((n) => n.id === date);
 function eventFor(date) {
   const n = nightOf(date), def = DEFAULT_EVENTS[d(date).getDay()] || ["Aften", "", ""];
-  return { name: (n && n.event) || def[0], time: (n && n.time) || def[1], age: def[2], guestlist: n ? num(n.guestlist) : 0 };
+  const manual = n ? num(n.guestlist) : 0, names = S.notes.filter((x) => x.kind === "gaest" && x.date === date).reduce((a, x) => a + (num(x.count) || 1), 0);
+  return { name: (n && n.event) || def[0], time: (n && n.time) || def[1], age: def[2], guestlist: manual + names, manual, names };
 }
 const active = (b) => b.status !== "aflyst";
 const bookingsOn = (date) => S.bookings.filter((b) => b.date === date && !b.club);
@@ -929,8 +930,8 @@ function vNight() {
   const top = `<div class="top"><button class="pillbtn" data-act="back">‹ Events</button>
     <div class="title"><span class="d">${dayLabel(date)}</span><br><span>${esc(e.name)}</span></div><button class="pillbtn right" data-act="editnight">Ret</button></div>
     <div class="seg"><button data-mode="liste" aria-pressed="${ui.mode === "liste"}">Liste</button><button data-mode="kort" aria-pressed="${ui.mode === "kort"}">Kort</button></div>
-    <div class="glist"><div><div style="font-weight:600">Din gæsteliste</div><div class="k">Antal du har sat på liste</div></div>
-    <div class="step"><button data-gl="-1" aria-label="Færre">−</button><input id="gl" class="num" inputmode="numeric" value="${e.guestlist}"><button data-gl="1" aria-label="Flere">+</button></div></div>`;
+    <div class="glist"><div><div style="font-weight:600">Din gæsteliste${e.names ? ` · ${e.guestlist} i alt` : ""}</div><div class="k">${e.names ? `${e.names} fra gæstelisten${isBoss() && (store.crew || []).length ? " (inkl. dit team)" : ""} + ekstra her` : "Antal du har sat på liste"}</div></div>
+    <div class="step"><button data-gl="-1" aria-label="Færre">−</button><input id="gl" class="num" inputmode="numeric" value="${e.manual}"><button data-gl="1" aria-label="Flere">+</button></div></div>`;
   if (ui.mode === "liste") {
     const rows = bs.slice().sort((a, b) => a.area.localeCompare(b.area) || num(a.table) - num(b.table));
     const exp = rows.filter(active).reduce((a, b) => a + num(b.expected), 0), sp = rows.reduce((a, b) => a + sold(b), 0);
@@ -1084,14 +1085,16 @@ function monthStats(ym, pred) {
   const bs = myBookings().filter((b) => inPay(b.date, ym) && (pred ? pred(b) : !b.club));
   const act = bs.filter(active), came = bs.filter((b) => b.status === "kom"), withSpent = came.filter((b) => num(b.spent));
   const decided = bs.filter((b) => b.status === "kom" || b.status === "udeblev");
-  const nights = S.nights.filter((n) => inPay(n.id, ym) && num(n.guestlist));
+  const glDates = [...new Set([...S.nights.map((n) => n.id), ...S.notes.filter((x) => x.kind === "gaest").map((x) => x.date)])].filter((x) => x && inPay(x, ym) && eventFor(x).guestlist);
+  const crewIds = (store.crew || []).map((c) => c.id);
   const expected = act.reduce((a, b) => a + num(b.expected), 0), soldSum = came.reduce((a, b) => a + num(b.spent), 0);
   return { bs, act, came, expected, sold: soldSum,
     avgExp: act.length ? expected / act.length : 0,
     avgSold: withSpent.length ? soldSum / withSpent.length : 0,
     expOfCame: withSpent.reduce((a, b) => a + num(b.expected), 0),
     show: decided.length ? Math.round(came.length / decided.length * 100) : null,
-    guests: nights.reduce((a, n) => a + num(n.guestlist), 0), guestNights: nights.length,
+    guests: glDates.reduce((a, x) => a + eventFor(x).guestlist, 0), guestNights: glDates.length,
+    crewGuests: S.notes.filter((x) => x.kind === "gaest" && x.date && inPay(x.date, ym) && crewIds.includes(noteOwner(x))).reduce((a, x) => a + (num(x.count) || 1), 0),
     tableGuests: came.reduce((a, b) => a + num(b.guests), 0),
     withMer: withSpent.filter((b) => extra(b) > 0), noMer: withSpent.filter((b) => extra(b) <= 0), waiting: came.length - withSpent.length };
 }
@@ -1154,7 +1157,7 @@ function salesKpis(m, hive) {
     <div class="kpi"><div class="l">Snit pr. bord</div><div class="v">${kr(m.avgSold || m.avgExp)}</div><div class="s">${m.avgSold ? "solgt" : "forventet"} pr. bord</div></div>
     <div class="kpi"><div class="l">Mødte op</div><div class="v">${m.show === null ? "–" : m.show + " %"}</div><div class="s">${m.tableGuests} gæster ved bordene</div></div>
     ${hive ? `<div class="kpi"><div class="l">Borde booket</div><div class="v">${m.act.length}</div><div class="s">${kr(m.expected)} forventet</div></div>`
-      : `<div class="kpi"><div class="l">Gæsteliste</div><div class="v">${m.guests}</div><div class="s">${m.guestNights ? "ca. " + Math.round(m.guests / m.guestNights) + " pr. aften" : "ingen aftener endnu"}</div></div>`}
+      : `<div class="kpi"><div class="l">Gæsteliste</div><div class="v">${m.guests}</div><div class="s">${m.guestNights ? (m.crewGuests ? "heraf " + m.crewGuests + " fra dit team · " : "") + "ca. " + Math.round(m.guests / m.guestNights) + " pr. aften" : "ingen aftener endnu"}</div></div>`}
   </div>`;
 }
 function periodTables(m) {
