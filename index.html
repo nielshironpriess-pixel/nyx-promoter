@@ -425,6 +425,7 @@ label.f input,label.f select,label.f textarea,.status button,.spentbox,label.sha
 .nyxh{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:10px 0 6px}
 .nyxh .btn{padding:7px 12px;font-size:13px}
 .nyxbox{margin-top:10px}
+.pkgp{font-weight:800;color:var(--green);font-size:14px}.pkg .nyxpre{margin-top:4px}
 .ctodo{flex:none;font-size:12px;font-weight:800;padding:5px 10px;border-radius:99px;background:var(--teal);color:var(--green-ink)}
 .ctodo.ok{background:var(--green)}
 .cchips{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}.cchips span{font-size:13px;font-weight:700;padding:4px 10px;border-radius:99px;background:rgba(255,255,255,.6);border:1px solid var(--line)}
@@ -1573,6 +1574,24 @@ async function moonCopy(k) {
     toast(MOON_IMG[k][2] + " er kopieret");
   } catch { toast("Kunne ikke kopiere. Hold fingeren på billedet og vælg Kopiér."); }
 }
+/* ekstra pakker som tekst, klar til at sende til kunder */
+const PACKAGES = [
+  { id: "12k", name: "12K-pakken", price: "12.000 kr. + SC", text: `12K-pakken
+
+Runde 1
+• 3L Vodka
+• 25 Mixers
+
+Runde 2
+• 1 × Magnum Moët
+• 2 × 0,7L Belvedere
+
+Inkluderet:
+• 2 bomberør
+
+Pris
+12.000 kr. + SC` },
+];
 function vMoon() {
   const card = (k, extra) => `<section class="cmp moonc"><div class="nyxh" style="margin-top:0"><b style="font-size:17px">${MOON_IMG[k][2]}</b></div>
     <button class="moonimg" data-moonview="${k}"><img src="${MOON_IMG[k][0]}" alt="Moon ${MOON_IMG[k][2].toLowerCase()}" loading="lazy"></button>
@@ -1580,6 +1599,10 @@ function vMoon() {
   return `<div class="top"><span></span><div class="title"><b>Menu til kunder</b><span>Moon · torsdag</span></div><span></span></div>
   <button class="btn teal" data-moonshare="menu,kort" style="width:100%;margin:6px 0 4px;padding:13px">Send menukort + bordkort</button>
   <p class="note" style="margin:4px 0 6px">"Del" åbner iPhonens delemenu, så du kan sende direkte på Instagram, Snap eller SMS.</p>
+  <h2>Pakker</h2>
+  ${PACKAGES.map((pk) => `<section class="cmp pkg"><div class="nyxh" style="margin-top:0"><b style="font-size:17px">${esc(pk.name)}</b><span class="pkgp">${esc(pk.price)}</span></div>
+    <pre class="nyxpre">${esc(pk.text.split("\n").slice(1).join("\n").trim())}</pre>
+    <div class="moonb"><button class="btn teal" data-pkgshare="${pk.id}">Del</button><button class="btn" data-pkgcopy="${pk.id}">Kopiér tekst</button></div></section>`).join("")}
   ${card("menu", `<button class="btn" data-mooncopytxt>Kopiér som tekst</button>`)}
   ${card("kort")}`;
 }
@@ -2040,6 +2063,8 @@ view.addEventListener("click", (e) => {
   if ((x = t("[data-pickclub]"))) return pickClub(x.dataset.pickclub);
   if ((x = t("[data-moonshare]"))) return moonShare(x.dataset.moonshare.split(","));
   if ((x = t("[data-mooncopy]"))) return moonCopy(x.dataset.mooncopy);
+  if ((x = t("[data-pkgcopy]"))) { const pk = PACKAGES.find((y) => y.id === x.dataset.pkgcopy); return pk && copyText(pk.text, pk.name + " er kopieret"); }
+  if ((x = t("[data-pkgshare]"))) { const pk = PACKAGES.find((y) => y.id === x.dataset.pkgshare); if (!pk) return; if (navigator.share) return navigator.share({ text: pk.text }).catch(() => {}); return copyText(pk.text, pk.name + " er kopieret"); }
   if (t("[data-mooncopytxt]")) return copyText(MOON_TXT, "Menukortet er kopieret som tekst");
   if ((x = t("[data-moonview]"))) { const o = document.createElement("div"); o.className = "moonfull"; o.innerHTML = `<img src="${MOON_IMG[x.dataset.moonview][0]}" alt=""><button aria-label="Luk">✕</button>`; o.addEventListener("click", (e) => { if (e.target.tagName === "BUTTON") o.remove(); }); document.body.appendChild(o); return; }
   if ((x = t("[data-cpy]"))) { const txt = (ui.cp || {})[x.dataset.cpy]; if (txt) copyText(txt, "Kopieret: " + (txt.includes("\n") ? txt.split("\n").length + " linjer" : txt.slice(0, 40))); return; }
