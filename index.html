@@ -411,6 +411,7 @@ label.f input,label.f select,label.f textarea,.status button,.spentbox,label.sha
 .nyxh{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:10px 0 6px}
 .nyxh .btn{padding:7px 12px;font-size:13px}
 .nyxbox{margin-top:10px}
+.donebtn{width:100%;margin-top:8px;padding:11px;background:var(--green)!important;color:var(--green-ink)!important;border-color:var(--green)!important;font-weight:700}
 .nyxpre{margin:0;white-space:pre-wrap;font:15px/1.5 var(--f);background:rgba(255,255,255,.55);border:1px solid var(--line);border-radius:12px;padding:10px 12px;user-select:text;-webkit-user-select:text}
 .moonimg{display:block;width:100%;padding:0;border:0;background:#fff;border-radius:14px;overflow:hidden;margin-top:8px;box-shadow:0 2px 10px rgba(0,0,0,.08)}
 .moonimg img{display:block;width:100%;height:auto;max-height:420px;object-fit:cover;object-position:top}
@@ -1357,11 +1358,26 @@ function notifyBoss(b, what) {
     } catch {}
   }, 1500);
 }
-async function pushBoss(title, body) {
+async function pushBoss(title, body, to) {
   try {
     const { data } = await store.sb.auth.getSession();
-    await fetch("/api/notify", { method: "POST", headers: { "Content-Type": "application/json", Authorization: "Bearer " + (data.session?.access_token || "") }, body: JSON.stringify({ title, body }) });
+    await fetch("/api/notify", { method: "POST", headers: { "Content-Type": "application/json", Authorization: "Bearer " + (data.session?.access_token || "") }, body: JSON.stringify(to ? { title, body, to } : { title, body }) });
   } catch {}
+}
+/* chefen markerer gæster som skrevet på i Nyx → underpromoteren får besked */
+const doneLog = {}; let doneTimer = null;
+async function markWritten(notes, on) {
+  for (const n of notes) { if (!!n.nyx !== on) await safe(store.put("notes", { ...n, nyx: on, nyxAt: on ? Date.now() : null })); }
+  if (!on || store.mode !== "sky") return;
+  notes.forEach((n) => { const k = noteOwner(n) + "|" + n.date; (doneLog[k] ||= []).push(nyxName(n)); });
+  clearTimeout(doneTimer);
+  doneTimer = setTimeout(() => {
+    Object.entries(doneLog).forEach(([k, names]) => {
+      const [to, date] = k.split("|"); if (to === store.uid) return;
+      pushBoss(`✓ ${first(profile().name || meNyx())} har skrevet dine gæster på`, `${eventFor(date).name} ${dayLabel(date)} · ${names.slice(0, 6).join(", ")}${names.length > 6 ? " og " + (names.length - 6) + " mere" : ""}`, to);
+    });
+    for (const k in doneLog) delete doneLog[k];
+  }, 2500);
 }
 const myFirst = () => first(profile().name || meNyx() || "Din underpromoter");
 let listTimer = null, listLog = {};
@@ -1441,8 +1457,11 @@ function toNyxSection() {
     const norm = gl.filter((n) => !n.vip), vip = gl.filter((n) => n.vip);
     if (!bs.length && !gl.length) return "";
     const head = `${c.name} · ${ev.name} ${dayLabel(date)}`;
-    const glBox = (arr, title, cls) => arr.length ? `<div class="nyxbox"><div class="nyxh"><b>${title} · ${sumG(arr)}</b>${arr.length > 1 ? `<button class="btn ${cls}" data-cpy="${cp(arr.map(nyxName).join("\n"))}">Kopiér alle navne</button>` : ""}</div>
-      <div class="list">${arr.map((n) => `<button class="row" data-cpy="${cp(nyxName(n))}"><span class="tag num ${n.vip ? "vip" : ""}">${gN(n)}</span><span class="mid"><span class="t">${esc(nyxName(n))}</span>${n.note ? `<span class="s">${esc(n.note)}</span>` : ""}</span><span class="right" style="font-size:12px;font-weight:700;color:var(--teal)">Kopiér</span></button>`).join("")}</div></div>` : "";
+    const glBox = (arr, title, cls) => { if (!arr.length) return ""; const left = arr.filter((n) => !n.nyx), ids = left.map((n) => n.id).join(",");
+      return `<div class="nyxbox"><div class="nyxh"><b>${title} · ${sumG(arr)}${arr.length - left.length ? ` <span style="color:var(--green);font-weight:700">· ${arr.length - left.length}/${arr.length} skrevet på</span>` : ""}</b>${left.length > 1 ? `<button class="btn ${cls}" data-cpy="${cp(left.map(nyxName).join("\n"))}">Kopiér ${left.length < arr.length ? "resten" : "alle navne"}</button>` : ""}</div>
+      <div class="list">${arr.map((n) => `<div class="crow${n.nyx ? " done" : ""}"><button class="row" data-cpy="${cp(nyxName(n))}"><span class="tag num ${n.nyx ? "kom" : n.vip ? "vip" : ""}">${gN(n)}</span><span class="mid"><span class="t">${esc(nyxName(n))}</span><span class="s">${esc([n.nyx ? "Skrevet på ✓" : "", n.note].filter(Boolean).join(" · ")) || "Tryk for at kopiere"}</span></span>${n.nyx ? "" : `<span class="right" style="font-size:12px;font-weight:700;color:var(--teal)">Kopiér</span>`}</button>
+        <button class="cbtn" data-gdone="${esc(n.id)}" aria-label="${n.nyx ? "Fortryd skrevet på" : "Skrevet på i Nyx"}" style="${n.nyx ? "background:var(--green);color:var(--green-ink);border-color:var(--green)" : ""}">✓</button></div>`).join("")}</div>
+      ${left.length ? `<button class="btn donebtn" data-gdoneall="${esc(ids)}">✓ ${left.length === 1 ? "Skrevet på" : "Alle " + left.length + " er skrevet på"} – giv ${esc(first(c.name))} besked</button>` : `<p class="note" style="margin:6px 2px 0;color:var(--green);font-weight:700">✓ Alle er skrevet på, og ${esc(first(c.name))} har fået besked.</p>`}</div>`; };
     return `<section class="cmp"><div class="big" style="font-size:20px">${esc(c.name)}</div>
       ${bs.length ? `<div class="nyxh" style="margin-top:6px"><b>Borde · ${bs.length}</b>${bs.length > 1 ? `<button class="btn teal" data-cpy="${cp("Borde – " + head + "\n" + bs.map(nyxLine).join("\n"))}">Kopiér alle</button>` : ""}</div>
       <div class="list">${bs.map((b) => `<div class="crow${b.nyx ? " done" : ""}"><button class="row" data-cpy="${cp(nyxLine(b))}"><span class="tag num ${b.nyx ? "kom" : "booket"}">${esc(b.table || "?")}</span><span class="mid"><span class="t">${esc(b.name || "Uden navn")}</span><span class="s">${esc([b.area, b.guests ? b.guests + " pers" : "", num(b.expected) ? kr(b.expected) : "", b.arrival, b.phone].filter(Boolean).join(" · "))}</span></span><span class="right" style="font-size:12px;font-weight:700;color:var(--teal)">Kopiér</span></button>
@@ -1453,7 +1472,7 @@ function toNyxSection() {
   return `<h2>Til Nyx</h2>
   <div class="monthsw"><button data-cday="-1" aria-label="Forrige aften">‹</button><strong>${dayLabel(date)} · ${esc(ev.name)}</strong><button data-cday="1" aria-label="Næste aften">›</button></div>
   ${blocks || `<div class="empty" style="margin-top:10px">Intet fra dit team til denne aften.</div>`}
-  <p class="note">Tryk på et bord eller et navn for at kopiere det, og sæt det ind i Nyx. Sæt ✓ når bordet er lagt ind.</p>`;
+  <p class="note">Tryk på et bord eller et navn for at kopiere det, og sæt det ind i Nyx. Tryk ✓ når det er skrevet på, så får ${crew.length === 1 ? esc(first(crew[0].name)) : "de"} besked.</p>`;
 }
 
 /* ---------- Moon: menukort og bordkort til kunder ---------- */
@@ -1531,7 +1550,7 @@ function vListe() {
   const order = Object.keys(groups).sort((a, b) => (a === store.uid ? -1 : b === store.uid ? 1 : 0));
   const who = (o) => (o === store.uid ? "Dig" : crewName(o) || memberName(o));
   const row = (n) => `<div class="crow${n.came ? " done" : ""}"><button class="row" data-gaest="${esc(n.id)}"><span class="tag num ${n.vip ? "vip" : ""} ${n.came ? "kom" : ""}">${gN(n)}</span>
-      <span class="mid"><span class="t">${esc(n.name)}${n.vip && !vip ? `<span class="vipb">VIP</span>` : ""}</span><span class="s">${esc(n.note || (n.came ? "Kom" : gN(n) === 1 ? "1 person" : gN(n) + " personer"))}</span></span></button>
+      <span class="mid"><span class="t">${esc(n.name)}${n.vip && !vip ? `<span class="vipb">VIP</span>` : ""}</span><span class="s">${n.nyx && !n.came ? `<b style="color:var(--green)">✓ Skrevet på</b>${n.note ? " · " : ""}` : ""}${esc(n.note || (n.came ? "Kom" : n.nyx ? "" : gN(n) === 1 ? "1 person" : gN(n) + " personer"))}</span></span></button>
       <button class="cbtn" data-gcame="${esc(n.id)}" aria-label="${n.came ? "Fortryd kommet" : "Markér som kommet"}" style="${n.came ? "background:var(--green);color:var(--green-ink);border-color:var(--green)" : ""}">✓</button></div>`;
   const byTime = (a, b) => (a.created || 0) - (b.created || 0);
   const lists = order.map((o) => {
@@ -1545,12 +1564,15 @@ function vListe() {
     ? `<section class="shero vip num" style="padding:14px 18px"><div class="lab">Dine VIP-pladser</div><div class="amt" style="font-size:34px">${mine} / ${VIP_MAX}</div>
       <div class="row2"><span>${left ? left + " tilbage" : "Alle pladser brugt"}</span><span>${came} kom</span></div><div class="vbar"><i style="width:${Math.min(100, (mine / VIP_MAX) * 100)}%"></i></div></section>`
     : `<section class="shero ${vip ? "vip" : ""} num" style="padding:14px 18px"><div class="lab">${vip ? "VIP-liste" : "På listen"}</div><div class="amt" style="font-size:34px">${total} ${total === 1 ? "gæst" : "gæster"}</div>
-      <div class="row2"><span>${rows.length} ${rows.length === 1 ? "navn" : "navne"}</span><span>${came} kom · ${total - came} mangler</span></div></section>`;
+      <div class="row2"><span>${rows.length} ${rows.length === 1 ? "navn" : "navne"}${isCrew() && rows.length ? ` · ${written} skrevet på` : ""}</span><span>${came} kom · ${total - came} mangler</span></div></section>`;
   const full = vip && isCrew() && !left;
+  const written = rows.filter((n) => n.nyx).length;
+  if (isCrew() && !ui.pushNow) pushState().then((st) => { ui.pushNow = st; if (ui.tab === "liste" && st !== "til") render(); });
+  const pushBanner = isCrew() && ui.pushNow && ui.pushNow !== "til" && ui.pushNow !== "nej" ? `<div class="list" style="margin-top:12px"><div class="row todo-row"><span class="bub">🔔</span><span class="mid"><span class="t">Få besked når de er skrevet på</span><span class="s">${ui.pushNow === "afvist" ? "Slå notifikationer til under Indstillinger → Bordbog." : "Du får en notifikation, når " + esc(first(store.boss.name)) + " har skrevet dine gæster ind."}</span></span>${ui.pushNow === "afvist" ? "" : `<button class="btn teal" data-act="pushon" style="padding:8px 12px">Slå til</button>`}</div></div>` : "";
   return `<div class="top"><span></span><div class="title"><b>${vip ? "VIP-liste" : "Gæsteliste"}</b><span>${esc(ev.name)}</span></div><span></span></div>
   <div class="monthsw"><button data-lday="-1" aria-label="Forrige aften">‹</button><strong>${dayLabel(date)}</strong><button data-lday="1" aria-label="Næste aften">›</button></div>
   <div class="seg lseg ${vip ? "vipon" : ""}" style="margin-top:12px"><button data-lseg="gaest" aria-pressed="${!vip}">Gæsteliste<span class="c num">${nG}</span></button><button data-lseg="vip" aria-pressed="${vip}">★ VIP<span class="c num">${nV}</span></button></div>
-  ${hero}
+  ${hero}${pushBanner}
   ${full ? `<div class="empty" style="margin-top:12px">Du har brugt alle ${VIP_MAX} VIP-pladser til denne aften.</div>` : `<form class="quick" id="gaestForm" style="margin-top:12px"><input id="g-name" placeholder="${vip ? "VIP-navn" : "Navn"}" autocomplete="off" autocorrect="off" spellcheck="false" enterkeyhint="done" required>
     <div class="gstep"><button type="button" data-gstep="-1" aria-label="Færre">−</button><b class="num" id="g-count">${ui.gcount}</b><button type="button" data-gstep="1" aria-label="Flere">+</button></div>
     <button class="btn ${vip ? "vip" : "teal"}" style="flex:none;padding:10px 14px">Tilføj</button></form>
@@ -1570,6 +1592,7 @@ function gaestSheet(n) {
   </form>`, (f) => {
     const nx = { ...n, name: v(f, "ge-name"), count: Math.max(1, num(v(f, "ge-count"))), date: v(f, "ge-date") || n.date, note: v(f, "ge-note"), vip: f.querySelector("#ge-vip").checked };
     if (!okDay(nx.date)) { toast("Du kan kun skrive gæster på torsdage (Moon)"); return false; }
+    if (n.nyx && (nx.name !== n.name || nx.count !== gN(n) || nx.date !== n.date)) nx.nyx = false;
     if (nx.vip && noteOwner(n) === store.uid && !vipRoom(nx.date, nx.count, n.id)) return false;
     safe(store.put("notes", nx), "Gemt");
   },
@@ -1930,6 +1953,8 @@ view.addEventListener("click", (e) => {
   if ((x = t("[data-moonview]"))) { const o = document.createElement("div"); o.className = "moonfull"; o.innerHTML = `<img src="${MOON_IMG[x.dataset.moonview][0]}" alt=""><button aria-label="Luk">✕</button>`; o.addEventListener("click", (e) => { if (e.target.tagName === "BUTTON") o.remove(); }); document.body.appendChild(o); return; }
   if ((x = t("[data-cpy]"))) { const txt = (ui.cp || {})[x.dataset.cpy]; if (txt) copyText(txt, "Kopieret: " + (txt.includes("\n") ? txt.split("\n").length + " linjer" : txt.slice(0, 40))); return; }
   if ((x = t("[data-cday]"))) { ui.crewDate = stepNight(ui.crewDate, Number(x.dataset.cday)); return render(); }
+  if ((x = t("[data-gdone]"))) { const n = S.notes.find((y) => y.id === x.dataset.gdone); return n && markWritten([n], !n.nyx); }
+  if ((x = t("[data-gdoneall]"))) { const ids = x.dataset.gdoneall.split(","); x.disabled = true; return markWritten(S.notes.filter((y) => ids.includes(y.id)), true).then(() => toast("Markeret som skrevet på")); }
   if ((x = t("[data-nyxdone]"))) { const b = S.bookings.find((y) => y.id === x.dataset.nyxdone); return b && safe(store.put("bookings", { ...b, nyx: !b.nyx })); }
   if ((x = t("[data-crewopen]"))) { ui.crewOpen = ui.crewOpen === x.dataset.crewopen ? null : x.dataset.crewopen; return render(); }
   if ((x = t("[data-copyinv]"))) return copyText(`Hej! Hent Bordbog på ${location.origin}, tryk "Opret ny konto", brug din email og skriv koden ${x.dataset.copyinv}.`);

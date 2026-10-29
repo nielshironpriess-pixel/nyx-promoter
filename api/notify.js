@@ -1,6 +1,7 @@
 // Notifikationer til chefen, når en underpromoter booker eller retter et bord.
 // GET  → den offentlige nøgle, telefonen skal bruge for at slå notifikationer til.
 // POST → (underpromoter logget ind) sender en besked til chefens telefoner.
+//        Med { to: <underpromoterens id> } sender chefen i stedet til underpromoteren.
 import { createHmac, createECDH } from "node:crypto";
 import webpush from "web-push";
 import { SUPABASE_URL, SUPABASE_ANON_KEY } from "../js/config.js";
@@ -25,9 +26,10 @@ export default async function handler(req, res) {
   const who = await fetch(SUPABASE_URL + "/auth/v1/user", { headers: { apikey: SUPABASE_ANON_KEY, Authorization: auth } }).catch(() => null);
   if (!who || !who.ok) return res.status(401).json({ error: "Log ind igen." });
 
-  const { title, body } = req.body || {};
+  const { title, body, to } = req.body || {};
   if (typeof title !== "string" || typeof body !== "string") return res.status(400).json({ error: "Mangler tekst." });
-  const r = await rpc("nyx_boss_push", auth).catch(() => null);
+  const toMember = typeof to === "string" && /^[0-9a-f-]{36}$/i.test(to);
+  const r = await (toMember ? rpc("nyx_member_push", auth, { p_member: to }) : rpc("nyx_boss_push", auth)).catch(() => null);
   if (!r || !r.ok) return res.status(200).json({ sent: 0 });
   const subs = await r.json();
   const origin = "https://" + (req.headers["x-forwarded-host"] || req.headers.host || "nyx-promoter.vercel.app");
@@ -36,7 +38,7 @@ export default async function handler(req, res) {
   let sent = 0;
   await Promise.all(subs.map(async (s) => {
     try { await webpush.sendNotification(s, payload, { TTL: 3600, urgency: "high" }); sent++; }
-    catch (e) { if (e?.statusCode === 404 || e?.statusCode === 410) await rpc("nyx_push_gone", auth, { p_endpoint: s.endpoint }).catch(() => {}); else console.error(e?.statusCode, e?.body); }
+    catch (e) { if (e?.statusCode === 404 || e?.statusCode === 410) await rpc(toMember ? "nyx_member_push_gone" : "nyx_push_gone", auth, { p_endpoint: s.endpoint }).catch(() => {}); else console.error(e?.statusCode, e?.body); }
   }));
   return res.status(200).json({ sent });
 }
