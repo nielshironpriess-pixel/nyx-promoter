@@ -589,12 +589,13 @@ const dayLabel = (iso) => `${WD[d(iso).getDay()]} ${d(iso).getDate()}. ${d(iso).
 const monthName = (ym) => d(ym + "-01").toLocaleDateString("da-DK", { month: "long", year: "numeric" });
 /* lønperiode: fra den 16. til den 15. i næste måned; ym = måneden perioden starter i */
 const PAY_DAY = 16;
-const payYm = (iso) => { const ym = iso.slice(0, 7); return Number(iso.slice(8, 10)) >= PAY_DAY ? ym : shiftMonth(ym, -1); };
-const payStart = (ym) => ym + "-" + String(PAY_DAY).padStart(2, "0");
-const payEnd = (ym) => addDays(payStart(shiftMonth(ym, 1)), -1);
-const inPay = (iso, ym) => !!iso && iso >= payStart(ym) && iso <= payEnd(ym);
+/* Hive afregner pr. kalendermåned (1.–sidste), så der bruges h = true */
+const payYm = (iso, h) => { const ym = iso.slice(0, 7); return h || Number(iso.slice(8, 10)) >= PAY_DAY ? ym : shiftMonth(ym, -1); };
+const payStart = (ym, h) => ym + "-" + (h ? "01" : String(PAY_DAY).padStart(2, "0"));
+const payEnd = (ym, h) => addDays(payStart(shiftMonth(ym, 1), h), -1);
+const inPay = (iso, ym, h) => !!iso && iso >= payStart(ym, h) && iso <= payEnd(ym, h);
 const mShort = (iso) => d(iso).toLocaleDateString("da-DK", { month: "short" }).replace(".", "");
-const payName = (ym) => `${d(payStart(ym)).getDate()}. ${mShort(payStart(ym))} – ${d(payEnd(ym)).getDate()}. ${mShort(payEnd(ym))} ${payEnd(ym).slice(0, 4)}`;
+const payName = (ym, h) => h ? monthName(ym).replace(/^./, (c) => c.toUpperCase()) : `${d(payStart(ym)).getDate()}. ${mShort(payStart(ym))} – ${d(payEnd(ym)).getDate()}. ${mShort(payEnd(ym))} ${payEnd(ym).slice(0, 4)}`;
 const shiftMonth = (ym, k) => { const [y, m] = ym.split("-").map(Number); const t = new Date(y, m - 1 + k, 1); return t.getFullYear() + "-" + String(t.getMonth() + 1).padStart(2, "0"); };
 const newId = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
 const shortName = (n) => { const p = String(n || "").trim().split(/\s+/); return p.length > 1 ? p[0] + " " + p[p.length - 1][0] + "." : p[0] || ""; };
@@ -1064,7 +1065,7 @@ function greeting() { const h = new Date().getHours(); return h < 5 ? "God nat" 
 function vHome() {
   ui.month ||= payYm(todayISO());
   const today = todayISO(), ym = payYm(today), pr = profile();
-  const so = monthStats(ym), hv = monthStats(ym, hiveB);
+  const hym = payYm(today, true), so = monthStats(ym), hv = monthStats(hym, hiveB);
   const pctS = num(S.settings.pct), pctH = num(S.settings.hivePct);
   const prov = so.sold * pctS / 100 + hv.sold * pctH / 100;
   const mer = [...so.withMer, ...hv.withMer].reduce((a, b) => a + extra(b), 0);
@@ -1098,7 +1099,7 @@ function vHome() {
     <h2>${payName(ym)}</h2>
     <div class="kpis num">
       <button class="kpi" data-tab-go="stats"><div class="l">Søpavillonen</div><div class="v">${kr(so.sold)}</div><div class="s">${nBorde(so.came.length)} solgt</div></button>
-      <button class="kpi" data-tab-go="hivesalg"><div class="l">Hive</div><div class="v">${kr(hv.sold)}</div><div class="s">${nBorde(hv.came.length)} solgt</div></button>
+      <button class="kpi" data-tab-go="hivesalg"><div class="l">Hive · ${esc(monthName(hym).split(" ")[0])}</div><div class="v">${kr(hv.sold)}</div><div class="s">${nBorde(hv.came.length)} solgt</div></button>
       ${isCrew() ? `<div class="kpi"><div class="l">Borde booket</div><div class="v">${so.act.length + hv.act.length}</div><div class="s">i lønperioden</div></div>` : `<div class="kpi"><div class="l">Din provision</div><div class="v">${pctS || pctH ? kr(prov) : "–"}</div><div class="s">${pctS || pctH ? `${pctS} % / ${pctH} % på Hive` : "Sæt procent i din profil"}</div></div>`}
       <div class="kpi"><div class="l">Merspend</div><div class="v">${kr(mer)}</div><div class="s">${nBorde(so.withMer.length + hv.withMer.length)} brugte mere</div></div>
     </div>
@@ -1125,7 +1126,8 @@ function bookingRow(b) {
 
 /* ---------- stats ---------- */
 function monthStats(ym, pred) {
-  const bs = myBookings().filter((b) => inPay(b.date, ym) && (pred ? pred(b) : !b.club));
+  const h = pred === hiveB;
+  const bs = myBookings().filter((b) => inPay(b.date, ym, h) && (pred ? pred(b) : !b.club));
   const act = bs.filter(active), came = bs.filter((b) => b.status === "kom"), withSpent = came.filter((b) => num(b.spent));
   const decided = bs.filter((b) => b.status === "kom" || b.status === "udeblev");
   const glDates = [...new Set([...S.nights.map((n) => n.id), ...S.notes.filter((x) => x.kind === "gaest").map((x) => x.date)])].filter((x) => x && inPay(x, ym) && eventFor(x).guestlist);
@@ -1218,15 +1220,16 @@ function periodTables(m) {
   }).join("")}</div>`;
 }
 function salesChart(pred) {
-  const months = Array.from({ length: 6 }, (_, i) => shiftMonth(ui.month, i - 5));
+  const h = pred === hiveB, base = h ? ui.hmonth : ui.month;
+  const months = Array.from({ length: 6 }, (_, i) => shiftMonth(base, i - 5));
   const ms = months.map((x) => monthStats(x, pred)), cmax = Math.max(...ms.map((x) => Math.max(x.sold, x.expected)), 1);
   const W = 340, Hh = 150, top = 20, bot = 22, slot = W / 6, bw = 14;
   const bars = months.map((ym, i) => {
     const cx = slot * i + slot / 2, he = (Hh - top - bot) * ms[i].expected / cmax, hs = (Hh - top - bot) * ms[i].sold / cmax;
     return `<rect x="${cx - bw - 1}" y="${Hh - bot - he}" width="${bw}" height="${Math.max(he, 1)}" rx="3" fill="var(--stripe2)"/>
-      <rect x="${cx + 1}" y="${Hh - bot - hs}" width="${bw}" height="${Math.max(hs, 1)}" rx="3" fill="var(--green)" opacity="${ym === ui.month ? 1 : .55}"/>
+      <rect x="${cx + 1}" y="${Hh - bot - hs}" width="${bw}" height="${Math.max(hs, 1)}" rx="3" fill="var(--green)" opacity="${ym === base ? 1 : .55}"/>
       ${ms[i].sold ? `<text class="val" x="${cx + 8}" y="${Hh - bot - hs - 5}" text-anchor="middle">${Math.round(ms[i].sold / 1000)}k</text>` : ""}
-      <text x="${cx}" y="${Hh - 6}" text-anchor="middle">${mShort(payStart(ym))}–${mShort(payEnd(ym))}</text>`;
+      <text x="${cx}" y="${Hh - 6}" text-anchor="middle">${h ? mShort(ym + "-01") : mShort(payStart(ym)) + "–" + mShort(payEnd(ym))}</text>`;
   }).join("");
   return `<div class="chart"><svg viewBox="0 0 ${W} ${Hh}" role="img" aria-label="Forventet og solgt pr. lønperiode"><line x1="0" x2="${W}" y1="${Hh - bot}" y2="${Hh - bot}" stroke="var(--line)"/>${bars}</svg></div>
   <p class="note"><span class="lg" style="background:var(--stripe2)"></span> forventet <span class="lg" style="background:var(--green)"></span> solgt · seneste 6 lønperioder</p>`;
@@ -1248,14 +1251,15 @@ function salesBody(m, pred) {
   return `<div class="hseg three" style="margin-top:18px">${[["borde", "Borde"], ["udvikling", "Udvikling"], ["top", "Bedste"]].map(([k, l]) => `<button data-stab="${k}" aria-pressed="${tab === k}">${l}</button>`).join("")}</div>
   ${tab === "udvikling" ? salesChart(pred) : tab === "top" ? salesTop(pred) : periodTables(m)}`;
 }
-const monthSw = () => `<div class="monthsw"><button data-month="-1" aria-label="Forrige lønperiode">‹</button><strong>${payName(ui.month)}</strong><button data-month="1" aria-label="Næste lønperiode">›</button></div>`;
+const monthSw = (h) => h ? `<div class="monthsw"><button data-hmonth="-1" aria-label="Forrige måned">‹</button><strong>${payName(ui.hmonth, true)}</strong><button data-hmonth="1" aria-label="Næste måned">›</button></div>`
+  : `<div class="monthsw"><button data-month="-1" aria-label="Forrige lønperiode">‹</button><strong>${payName(ui.month)}</strong><button data-month="1" aria-label="Næste lønperiode">›</button></div>`;
 function vHiveSales() {
-  ui.month ||= payYm(todayISO());
-  const m = monthStats(ui.month, hiveB), pct = num(S.settings.hivePct);
+  ui.hmonth ||= payYm(todayISO(), true);
+  const m = monthStats(ui.hmonth, hiveB), pct = num(S.settings.hivePct);
   return `<div class="top"><span></span><div class="title"><b>Hive</b><span>Salg og provision</span></div><span></span></div>
     ${clubSeg()}
     ${hiveTabs("hivesalg")}
-    ${monthSw()}
+    ${monthSw(true)}
     ${salesHero(m, pct, "på Hive")}
     ${salesAlert(m)}
     ${salesKpis(m, true)}
@@ -1270,7 +1274,7 @@ function totalCard(m, h, pct, hpct) {
   return `<button class="cmp num totalc" data-tab-go="hivesalg" style="display:block;width:100%;text-align:left;margin-top:10px">
     <div style="display:flex;justify-content:space-between;align-items:baseline;gap:8px"><b style="font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)">I alt med Hive</b><span style="font-size:12px;color:var(--teal);font-weight:700">Hive salg ›</span></div>
     <div style="display:flex;justify-content:space-between;align-items:baseline;margin-top:4px"><span class="big" style="font-size:26px">${kr(m.sold + h.sold)}</span><span class="sub">${nBorde(m.act.length + h.act.length)} booket · forventet ${kr(m.expected + h.expected)}</span></div>
-    <div class="sub" style="margin-top:4px">Søpavillonen ${kr(m.sold)} (${m.act.length}) · Hive ${kr(h.sold)} (${h.act.length})${pct || hpct ? " · provision i alt " + kr(prov) : ""}</div></button>`;
+    <div class="sub" style="margin-top:4px">Søpavillonen ${kr(m.sold)} (${m.act.length}) · Hive ${esc(monthName(ui.month).split(" ")[0])} ${kr(h.sold)} (${h.act.length})${pct || hpct ? " · provision i alt " + kr(prov) : ""}</div></button>`;
 }
 function vStats() {
   ui.month ||= payYm(todayISO());
@@ -2053,6 +2057,7 @@ view.addEventListener("click", (e) => {
   if ((x = t("[data-stab]"))) { ui.stab = x.dataset.stab; return render(); }
   if ((x = t("[data-tf]"))) { ui.tf = x.dataset.tf; return render(); }
   if ((x = t("[data-month]"))) { ui.month = shiftMonth(ui.month, Number(x.dataset.month)); return render(); }
+  if ((x = t("[data-hmonth]"))) { ui.hmonth = shiftMonth(ui.hmonth, Number(x.dataset.hmonth)); return render(); }
   if ((x = t("[data-nseg]"))) { ui.noteSeg = x.dataset.nseg; return render(); }
   if ((x = t("[data-party]"))) return partySheet(S.notes.find((n) => n.id === x.dataset.party));
   if ((x = t("[data-delnote]"))) return safe(store.del("notes", x.dataset.delnote));
