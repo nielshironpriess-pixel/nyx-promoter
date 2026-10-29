@@ -1424,6 +1424,7 @@ function vCrew() {
 const sold_ = (b) => (b.status === "kom" ? num(b.spent) || 0 : 0);
 /* ---------- Til Nyx: kopiér underpromoternes borde og lister ---------- */
 const nyxLine = (b) => [`Bord ${b.table || "?"}${b.area ? " (" + b.area + ")" : ""}`, b.name, b.guests ? b.guests + " pers" : "", num(b.expected) ? "min. " + kr(b.expected) : "", b.arrival ? "ankomst " + b.arrival : "", b.phone ? "tlf " + b.phone : "", b.notes || ""].filter(Boolean).join(" · ");
+const nyxName = (n) => n.name.trim() + (gN(n) > 1 ? " +" + (gN(n) - 1) : "");
 const gLine = (n) => n.name + (gN(n) > 1 ? " +" + (gN(n) - 1) : "") + (n.note ? " (" + n.note + ")" : "");
 function crewNightHas(date) { const ids = (store.crew || []).map((c) => c.id); return S.bookings.some((b) => b.date === date && !b.club && active(b) && ids.includes(ownerOf(b))) || listOf(date).some((n) => ids.includes(noteOwner(n))); }
 function toNyxSection() {
@@ -1437,8 +1438,8 @@ function toNyxSection() {
     const norm = gl.filter((n) => !n.vip), vip = gl.filter((n) => n.vip);
     if (!bs.length && !gl.length) return "";
     const head = `${c.name} · ${ev.name} ${dayLabel(date)}`;
-    const glBox = (arr, title, cls) => arr.length ? `<div class="nyxbox"><div class="nyxh"><b>${title} · ${sumG(arr)}</b><button class="btn ${cls}" data-cpy="${cp(title + " – " + head + "\n" + arr.map(gLine).join("\n"))}">Kopiér liste</button></div>
-      <pre class="nyxpre">${esc(arr.map(gLine).join("\n"))}</pre></div>` : "";
+    const glBox = (arr, title, cls) => arr.length ? `<div class="nyxbox"><div class="nyxh"><b>${title} · ${sumG(arr)}</b>${arr.length > 1 ? `<button class="btn ${cls}" data-cpy="${cp(arr.map(nyxName).join("\n"))}">Kopiér alle navne</button>` : ""}</div>
+      <div class="list">${arr.map((n) => `<button class="row" data-cpy="${cp(nyxName(n))}"><span class="tag num ${n.vip ? "vip" : ""}">${gN(n)}</span><span class="mid"><span class="t">${esc(nyxName(n))}</span>${n.note ? `<span class="s">${esc(n.note)}</span>` : ""}</span><span class="right" style="font-size:12px;font-weight:700;color:var(--teal)">Kopiér</span></button>`).join("")}</div></div>` : "";
     return `<section class="cmp"><div class="big" style="font-size:20px">${esc(c.name)}</div>
       ${bs.length ? `<div class="nyxh" style="margin-top:6px"><b>Borde · ${bs.length}</b>${bs.length > 1 ? `<button class="btn teal" data-cpy="${cp("Borde – " + head + "\n" + bs.map(nyxLine).join("\n"))}">Kopiér alle</button>` : ""}</div>
       <div class="list">${bs.map((b) => `<div class="crow${b.nyx ? " done" : ""}"><button class="row" data-cpy="${cp(nyxLine(b))}"><span class="tag num ${b.nyx ? "kom" : "booket"}">${esc(b.table || "?")}</span><span class="mid"><span class="t">${esc(b.name || "Uden navn")}</span><span class="s">${esc([b.area, b.guests ? b.guests + " pers" : "", num(b.expected) ? kr(b.expected) : "", b.arrival, b.phone].filter(Boolean).join(" · "))}</span></span><span class="right" style="font-size:12px;font-weight:700;color:var(--teal)">Kopiér</span></button>
@@ -1449,7 +1450,7 @@ function toNyxSection() {
   return `<h2>Til Nyx</h2>
   <div class="monthsw"><button data-cday="-1" aria-label="Forrige aften">‹</button><strong>${dayLabel(date)} · ${esc(ev.name)}</strong><button data-cday="1" aria-label="Næste aften">›</button></div>
   ${blocks || `<div class="empty" style="margin-top:10px">Intet fra dit team til denne aften.</div>`}
-  <p class="note">Tryk på et bord for at kopiere det, og sæt ✓ når det er lagt i Nyx.</p>`;
+  <p class="note">Tryk på et bord eller et navn for at kopiere det, og sæt det ind i Nyx. Sæt ✓ når bordet er lagt ind.</p>`;
 }
 
 /* ---------- Moon: menukort og bordkort til kunder ---------- */
@@ -1924,7 +1925,7 @@ view.addEventListener("click", (e) => {
   if ((x = t("[data-mooncopy]"))) return moonCopy(x.dataset.mooncopy);
   if (t("[data-mooncopytxt]")) return copyText(MOON_TXT, "Menukortet er kopieret som tekst");
   if ((x = t("[data-moonview]"))) { const o = document.createElement("div"); o.className = "moonfull"; o.innerHTML = `<img src="${MOON_IMG[x.dataset.moonview][0]}" alt=""><button aria-label="Luk">✕</button>`; o.addEventListener("click", (e) => { if (e.target.tagName === "BUTTON") o.remove(); }); document.body.appendChild(o); return; }
-  if ((x = t("[data-cpy]"))) { const txt = (ui.cp || {})[x.dataset.cpy]; if (txt) copyText(txt, txt.includes("\n") ? "Kopieret – sæt ind i Nyx" : "Bordet er kopieret"); return; }
+  if ((x = t("[data-cpy]"))) { const txt = (ui.cp || {})[x.dataset.cpy]; if (txt) copyText(txt, "Kopieret: " + (txt.includes("\n") ? txt.split("\n").length + " linjer" : txt.slice(0, 40))); return; }
   if ((x = t("[data-cday]"))) { ui.crewDate = stepNight(ui.crewDate, Number(x.dataset.cday)); return render(); }
   if ((x = t("[data-nyxdone]"))) { const b = S.bookings.find((y) => y.id === x.dataset.nyxdone); return b && safe(store.put("bookings", { ...b, nyx: !b.nyx })); }
   if ((x = t("[data-crewopen]"))) { ui.crewOpen = ui.crewOpen === x.dataset.crewopen ? null : x.dataset.crewopen; return render(); }
