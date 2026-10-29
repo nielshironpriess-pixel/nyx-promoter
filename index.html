@@ -29,6 +29,7 @@
 *{box-sizing:border-box}
 [hidden]{display:none!important}
 body:not(.crew) .crew-only{display:none!important}
+body.crew .boss-only{display:none!important}
 body.crew [data-act=scan],body.crew [data-tab=hive],body.crew [data-tab=hivesalg],body.crew [data-tab-go=hive],body.crew [data-tab-go=hivesalg],body.crew .hive-only,body.crew .genvej-scan,body.crew [data-act=newclub]{display:none!important}
 html,body,button,a,input,select,textarea,label{touch-action:manipulation}
 html,body{background:var(--bg);color:var(--fg)}
@@ -411,6 +412,9 @@ label.f input,label.f select,label.f textarea,.status button,.spentbox,label.sha
 .nyxh{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:10px 0 6px}
 .nyxh .btn{padding:7px 12px;font-size:13px}
 .nyxbox{margin-top:10px}
+.ctodo{flex:none;font-size:12px;font-weight:800;padding:5px 10px;border-radius:99px;background:var(--teal);color:var(--green-ink)}
+.ctodo.ok{background:var(--green)}
+.cchips{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}.cchips span{font-size:13px;font-weight:700;padding:4px 10px;border-radius:99px;background:rgba(255,255,255,.6);border:1px solid var(--line)}
 .donebtn{width:100%;margin-top:8px;padding:11px;background:var(--green)!important;color:var(--green-ink)!important;border-color:var(--green)!important;font-weight:700}
 .nyxpre{margin:0;white-space:pre-wrap;font:15px/1.5 var(--f);background:rgba(255,255,255,.55);border:1px solid var(--line);border-radius:12px;padding:10px 12px;user-select:text;-webkit-user-select:text}
 .moonimg{display:block;width:100%;padding:0;border:0;background:#fff;border-radius:14px;overflow:hidden;margin-top:8px;box-shadow:0 2px 10px rgba(0,0,0,.08)}
@@ -486,7 +490,7 @@ button:active,.ev:active,.kpi:active,.qa:active,.hero:active,a.cbtn:active{trans
 <nav class="tabs" aria-label="Sektioner"><div class="in">
   <button data-tab="home"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg>Overblik</button>
   <button data-tab="events"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>Events</button>
-  <button data-tab="hive"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l8 4.6v9.2L12 22l-8-6.2V6.6z M12 8l3.5 2v4L12 16l-3.5-2v-4z"/></svg>Hive</button>
+  <button data-tab="borde" class="boss-only"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12c2.5-3 5-3 7.5 0s5 3 7.5 0 3.5-2 5 0 M2 17c2.5-3 5-3 7.5 0s5 3 7.5 0 3.5-2 5 0 M7 8a5 5 0 0 1 10 0"/></svg>Sø</button>
   <button data-tab="liste" class="crew-only"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6h11M9 12h11M9 18h11M4 6h.01M4 12h.01M4 18h.01"/></svg>Liste</button>
   <button data-tab="stats"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V11M10 20V5M16 20v-6M2 20h20"/></svg>Salg</button>
   <button data-open-side><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>Mere</button>
@@ -666,7 +670,7 @@ const store = {
     this.later = later; this.listenTeam();
     document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") this.loadAll(); });
     setStatus("Gemt i din konto og opdateres live på alle dine enheder.");
-    checkHashScan();
+    if (!checkHashAdd()) checkHashScan();
   },
   async loadAll() {
     let res = await this.sb.from("nyx_docs").select("col,id,data,owner,team");
@@ -848,7 +852,7 @@ function render() {
   const cur = ui.tab === "night" ? "borde" : ui.tab;
   { const cb = document.querySelector('.snav [data-tab="crew"]'); if (cb) cb.hidden = !(isBoss() && store.crewOk); }
   document.body.classList.toggle("crew", isCrew());
-  document.querySelectorAll("nav.tabs [data-tab], .snav [data-tab]").forEach((b) => b.setAttribute("aria-current", b.dataset.tab === cur || (cur === "borde" && b.dataset.tab === "events" && b.closest("nav.tabs")) || (cur === "hivesalg" && b.dataset.tab === "hive" && b.closest("nav.tabs")) ? "page" : "false"));
+  document.querySelectorAll("nav.tabs [data-tab], .snav [data-tab]").forEach((b) => b.setAttribute("aria-current", b.dataset.tab === cur || (cur === "borde" && b.dataset.tab === "events" && b.closest("nav.tabs") && isCrew()) || (cur === "hivesalg" && b.dataset.tab === "hive" && b.closest("nav.tabs")) ? "page" : "false"));
   const ini = esc(initials(profile().name || meNyx()));
   ["topAvatar", "sideAvatar"].forEach((id) => { const el = document.getElementById(id); if (el) el.innerHTML = ini; });
   const sn = document.getElementById("sideName"); if (sn) sn.textContent = profile().name || "Din profil";
@@ -952,10 +956,11 @@ function vNight() {
     <div class="map" style="aspect-ratio:920/${A.h}">${items}</div>
     <p class="maptip">Tryk på et bord for at booke det. Bordeaux er booket, oliven kom, rød udeblev.</p>`;
 }
-const hiveAt = (date, table) => S.bookings.find((b) => b.club === "Hive" && b.date === date && String(b.table) === String(table) && active(b));
+const isHiveClub = (c) => /^\s*hive\b/i.test(c || "");
+const hiveAt = (date, table) => S.bookings.find((b) => isHiveClub(b.club) && b.date === date && String(b.table) === String(table) && active(b));
 function vHive() {
   const date = ui.hiveDate ||= nextNight(), A = HIVE;
-  const bs = S.bookings.filter((b) => b.club === "Hive" && b.date === date).sort((a, b) => num(a.table) - num(b.table));
+  const bs = S.bookings.filter((b) => isHiveClub(b.club) && b.date === date).sort((a, b) => num(a.table) - num(b.table));
   const items = A.items.map((it) => {
     const pos = `left:${it.x / 9.2}%;top:${(it.y - A.y0) / A.h * 100}%;width:${it.w / 9.2}%;height:${it.h / A.h * 100}%`;
     if (it.k === "h") return `<div class="hatch" style="${pos}">${it.label || ""}</div>`;
@@ -1016,7 +1021,7 @@ function profileSheet() {
   });
 }
 /* ---------- forside ---------- */
-const hiveB = (b) => b.club === "Hive";
+const hiveB = (b) => isHiveClub(b.club);
 const allB = () => (typeof myBookings === "function" ? myBookings() : S.bookings);
 function greeting() { const h = new Date().getHours(); return h < 5 ? "God nat" : h < 10 ? "Godmorgen" : h < 17 ? "Hej" : "God aften"; }
 function vHome() {
@@ -1221,6 +1226,14 @@ function vHiveSales() {
     <form class="form" id="hivePctForm"><label class="f">Procent af bordsalg (%)<input id="h-pct" inputmode="decimal" value="${pct || ""}" placeholder="Fx 10"></label>
     <div style="align-self:end"><button class="btn teal" type="submit">Gem</button></div></form></details>`}`;
 }
+function totalCard(m, h, pct, hpct) {
+  if (!h.act.length) return "";
+  const prov = m.sold * pct / 100 + h.sold * hpct / 100;
+  return `<button class="cmp num totalc" data-tab-go="hivesalg" style="display:block;width:100%;text-align:left;margin-top:10px">
+    <div style="display:flex;justify-content:space-between;align-items:baseline;gap:8px"><b style="font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)">I alt med Hive</b><span style="font-size:12px;color:var(--teal);font-weight:700">Hive salg ›</span></div>
+    <div style="display:flex;justify-content:space-between;align-items:baseline;margin-top:4px"><span class="big" style="font-size:26px">${kr(m.sold + h.sold)}</span><span class="sub">${nBorde(m.act.length + h.act.length)} booket · forventet ${kr(m.expected + h.expected)}</span></div>
+    <div class="sub" style="margin-top:4px">Søpavillonen ${kr(m.sold)} (${m.act.length}) · Hive ${kr(h.sold)} (${h.act.length})${pct || hpct ? " · provision i alt " + kr(prov) : ""}</div></button>`;
+}
 function vStats() {
   ui.month ||= payYm(todayISO());
   const m = monthStats(ui.month), pct = num(S.settings.pct);
@@ -1229,6 +1242,7 @@ function vStats() {
   return `<div class="top"><span></span><div class="title"><b>Søpavillonen</b><span>Salg og statistik</span></div><span></span></div>
   ${monthSw()}
   ${salesHero(m, pct, "på Søpavillonen")}
+  ${isCrew() ? "" : totalCard(m, monthStats(ui.month, hiveB), pct, num(S.settings.hivePct))}
   ${salesAlert(m)}
   ${typeof poolSection === "function" ? poolSection() : ""}
   ${salesKpis(m, false)}
@@ -1428,21 +1442,23 @@ function vCrew() {
       ${bs.length > 4 ? `<button class="btn" data-crewopen="${esc(c.id)}">${ui.crewOpen === c.id ? "Vis færre" : "Vis alle " + bs.length + " borde"}</button>` : ""}
     </section>`;
   }).join("");
-  return `<div class="top"><span></span><div class="title"><b>Underpromotere</b><span>Du er admin</span></div><span></span></div>
-  <div class="list" style="margin-top:12px"><div class="row todo-row"><span class="bub ${ps === "til" ? "olive" : ""}">🔔</span><span class="mid"><span class="t">Notifikationer på denne telefon</span>
-    <span class="s">${ps === "til" ? "Slået til. Du får besked, når de booker eller retter et bord." : ps === "afvist" ? "Afvist. Slå dem til under Indstillinger → Bordbog." : !standalone() && /iPhone|iPad/.test(navigator.userAgent) ? "Læg Bordbog på hjemmeskærmen og åbn den derfra først." : "Få besked, når de booker eller retter et bord."}</span></span>
-    ${ps === "til" ? `<span class="right">✓</span>` : `<button class="btn teal" data-act="pushon" style="padding:8px 12px">Slå til</button>`}</div></div>
-  ${toNyxSection()}
-  ${crew.length ? `<h2>Dit team</h2>${monthSw()}${cards}` : `<div class="empty" style="margin-top:12px">Ingen underpromotere endnu. Lav en kode herunder og giv den til dem.</div>`}
-  <h2>Lav en kode</h2>
+  const notif = `<div class="list" style="margin-top:12px"><div class="row todo-row"><span class="bub ${ps === "til" ? "olive" : ""}">🔔</span><span class="mid"><span class="t">Notifikationer på denne telefon</span>
+    <span class="s">${ps === "til" ? "Slået til. Du får besked om alt, de laver." : ps === "afvist" ? "Afvist. Slå dem til under Indstillinger → Bordbog." : !standalone() && /iPhone|iPad/.test(navigator.userAgent) ? "Læg Bordbog på hjemmeskærmen og åbn den derfra først." : "Få besked om alt, de laver."}</span></span>
+    ${ps === "til" ? `<span class="right">✓</span>` : `<button class="btn teal" data-act="pushon" style="padding:8px 12px">Slå til</button>`}</div></div>`;
+  const invites = `<h2>Lav en kode</h2>
   <form class="form" id="inviteForm"><label class="f full">Deres email<input id="inv-email" type="email" placeholder="fx gabrielcaca08@gmail.com" autocapitalize="off"></label>
   <div class="full"><button class="btn teal" type="submit">Lav kode</button></div></form>
   ${(store.invites || []).length ? `<div class="list" style="margin-top:10px">${store.invites.map((i) => `<div class="row"><span class="tag num" style="min-width:86px;letter-spacing:.08em">${esc(i.code)}</span><span class="mid"><span class="t">${esc(i.email || "Alle emails")}</span><span class="s">Ikke brugt endnu</span></span><button class="btn" data-copyinv="${esc(i.code)}" style="padding:8px 12px">Kopiér</button></div>`).join("")}</div>` : ""}
   <p class="note">De opretter en konto i Bordbog med deres email og skriver koden. De ser ingen provision, og du kan se og rette alle deres borde.</p>`;
+  return `<div class="top"><span></span><div class="title"><b>Underpromotere</b><span>Du er admin</span></div><span></span></div>
+  ${ps === "til" ? "" : notif}
+  ${crew.length ? toNyxSection() : `<div class="empty" style="margin-top:12px">Ingen underpromotere endnu. Lav en kode herunder og giv den til dem.</div>${invites}`}
+  ${crew.length ? `<details class="more" style="margin-top:16px"${ui.crewMore ? " open" : ""} data-crewmore><summary>Salg pr. person</summary>${monthSw()}${cards}</details>
+  <details class="more"><summary>Koder og notifikationer</summary>${ps === "til" ? notif : ""}${invites}</details>` : ""}`;
 }
 const sold_ = (b) => (b.status === "kom" ? num(b.spent) || 0 : 0);
 /* ---------- Til Nyx: kopiér underpromoternes borde og lister ---------- */
-const nyxLine = (b) => [`Bord ${b.table || "?"}${b.area ? " (" + b.area + ")" : ""}`, b.name, b.guests ? b.guests + " pers" : "", num(b.expected) ? "min. " + kr(b.expected) : "", b.arrival ? "ankomst " + b.arrival : "", b.phone ? "tlf " + b.phone : "", b.notes || ""].filter(Boolean).join(" · ");
+const nyxLine = (b) => [`Bord ${b.table || "?"}${b.area ? " (" + b.area + ")" : ""}`, b.name, b.guests ? b.guests + " pers" : "", num(b.expected) ? "min. " + kr(b.expected) : "", b.arrival ? "ankomst " + b.arrival : "", b.phone ? "tlf " + b.phone : "", b.email || "", b.notes || ""].filter(Boolean).join(" · ");
 const nyxName = (n) => n.name.trim() + (gN(n) > 1 ? " +" + (gN(n) - 1) : "");
 const gLine = (n) => n.name + (gN(n) > 1 ? " +" + (gN(n) - 1) : "") + (n.note ? " (" + n.note + ")" : "");
 function crewNightHas(date) { const ids = (store.crew || []).map((c) => c.id); return S.bookings.some((b) => b.date === date && !b.club && active(b) && ids.includes(ownerOf(b))) || listOf(date).some((n) => ids.includes(noteOwner(n))); }
@@ -1462,7 +1478,11 @@ function toNyxSection() {
       <div class="list">${arr.map((n) => `<div class="crow${n.nyx ? " done" : ""}"><button class="row" data-cpy="${cp(nyxName(n))}"><span class="tag num ${n.nyx ? "kom" : n.vip ? "vip" : ""}">${gN(n)}</span><span class="mid"><span class="t">${esc(nyxName(n))}</span><span class="s">${esc([n.nyx ? "Skrevet på ✓" : "", n.note].filter(Boolean).join(" · ")) || "Tryk for at kopiere"}</span></span>${n.nyx ? "" : `<span class="right" style="font-size:12px;font-weight:700;color:var(--teal)">Kopiér</span>`}</button>
         <button class="cbtn" data-gdone="${esc(n.id)}" aria-label="${n.nyx ? "Fortryd skrevet på" : "Skrevet på i Nyx"}" style="${n.nyx ? "background:var(--green);color:var(--green-ink);border-color:var(--green)" : ""}">✓</button></div>`).join("")}</div>
       ${left.length ? `<button class="btn donebtn" data-gdoneall="${esc(ids)}">✓ ${left.length === 1 ? "Skrevet på" : "Alle " + left.length + " er skrevet på"} – giv ${esc(first(c.name))} besked</button>` : `<p class="note" style="margin:6px 2px 0;color:var(--green);font-weight:700">✓ Alle er skrevet på, og ${esc(first(c.name))} har fået besked.</p>`}</div>`; };
-    return `<section class="cmp"><div class="big" style="font-size:20px">${esc(c.name)}</div>
+    const todo = bs.filter((b) => !b.nyx).length + gl.filter((n) => !n.nyx).length;
+    const chips = [bs.length ? nBorde(bs.length) : "", norm.length ? sumG(norm) + " på liste" : "", vip.length ? sumG(vip) + " VIP" : ""].filter(Boolean);
+    return `<section class="cmp"><div style="display:flex;justify-content:space-between;align-items:center;gap:10px"><div class="big" style="font-size:20px">${esc(c.name)}</div>
+      <span class="ctodo ${todo ? "" : "ok"}">${todo ? todo + " mangler i Nyx" : "✓ Alt er i Nyx"}</span></div>
+      <div class="cchips">${chips.map((x) => `<span>${esc(x)}</span>`).join("")}</div>
       ${bs.length ? `<div class="nyxh" style="margin-top:6px"><b>Borde · ${bs.length}</b>${bs.length > 1 ? `<button class="btn teal" data-cpy="${cp("Borde – " + head + "\n" + bs.map(nyxLine).join("\n"))}">Kopiér alle</button>` : ""}</div>
       <div class="list">${bs.map((b) => `<div class="crow${b.nyx ? " done" : ""}"><button class="row" data-cpy="${cp(nyxLine(b))}"><span class="tag num ${b.nyx ? "kom" : "booket"}">${esc(b.table || "?")}</span><span class="mid"><span class="t">${esc(b.name || "Uden navn")}</span><span class="s">${esc([b.area, b.guests ? b.guests + " pers" : "", num(b.expected) ? kr(b.expected) : "", b.arrival, b.phone].filter(Boolean).join(" · "))}</span></span><span class="right" style="font-size:12px;font-weight:700;color:var(--teal)">Kopiér</span></button>
         <button class="cbtn" data-nyxdone="${esc(b.id)}" aria-label="Lagt i Nyx" title="Lagt i Nyx" style="${b.nyx ? "background:var(--green);color:var(--green-ink);border-color:var(--green)" : ""}">✓</button></div>`).join("")}</div>` : ""}
@@ -1655,6 +1675,7 @@ function bookingSheet(b) {
     <label class="f">Gæster<input id="b-guests" inputmode="numeric" value="${num(b.guests) || ""}"></label>
     <label class="f">Bordpris / minimum (kr.)<input id="b-expected" inputmode="numeric" data-money value="${fmtIn(b.expected)}"></label>
     <label class="f">Telefon<input id="b-phone" type="tel" value="${esc(b.phone)}"></label>
+    <label class="f">Mail<input id="b-email" type="email" inputmode="email" autocapitalize="off" autocorrect="off" spellcheck="false" value="${esc(b.email || "")}" placeholder="kunde@mail.dk"></label>
     <label class="f">Ankomst<input id="b-arrival" type="time" value="${esc(b.arrival)}"></label>
     <label class="f full">Kundens fødselsdag<input id="b-bday" type="date" value="${esc(b.bday || bdayOf(b.name))}"></label>
     <div class="full"><div class="status" role="group" aria-label="Status">${Object.entries(STATUS).map(([k, l]) => `<button type="button" class="${k}" data-st="${k}" aria-pressed="${b.status === k}">${l}</button>`).join("")}</div></div>
@@ -1666,12 +1687,13 @@ function bookingSheet(b) {
     ${store.team && mine(b) ? `<label class="share full"><input type="checkbox" id="b-share" ${b.shared ?? !!b.club ? "checked" : ""}><span><b>Del med holdet</b><br><small>${esc(store.team.name)} kan se bordet og skrive merspend ind</small></span></label>` : ""}
     <div class="full btns">${exists && mine(b) ? `<button type="button" class="btn danger" data-del>Slet</button>` : `<button type="button" class="btn" data-close>Annullér</button>`}<button class="btn teal" type="submit">Gem</button></div>
   </form>`, (f) => {
-    const o = { ...b, name: v(f, "b-name"), guests: num(v(f, "b-guests")), expected: num(v(f, "b-expected")), phone: v(f, "b-phone"), arrival: v(f, "b-arrival"),
+    const o = { ...b, name: v(f, "b-name"), guests: num(v(f, "b-guests")), expected: num(v(f, "b-expected")), phone: v(f, "b-phone"), email: v(f, "b-email"), arrival: v(f, "b-arrival"),
       spent: num(v(f, "b-spent")), notes: v(f, "b-notes"), bday: v(f, "b-bday"), status: f.querySelector("[data-st][aria-pressed=true]").dataset.st };
     if (free) o.table = v(f, "b-table");
     o.date = v(f, "b-date") || o.date;
     const sh = f.querySelector("#b-share"); if (sh) o.shared = sh.checked;
     if (other) o.club = v(f, "b-club") || "Anden klub";
+    if (other && isHiveClub(o.club)) o.club = "Hive";
     if (o.spent && o.status === "booket") o.status = "kom";
     if (!o.club && !okDay(o.date)) { toast("Du kan kun booke torsdage (Moon)"); return false; }
     safe(store.put("bookings", o), "Gemt");
@@ -1818,7 +1840,29 @@ function checkHashScan() {
     reviewScan(normScan({ rows }), j.n);
   } catch { toast("Kunne ikke læse scanningen fra genvejen"); }
 }
-window.addEventListener("hashchange", () => { if (store.uid) checkHashScan(); });
+/* #add=<base64url JSON> (ét bord eller en liste) → vis dem og gem med ét tryk */
+function checkHashAdd() {
+  const m = location.hash.match(/^#add=([\w-]+)$/); if (!m) return false;
+  history.replaceState(null, "", location.pathname);
+  try {
+    const raw = atob(m[1].replace(/-/g, "+").replace(/_/g, "/"));
+    const j = JSON.parse(new TextDecoder().decode(Uint8Array.from(raw, (c) => c.charCodeAt(0))));
+    const ok = ["date", "table", "name", "guests", "expected", "spent", "status", "notes", "phone", "email", "club", "tip"];
+    const list = (Array.isArray(j) ? j : [j]).map((x) => {
+      const b = { ...newBooking(x.date || todayISO(), x.club ? "Andet" : x.area || "Andet", x.table || ""), src: "link:" + (x.key || "") };
+      ok.forEach((k) => { if (x[k] != null && x[k] !== "") b[k] = x[k]; });
+      if (b.club && isHiveClub(b.club)) b.club = "Hive";
+      return b;
+    }).filter((b) => !S.bookings.some((y) => y.src && y.src === b.src && b.src !== "link:"));
+    if (!list.length) { toast("De borde er allerede lagt ind"); return true; }
+    openSheet(`<h3>Læg ${list.length === 1 ? "bordet" : list.length + " borde"} ind</h3><p class="sh">Tjek dem og tryk Gem. Du kan rette dem bagefter.</p>
+      <form class="form"><div class="full list">${list.map((b) => `<div class="row"><span class="tag num kom" style="min-width:56px;font-size:12px">${esc(b.club || b.area)}</span><span class="mid"><span class="t">${esc(b.name)} · ${kr(b.spent)}</span><span class="s">${dayLabel(b.date)}${b.notes ? " · " + esc(b.notes) : ""}</span></span></div>`).join("")}</div>
+      <div class="full btns"><span></span><button class="btn teal">Gem ${list.length === 1 ? "bordet" : "alle " + list.length}</button></div></form>`,
+      () => { Promise.all(list.map((b) => store.put("bookings", b))).then(() => toast(list.length === 1 ? "Bordet er lagt ind" : list.length + " borde er lagt ind"), (e) => toast("Kunne ikke gemme: " + (e.message || e))); });
+  } catch { toast("Kunne ikke læse linket"); }
+  return true;
+}
+window.addEventListener("hashchange", () => { if (store.uid) { if (!checkHashAdd()) checkHashScan(); } });
 function reviewScan(rows, note) {
   if (!rows.length) return scanMsg("Ingen af dine borde fundet", (note ? note + " " : "") + "Tjek at der står Niels Priess på bordene, og at billederne er fra Tables → List i Nyx.");
   const anyPromoter = rows.some((r) => r.promoter), from = payStart(payYm(todayISO()));
@@ -1899,6 +1943,7 @@ function setGuestlist(date, val) {
 }
 view.addEventListener("input", (e) => { if (e.target.id === "kq") { const q = e.target.value.trim().toLowerCase(); view.querySelectorAll(".crow").forEach((r) => { r.hidden = !!q && !r.textContent.toLowerCase().includes(q); }); } });
 view.addEventListener("input", (e) => { if (e.target.id === "gl") setGuestlist(ui.date, num(e.target.value)); });
+view.addEventListener("toggle", (e) => { if (e.target.matches && e.target.matches("[data-crewmore]")) ui.crewMore = e.target.open; }, true);
 view.addEventListener("submit", (e) => {
   e.preventDefault();
   if (e.target.id === "teamNew") { const f = e.target; return safe(store.rpc("nyx_create_team", { p_team: f.querySelector("#t-name").value, p_name: f.querySelector("#t-me").value }).then(() => store.loadAll()), "Holdet er oprettet"); }
@@ -2004,9 +2049,9 @@ view.addEventListener("click", (e) => {
   view.addEventListener("touchend", (e) => {
     if (!ok) return; const t = e.changedTouches[0], dx = t.clientX - sx, dy = t.clientY - sy;
     if (Math.abs(dx) < 80 || Math.abs(dy) > 45 || sx < 24) return;
-    const SWIPE_TABS = isCrew() ? ["home", "events", "liste", "stats"] : ["home", "events", "hive", "stats"];
-    const cur = SWIPE_TABS.indexOf(ui.tab === "hivesalg" ? "hive" : ui.tab); if (cur < 0) return;
-    const nx = SWIPE_TABS[cur + (dx < 0 ? 1 : -1)]; if (nx) go(nx);
+    const SWIPE_TABS = isCrew() ? ["home", "events", "liste", "stats"] : ["home", "events", "borde", "stats"];
+    const cur = SWIPE_TABS.indexOf(ui.tab === "night" ? "borde" : ui.tab); if (cur < 0) return;
+    const nx = SWIPE_TABS[cur + (dx < 0 ? 1 : -1)]; if (nx === "borde") go("night", { date: ui.date || nextNight() }); else if (nx) go(nx);
   }, { passive: true });
   // træk et ark ned for at lukke det
   let dy0 = null, sh = null, last = 0;
