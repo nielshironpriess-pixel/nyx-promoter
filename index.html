@@ -241,6 +241,19 @@ label.share small{color:var(--muted)}
 /* ---------- skal: topbar, sidemenu og forside (som i Goon) ---------- */
 .topbar{position:sticky;top:env(safe-area-inset-top,0px);z-index:8;display:grid;grid-template-columns:44px 1fr 44px;align-items:center;padding:8px 0 6px;background:var(--bg);max-width:640px;margin:0 auto;box-sizing:border-box;width:100%}
 .topbar .brand{text-align:center}
+.clubsw{background:none;border:0;padding:0;display:flex;flex-direction:column;align-items:center;line-height:1.05;cursor:pointer}
+.clubsw small{display:inline-flex;align-items:center;gap:5px;font:700 12px/1.2 var(--f);color:var(--muted);letter-spacing:.02em;margin-top:3px;padding:2px 9px;border-radius:99px;background:rgba(255,255,255,.55);border:1px solid var(--line)}
+.clubsw small i{width:8px;height:8px;border-radius:99px;background:var(--teal)}
+.clubsw small em{font-style:normal;font-size:10px}
+body.club-hive .clubsw small i{background:#d9a21b}
+body.crew .clubsw small{display:none}
+body.club-hive nav.tabs [data-tab=borde],body:not(.club-hive) nav.tabs [data-tab=hive]{display:none!important}
+.clubrow{display:flex;align-items:center;gap:14px;width:100%;padding:14px 12px;border:0;background:none;border-radius:14px;text-align:left;font:inherit;color:inherit}
+.clubrow+.clubrow{border-top:1px solid var(--line)}
+.clubrow .cav{width:52px;height:52px;border-radius:99px;display:grid;place-items:center;font:700 20px var(--serif);color:#fff;flex:none}
+.clubrow .cn{flex:1}.clubrow .cn b{display:block;font-size:17px}.clubrow .cn span{font-size:13px;color:var(--muted)}
+.clubrow .ck{width:24px;height:24px;border-radius:99px;border:2px solid var(--line);display:grid;place-items:center;font-size:13px;color:#fff}
+.clubrow[aria-pressed=true] .ck{background:var(--teal);border-color:var(--teal)}
 .brand{font-family:var(--serif);font-weight:700;font-size:22px;color:var(--teal);letter-spacing:.02em}
 .brand.big{font-size:30px}
 .brand-sub{color:var(--muted);font-size:13px;margin:2px 0 18px}
@@ -466,7 +479,7 @@ button:active,.ev:active,.kpi:active,.qa:active,.hero:active,a.cbtn:active{trans
 </style>
 </head>
 <body>
-<header class="topbar"><button class="tb-menu" data-open-side aria-label="Menu"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button><span class="brand">Bordbog</span><button class="avatar" data-act="profile" id="topAvatar" aria-label="Din profil">?</button></header>
+<header class="topbar"><button class="tb-menu" data-open-side aria-label="Menu"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button><button class="brand clubsw" data-act="club" aria-label="Skift mellem Søpavillonen og Hive"><span>Bordbog</span><small id="clubLbl"><i id="clubDot"></i><b id="clubName">Søpavillonen</b> <em>▾</em></small></button><button class="avatar" data-act="profile" id="topAvatar" aria-label="Din profil">?</button></header>
 <div class="wrap"><main id="view"><p class="note" style="padding-top:24px">Henter dine bookinger…</p></main><p class="foot" id="status"></p></div>
 
 <div class="sidescrim" id="sideScrim"></div>
@@ -491,6 +504,7 @@ button:active,.ev:active,.kpi:active,.qa:active,.hero:active,a.cbtn:active{trans
   <button data-tab="home"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg>Overblik</button>
   <button data-tab="events"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>Events</button>
   <button data-tab="borde" class="boss-only"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12c2.5-3 5-3 7.5 0s5 3 7.5 0 3.5-2 5 0 M2 17c2.5-3 5-3 7.5 0s5 3 7.5 0 3.5-2 5 0 M7 8a5 5 0 0 1 10 0"/></svg>Sø</button>
+  <button data-tab="hive" class="boss-only"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l8 4.6v9.2L12 22l-8-6.2V6.6z M12 8l3.5 2v4L12 16l-3.5-2v-4z"/></svg>Hive</button>
   <button data-tab="liste" class="crew-only"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6h11M9 12h11M9 18h11M4 6h.01M4 12h.01M4 18h.01"/></svg>Liste</button>
   <button data-tab="stats"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V11M10 20V5M16 20v-6M2 20h20"/></svg>Salg</button>
   <button data-open-side><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>Mere</button>
@@ -551,7 +565,7 @@ const STATUS = { booket: "Booket", kom: "Kom", udeblev: "Udeblev", aflyst: "Afly
 
 /* ---------- state ---------- */
 const S = { bookings: [], nights: [], notes: [], settings: { pct: 0, goal: 0 }, ready: false };
-const ui = { tab: "home", date: null, area: 0, mode: "kort", month: null, noteSeg: "selskaber", showPast: false };
+const ui = { club: (() => { try { return localStorage.getItem("bordbog-club") === "hive" ? "hive" : "so"; } catch { return "so"; } })(), tab: "home", date: null, area: 0, mode: "kort", month: null, noteSeg: "selskaber", showPast: false };
 
 /* ---------- helpers ---------- */
 function todayISO() { return new Date().toLocaleDateString("sv-SE"); }
@@ -847,12 +861,35 @@ function badge() {
   if (!el) { el = document.createElement("span"); el.className = "badge"; b.appendChild(el); }
   el.textContent = n > 9 ? "9+" : n;
 }
+function setClub(c, quiet) { ui.club = c; try { localStorage.setItem("bordbog-club", c); } catch {} if (!quiet) render(); }
+function pickClub(c) {
+  setClub(c, true);
+  const t = ui.tab;
+  if (t === "stats" || t === "hivesalg") return go(c === "hive" ? "hivesalg" : "stats");
+  if (t === "night" || t === "borde" || t === "hive") return c === "hive" ? go("hive") : go("night", { date: ui.date || nextNight() });
+  render();
+}
+function clubSheet() {
+  if (isCrew()) return;
+  const sel = ui.club || "so";
+  const row = (k, name, sub, color, ini) => `<button type="button" class="clubrow" data-pickclub="${k}" aria-pressed="${sel === k}"><span class="cav" style="background:${color}">${ini}</span><span class="cn"><b>${name}</b><span>${sub}</span></span><span class="ck">${sel === k ? "✓" : ""}</span></button>`;
+  openSheet(`<h3 style="text-align:center">Skift klub</h3><form class="form"><div class="full">${row("so", "Søpavillonen", "Moon, Friday og Saturday", "var(--teal)", "S")}${row("hive", "Hive", "Hive Copenhagen", "linear-gradient(135deg,#e9b93a,#b8860b)", "H")}</div></form>`, () => {});
+  root.querySelectorAll("[data-pickclub]").forEach((b) => b.addEventListener("click", () => { close(); pickClub(b.dataset.pickclub); }));
+}
+function clubSeg() {
+  if (isCrew()) return "";
+  return `<div class="seg" style="margin-bottom:10px"><button data-pickclub="so" aria-pressed="${ui.club !== "hive"}">Søpavillonen</button><button data-pickclub="hive" aria-pressed="${ui.club === "hive"}">Hive</button></div>`;
+}
 function render() {
   if (isCrew() && (ui.tab === "hive" || ui.tab === "hivesalg")) ui.tab = "home";
+  if (ui.tab === "hive" || ui.tab === "hivesalg") setClub("hive", true); else if (ui.tab === "stats" || ui.tab === "night") setClub("so", true);
+  if (isCrew()) ui.club = "so";
+  document.body.classList.toggle("club-hive", ui.club === "hive");
+  { const cn = document.getElementById("clubName"); if (cn) cn.textContent = ui.club === "hive" ? "Hive" : "Søpavillonen"; }
   const cur = ui.tab === "night" ? "borde" : ui.tab;
   { const cb = document.querySelector('.snav [data-tab="crew"]'); if (cb) cb.hidden = !(isBoss() && store.crewOk); }
   document.body.classList.toggle("crew", isCrew());
-  document.querySelectorAll("nav.tabs [data-tab], .snav [data-tab]").forEach((b) => b.setAttribute("aria-current", b.dataset.tab === cur || (cur === "borde" && b.dataset.tab === "events" && b.closest("nav.tabs") && isCrew()) || (cur === "hivesalg" && b.dataset.tab === "hive" && b.closest("nav.tabs")) ? "page" : "false"));
+  document.querySelectorAll("nav.tabs [data-tab], .snav [data-tab]").forEach((b) => b.setAttribute("aria-current", b.dataset.tab === cur || (cur === "borde" && b.dataset.tab === "events" && b.closest("nav.tabs") && isCrew()) || (cur === "hivesalg" && b.dataset.tab === "stats" && b.closest("nav.tabs")) ? "page" : "false"));
   const ini = esc(initials(profile().name || meNyx()));
   ["topAvatar", "sideAvatar"].forEach((id) => { const el = document.getElementById(id); if (el) el.innerHTML = ini; });
   const sn = document.getElementById("sideName"); if (sn) sn.textContent = profile().name || "Din profil";
@@ -1216,6 +1253,7 @@ function vHiveSales() {
   ui.month ||= payYm(todayISO());
   const m = monthStats(ui.month, hiveB), pct = num(S.settings.hivePct);
   return `<div class="top"><span></span><div class="title"><b>Hive</b><span>Salg og provision</span></div><span></span></div>
+    ${clubSeg()}
     ${hiveTabs("hivesalg")}
     ${monthSw()}
     ${salesHero(m, pct, "på Hive")}
@@ -1240,6 +1278,7 @@ function vStats() {
   const team = typeof teamSection === "function" ? teamSection() : "";
   const sky = typeof store !== "undefined" && store.mode === "sky";
   return `<div class="top"><span></span><div class="title"><b>Søpavillonen</b><span>Salg og statistik</span></div><span></span></div>
+  ${clubSeg()}
   ${monthSw()}
   ${salesHero(m, pct, "på Søpavillonen")}
   ${isCrew() ? "" : totalCard(m, monthStats(ui.month, hiveB), pct, num(S.settings.hivePct))}
@@ -1929,10 +1968,12 @@ document.addEventListener("click", (e) => {
   if (e.target.id === "sideScrim") return setSide(false);
   const inNav = e.target.closest("nav.tabs, #side, .topbar"); if (!inNav) return;
   const a = e.target.closest("[data-act]");
-  if (a && !view.contains(a)) { setSide(false); if (a.dataset.act === "profile") return profileSheet(); if (a.dataset.act === "scan") return startScan(); }
+  if (a && !view.contains(a)) { setSide(false); if (a.dataset.act === "profile") return profileSheet(); if (a.dataset.act === "club") return clubSheet(); if (a.dataset.act === "scan") return startScan(); }
   const b = e.target.closest("[data-tab]"); if (!b) return;
   setSide(false);
-  if (b.dataset.tab === "borde") go("night", { date: ui.date || nextNight() }); else go(b.dataset.tab);
+  if (b.dataset.tab === "borde") go("night", { date: ui.date || nextNight() });
+  else if (b.dataset.tab === "stats" && b.closest("nav.tabs") && ui.club === "hive" && !isCrew()) go("hivesalg");
+  else go(b.dataset.tab);
 });
 let glTimer = null;
 function setGuestlist(date, val) {
@@ -1992,6 +2033,7 @@ view.addEventListener("click", (e) => {
   if ((x = t("[data-lday]"))) { ui.listDate = stepNight(ui.listDate, Number(x.dataset.lday)); return render(); }
   if ((x = t("[data-gcame]"))) { const n = S.notes.find((y) => y.id === x.dataset.gcame); return n && safe(store.put("notes", { ...n, came: !n.came })); }
   if ((x = t("[data-gaest]"))) { const n = S.notes.find((y) => y.id === x.dataset.gaest); return n && gaestSheet(n); }
+  if ((x = t("[data-pickclub]"))) return pickClub(x.dataset.pickclub);
   if ((x = t("[data-moonshare]"))) return moonShare(x.dataset.moonshare.split(","));
   if ((x = t("[data-mooncopy]"))) return moonCopy(x.dataset.mooncopy);
   if (t("[data-mooncopytxt]")) return copyText(MOON_TXT, "Menukortet er kopieret som tekst");
@@ -2049,7 +2091,7 @@ view.addEventListener("click", (e) => {
   view.addEventListener("touchend", (e) => {
     if (!ok) return; const t = e.changedTouches[0], dx = t.clientX - sx, dy = t.clientY - sy;
     if (Math.abs(dx) < 80 || Math.abs(dy) > 45 || sx < 24) return;
-    const SWIPE_TABS = isCrew() ? ["home", "events", "liste", "stats"] : ["home", "events", "borde", "stats"];
+    const SWIPE_TABS = isCrew() ? ["home", "events", "liste", "stats"] : ui.club === "hive" ? ["home", "events", "hive", "hivesalg"] : ["home", "events", "borde", "stats"];
     const cur = SWIPE_TABS.indexOf(ui.tab === "night" ? "borde" : ui.tab); if (cur < 0) return;
     const nx = SWIPE_TABS[cur + (dx < 0 ? 1 : -1)]; if (nx === "borde") go("night", { date: ui.date || nextNight() }); else if (nx) go(nx);
   }, { passive: true });
