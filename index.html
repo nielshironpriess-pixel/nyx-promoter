@@ -425,6 +425,12 @@ label.f input,label.f select,label.f textarea,.status button,.spentbox,label.sha
 .nyxh{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:10px 0 6px}
 .nyxh .btn{padding:7px 12px;font-size:13px}
 .nyxbox{margin-top:10px}
+.tb{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none}
+.tb.moving{outline:3px solid #d9a21b;outline-offset:1px;animation:mvpulse 1s ease-in-out infinite}
+@keyframes mvpulse{50%{transform:scale(1.06)}}
+.map.movemode .tb:not(.moving){box-shadow:inset 0 0 0 2px #d9a21b}
+.movebar{position:sticky;top:calc(env(safe-area-inset-top,0px) + 64px);z-index:5;display:flex;align-items:center;gap:10px;margin:8px 0;padding:10px 12px;border-radius:14px;background:linear-gradient(135deg,#e9b93a,#b8860b);color:#2b1d1f;font-weight:700;box-shadow:0 8px 20px rgba(184,134,11,.3)}
+.movebar span{flex:1;font-size:14px;line-height:1.3}.movebar button{border:0;border-radius:99px;padding:8px 12px;background:rgba(255,255,255,.85);font-weight:700}
 .pkgp{font-weight:800;color:var(--green);font-size:14px}.pkg .nyxpre{margin-top:4px}
 .ctodo{flex:none;font-size:12px;font-weight:800;padding:5px 10px;border-radius:99px;background:var(--teal);color:var(--green-ink)}
 .ctodo.ok{background:var(--green)}
@@ -964,6 +970,30 @@ function bdaySection(today) {
 }
 
 /* ---------- night: map + list ---------- */
+/* flyt et bord: hold fingeren på bordet (eller "Flyt" i bordet) og tryk på det nye bord */
+function moveBar() {
+  if (!ui.move) return "";
+  const b = S.bookings.find((x) => x.id === ui.move.id); if (!b) { ui.move = null; return ""; }
+  return `<div class="movebar"><span>Flyt ${esc(b.name || "bordet")} fra bord ${esc(b.table)}${b.club ? "" : " (" + esc(b.area) + ")"}<br><small style="font-weight:600">Tryk på det nye bord${b.club ? "" : ". Skift område med pilene"}</small></span><button data-movecancel>Annullér</button></div>`;
+}
+function startMove(b) {
+  if (!b || (b.area === "Andet" && !isHiveClub(b.club))) return toast("Det her bord ligger ikke på kortet");
+  ui.move = { id: b.id };
+  if (isHiveClub(b.club)) { ui.hiveDate = b.date; go("hive"); }
+  else { const ai = AREAS.findIndex((a) => a.name === b.area); if (ai >= 0) ui.area = ai; ui.mode = "kort"; go("night", { date: b.date }); }
+  try { navigator.vibrate && navigator.vibrate(15); } catch {}
+}
+async function finishMove(area, table) {
+  const b = S.bookings.find((x) => x.id === ui.move.id); ui.move = null;
+  if (!b) return render();
+  const hive = isHiveClub(b.club);
+  if (String(b.table) === String(table) && (hive || b.area === area)) { toast("Bordet blev ikke flyttet"); return render(); }
+  const other = hive ? hiveAt(b.date, table) : bookingAt(b.date, area, table);
+  const from = { area: b.area, table: b.table };
+  await safe(store.put("bookings", { ...b, area: hive ? b.area : area, table: String(table) }));
+  if (other) await safe(store.put("bookings", { ...other, area: from.area, table: String(from.table) }));
+  toast(other ? `Byttet: ${first(b.name) || "bordet"} → ${table}, ${first(other.name) || "det andet"} → ${from.table}` : `${first(b.name) || "Bordet"} er flyttet til bord ${table}`);
+}
 function bookingAt(date, area, table) { return S.bookings.find((b) => b.date === date && b.area === area && String(b.table) === String(table) && active(b)); }
 function vNight() {
   const date = ui.date || nextNight();
@@ -988,12 +1018,12 @@ function vNight() {
     if (it.k === "h") return `<div class="hatch" style="${pos}">${it.label || ""}</div>`;
     if (it.k === "b") return `<div class="blk ${it.v ? "v" : ""}" style="${pos}"><span>${esc(it.label)}</span></div>`;
     const b = bookingAt(date, A.name, it.id);
-    return `<button class="tb ${it.k === "r" ? "round" : ""} ${b ? b.status : ""}" style="${pos}" data-table="${it.id}" aria-label="Bord ${it.id}${b ? ", " + esc(b.name) : ", ledigt"}"><b>${it.id}</b><small>${b ? esc(shortName(b.name)) : esc(it.cap)}</small></button>`;
+    return `<button class="tb ${it.k === "r" ? "round" : ""} ${b ? b.status : ""} ${b && ui.move && ui.move.id === b.id ? "moving" : ""}" style="${pos}" data-table="${it.id}"${b ? ` data-bid="${esc(b.id)}"` : ""} aria-label="Bord ${it.id}${b ? ", " + esc(b.name) : ", ledigt"}"><b>${it.id}</b><small>${b ? esc(shortName(b.name)) : esc(it.cap)}</small></button>`;
   }).join("");
   return top + `<div class="areabar"><div class="nav"><button data-area="-1" aria-label="Forrige område">‹</button><span class="nm">${esc(A.name)} (${ui.area + 1}/${AREAS.length})</span><button data-area="1" aria-label="Næste område">›</button></div>
     <div class="counts num"><span class="c-green" title="Booket">${cnt("booket")}</span><span class="c-blue" title="Kom">${cnt("kom")}</span><span class="c-red" title="Udeblev">${cnt("udeblev")}</span></div></div>
-    <div class="map" style="aspect-ratio:920/${A.h}">${items}</div>
-    <p class="maptip">Tryk på et bord for at booke det. Bordeaux er booket, oliven kom, rød udeblev.</p>`;
+    ${moveBar()}<div class="map ${ui.move ? "movemode" : ""}" style="aspect-ratio:920/${A.h}">${items}</div>
+    <p class="maptip">Tryk på et bord for at booke det. Hold fingeren på et booket bord for at flytte det. Bordeaux er booket, oliven kom, rød udeblev.</p>`;
 }
 const isHiveClub = (c) => /^\s*hive\b/i.test(c || "");
 const hiveAt = (date, table) => S.bookings.find((b) => isHiveClub(b.club) && b.date === date && String(b.table) === String(table) && active(b));
@@ -1005,14 +1035,14 @@ function vHive() {
     if (it.k === "h") return `<div class="hatch" style="${pos}">${it.label || ""}</div>`;
     if (it.k === "b") return `<div class="blk ${it.v ? "v" : ""}" style="${pos}"><span>${esc(it.label)}</span></div>`;
     const b = hiveAt(date, it.id);
-    return `<button class="tb ${it.k === "r" ? "round" : ""} ${b ? b.status : ""}" style="${pos}" data-hive="${it.id}" aria-label="Hive bord ${it.id}${b ? ", " + esc(b.name) : ", ledigt"}"><b>${it.id}</b><small>${b ? esc(shortName(b.name)) : esc(it.cap)}</small></button>`;
+    return `<button class="tb ${it.k === "r" ? "round" : ""} ${b ? b.status : ""} ${b && ui.move && ui.move.id === b.id ? "moving" : ""}" style="${pos}" data-hive="${it.id}"${b ? ` data-bid="${esc(b.id)}"` : ""} aria-label="Hive bord ${it.id}${b ? ", " + esc(b.name) : ", ledigt"}"><b>${it.id}</b><small>${b ? esc(shortName(b.name)) : esc(it.cap)}</small></button>`;
   }).join("");
   const exp = bs.filter(active).reduce((a, b) => a + num(b.expected), 0);
   return `${hiveTabs("hive")}<div class="top"><button class="pillbtn" data-hday="-1" aria-label="Dagen før">‹</button>
     <div class="title"><span class="d">${dayLabel(date)}</span><br><span>Hive Copenhagen</span></div><button class="pillbtn right" data-hday="1" aria-label="Dagen efter">›</button></div>
     <div class="addrow" style="margin-bottom:10px"><label class="f" style="flex:1"><span>Dato</span><input type="date" id="hiveDate" value="${date}"></label></div>
-    <div class="map" style="aspect-ratio:920/${A.h}">${items}</div>
-    <p class="maptip">Tryk på et bord for at booke det på Hive.${store.team ? " Det bliver delt med holdet, så de får besked og kan skrive tallene ind." : ""}</p>
+    ${moveBar()}<div class="map ${ui.move ? "movemode" : ""}" style="aspect-ratio:920/${A.h}">${items}</div>
+    <p class="maptip">Tryk på et bord for at booke det på Hive. Hold fingeren på et booket bord for at flytte det.${store.team ? " Det bliver delt med holdet, så de får besked og kan skrive tallene ind." : ""}</p>
     <h2>${bs.filter(active).length} borde på Hive${exp ? " · " + kr(exp) : ""}</h2>
     ${bs.length ? `<div class="list">${bs.map(bookingRow).join("")}</div>` : `<div class="empty">Ingen borde på Hive denne dag.</div>`}`;
 }
@@ -1750,6 +1780,7 @@ function bookingSheet(b) {
       <label class="f">Brugt i alt (kr.)<input id="b-spent" inputmode="numeric" data-money value="${fmtIn(b.spent)}" placeholder="Ikke skrevet"></label>
       <button type="button" class="btn" data-minonly>Kun minimum</button><small class="mer" id="b-mer"></small></div>
     <label class="f full">Noter<textarea id="b-notes" placeholder="Fx flasker, fødselsdag">${esc(b.notes)}</textarea></label>
+    ${exists && (isHiveClub(b.club) || (!b.club && !free)) ? `<button type="button" class="btn full" data-movebtn>⇄ Flyt til et andet bord</button>` : ""}
     ${store.team && mine(b) ? `<label class="share full"><input type="checkbox" id="b-share" ${b.shared ?? !!b.club ? "checked" : ""}><span><b>Del med holdet</b><br><small>${esc(store.team.name)} kan se bordet og skrive merspend ind</small></span></label>` : ""}
     <div class="full btns">${exists && mine(b) ? `<button type="button" class="btn danger" data-del>Slet</button>` : `<button type="button" class="btn" data-close>Annullér</button>`}<button class="btn teal" type="submit">Gem</button></div>
   </form>`, (f) => {
@@ -1774,6 +1805,7 @@ function bookingSheet(b) {
     if (e.target.id === "b-spent" || e.target.id === "b-expected") { const sp = num(v(f, "b-spent")); $("b-extra").value = sp > ex ? fmtIn(sp - ex) : sp ? "0" : ""; }
     merHint();
   });
+  const mv = f.querySelector("[data-movebtn]"); if (mv) mv.addEventListener("click", () => { close(); setTimeout(() => startMove(S.bookings.find((x) => x.id === b.id)), 240); });
   f.querySelector("[data-minonly]").addEventListener("click", () => { $("b-spent").value = fmtIn(v(f, "b-expected")); $("b-extra").value = "0"; merHint(); });
   merHint();
   // Navneforslag vises først, når man er begyndt at skrive
@@ -2012,6 +2044,19 @@ function setGuestlist(date, val) {
 view.addEventListener("input", (e) => { if (e.target.id === "kq") { const q = e.target.value.trim().toLowerCase(); view.querySelectorAll(".crow").forEach((r) => { r.hidden = !!q && !r.textContent.toLowerCase().includes(q); }); } });
 view.addEventListener("input", (e) => { if (e.target.id === "gl") setGuestlist(ui.date, num(e.target.value)); });
 view.addEventListener("toggle", (e) => { if (e.target.matches && e.target.matches("[data-crewmore]")) ui.crewMore = e.target.open; }, true);
+{ // hold fingeren på et booket bord → flyt det
+  let lp = null, sx = 0, sy = 0;
+  const stop = () => { clearTimeout(lp); lp = null; };
+  view.addEventListener("pointerdown", (e) => {
+    const tb = e.target.closest(".tb[data-bid]"); if (!tb || ui.move) return;
+    sx = e.clientX; sy = e.clientY; stop();
+    lp = setTimeout(() => { lp = null; ui.lpDone = Date.now(); startMove(S.bookings.find((x) => x.id === tb.dataset.bid)); }, 480);
+  });
+  view.addEventListener("pointermove", (e) => { if (lp && Math.hypot(e.clientX - sx, e.clientY - sy) > 10) stop(); });
+  ["pointerup", "pointercancel", "pointerleave"].forEach((ev) => view.addEventListener(ev, stop));
+  view.addEventListener("contextmenu", (e) => { if (e.target.closest(".tb")) e.preventDefault(); });
+  view.addEventListener("click", (e) => { if (ui.lpDone && Date.now() - ui.lpDone < 700 && e.target.closest(".tb")) { e.stopImmediatePropagation(); e.preventDefault(); } }, true);
+}
 view.addEventListener("submit", (e) => {
   e.preventDefault();
   if (e.target.id === "teamNew") { const f = e.target; return safe(store.rpc("nyx_create_team", { p_team: f.querySelector("#t-name").value, p_name: f.querySelector("#t-me").value }).then(() => store.loadAll()), "Holdet er oprettet"); }
@@ -2052,6 +2097,9 @@ view.addEventListener("click", (e) => {
   if ((x = t("[data-gl]"))) { const inp = view.querySelector("#gl"); const nv = Math.max(0, num(inp.value) + Number(x.dataset.gl)); inp.value = nv; return setGuestlist(ui.date, nv); }
   if ((x = t("[data-hive]"))) { const id = x.dataset.hive; return bookingSheet(hiveAt(ui.hiveDate, id) || { ...newBooking(ui.hiveDate, "Hive", id), club: "Hive" }); }
   if ((x = t("[data-hday]"))) { ui.hiveDate = addDays(ui.hiveDate, Number(x.dataset.hday)); return render(); }
+  if (t("[data-movecancel]")) { ui.move = null; return render(); }
+  if (ui.move && (x = t("[data-table]"))) return finishMove(AREAS[ui.area].name, x.dataset.table);
+  if (ui.move && (x = t("[data-hive]"))) return finishMove("Hive", x.dataset.hive);
   if ((x = t("[data-table]"))) { const A = AREAS[ui.area]; return bookingSheet(bookingAt(ui.date, A.name, x.dataset.table) || newBooking(ui.date, A.name, x.dataset.table)); }
   if ((x = t("[data-news]"))) { try { localStorage.setItem(seenKey(), new Date().toISOString()); } catch {} const b = S.bookings.find((y) => y.id === x.dataset.news); render(); return b ? bookingSheet(b) : toast("Bordet er ikke delt mere"); }
   if ((x = t("[data-booking]"))) return bookingSheet(S.bookings.find((b) => b.id === x.dataset.booking));
