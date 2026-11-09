@@ -30,7 +30,7 @@
 [hidden]{display:none!important}
 body:not(.crew) .crew-only{display:none!important}
 body.crew .boss-only{display:none!important}
-body.crew.club-hive [data-tab=liste],body.crew.club-hive [data-tab-go=liste],body.crew [data-act=scan],body.crew .genvej-scan,body.crew [data-act=newclub]{display:none!important}
+body.crew [data-act=scan],body.crew .genvej-scan,body.crew [data-act=newclub]{display:none!important}
 html,body,button,a,input,select,textarea,label{touch-action:manipulation}
 html,body{background:var(--bg);color:var(--fg)}
 body{font-family:var(--f);font-size:15px;line-height:1.4;margin:0;min-height:100vh;
@@ -246,7 +246,6 @@ label.share small{color:var(--muted)}
 .clubsw small i{width:8px;height:8px;border-radius:99px;background:var(--teal)}
 .clubsw small em{font-style:normal;font-size:10px}
 body.club-hive .clubsw small i{background:#d9a21b}
-body.club-hive nav.tabs [data-tab=borde],body:not(.club-hive) nav.tabs [data-tab=hive]{display:none!important}
 .clubrow{display:flex;align-items:center;gap:14px;width:100%;padding:14px 12px;border:0;background:none;border-radius:14px;text-align:left;font:inherit;color:inherit}
 .clubrow+.clubrow{border-top:1px solid var(--line)}
 .clubrow .cav{width:52px;height:52px;border-radius:99px;display:grid;place-items:center;font:700 20px var(--serif);color:#fff;flex:none}
@@ -424,6 +423,46 @@ label.f input,label.f select,label.f textarea,.status button,.spentbox,label.sha
 .nyxh{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:10px 0 6px}
 .nyxh .btn{padding:7px 12px;font-size:13px}
 .nyxbox{margin-top:10px}
+/* ---------- Bordbog 2 ---------- */
+.tb-menu{visibility:hidden}
+nav.tabs .mdot{position:absolute;top:6px;right:calc(50% - 16px);width:9px;height:9px;border-radius:99px;background:var(--teal);box-shadow:0 0 0 2px var(--surface)}
+.daybar{display:grid;grid-template-columns:40px 1fr 40px;align-items:center;gap:8px;margin:2px 0 6px}
+.daybar>button{width:40px;height:40px;border-radius:99px;border:1px solid var(--line);background:var(--surface);font-size:18px}
+.dpick{position:relative;display:block;text-align:center;line-height:1.15;padding:4px 0;cursor:pointer}
+.dpick b{display:block;font-family:var(--serif);font-size:21px;color:var(--teal)}
+.dpick span{font-size:14px;color:var(--muted)}
+.dpick span em{font-style:normal;color:var(--teal);font-weight:700}
+.dpick input{position:absolute;inset:0;opacity:0;width:100%;height:100%;cursor:pointer}
+.nsum{display:flex;justify-content:center;flex-wrap:wrap;gap:6px;margin:4px 0 12px}
+.nsum span{font-size:13px;font-weight:700;padding:5px 11px;border-radius:99px;background:rgba(255,255,255,.6);border:1px solid var(--line)}
+.nsum button{font-size:13px;font-weight:700;padding:5px 11px;border-radius:99px;border:1px solid var(--line);background:none;color:var(--teal)}
+.mcard{display:block;width:100%;text-align:left;margin-top:14px;padding:16px;border-radius:20px;border:1px solid var(--line);background:var(--surface)}
+.mcard .l{font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.mcard .v{font-family:var(--serif);font-size:34px;font-weight:700;color:var(--green);line-height:1.1;margin-top:4px}
+.mcard .r{display:flex;flex-wrap:wrap;gap:6px 14px;margin-top:8px;font-size:14px;color:var(--muted)}
+.mcard .r b{color:var(--fg)}
+.mcard .pv{display:flex;justify-content:space-between;align-items:baseline;margin-top:12px;padding-top:10px;border-top:1px solid var(--line);font-weight:700}
+.mcard .pv b{color:var(--teal);font-size:18px}
+.quick.two{grid-template-columns:repeat(2,1fr)!important}
+.mlist .row{grid-template-columns:36px minmax(0,1fr) auto;padding:14px}
+.mlist .ico{width:36px;height:36px;border-radius:11px;display:grid;place-items:center;background:var(--raise);color:var(--teal)}
+.mlist .ico svg{width:20px;height:20px}
+.mlist .cnt{min-width:22px;height:22px;padding:0 7px;border-radius:99px;background:var(--teal);color:var(--green-ink);font-size:12px;font-weight:800;display:inline-grid;place-items:center;margin-right:6px}
+.msgc{margin:0 0 14px;padding:14px 16px;border-radius:18px;background:linear-gradient(135deg,#e9b93a,#c99a2e);color:#2b1d1f;box-shadow:0 8px 20px rgba(184,134,11,.25)}
+.msgc .l{font-size:12px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;opacity:.75}
+.msgc p{margin:4px 0 10px;font-size:17px;font-weight:600;white-space:pre-wrap}
+.msgc button{border:0;border-radius:99px;padding:8px 14px;background:rgba(255,255,255,.85);font-weight:800}
+.msgrow{padding:12px 14px;border-top:1px solid var(--line)}.msgrow:first-child{border-top:0}
+.msgrow p{margin:0 0 4px;white-space:pre-wrap;font-size:15px}.msgrow small{color:var(--muted);font-size:12px}
+.msgrow.new p{font-weight:700}
+.qmsg{display:flex;flex-wrap:wrap;gap:6px}
+.qmsg button{border:1px solid var(--line);background:rgba(255,255,255,.6);border-radius:99px;padding:7px 12px;font-size:13px;font-weight:600}
+.crewhead{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.crewhead .btn{flex:1;min-width:150px}
+.newv h3{font-family:var(--serif);font-size:24px;margin:0 0 4px;color:var(--teal)}
+.newv ol{margin:12px 0 0;padding-left:20px;display:flex;flex-direction:column;gap:10px}
+.newv li b{display:block}
+.newv li span{color:var(--muted);font-size:14px}
 .tb{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none}
 .tb.moving{outline:3px solid #d9a21b;outline-offset:1px;animation:mvpulse 1s ease-in-out infinite}
 @keyframes mvpulse{50%{transform:scale(1.06)}}
@@ -492,28 +531,27 @@ button:active,.ev:active,.kpi:active,.qa:active,.hero:active,a.cbtn:active{trans
 <aside class="side" id="side" aria-label="Menu">
   <div class="brand big">Bordbog</div><div class="brand-sub" id="brandSub">Niels' promoterbog</div>
   <nav class="snav">
-    <button data-tab="home"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg>Overblik</button>
-    <div class="nav-label">Søpavillonen</div>
-    <button data-tab="events"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>Events</button>
-    <button data-tab="liste"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6h11M9 12h11M9 18h11M4 6h.01M4 12h.01M4 18h.01"/></svg>Gæsteliste</button>    <button data-tab="borde"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3l7 7-9 9a3 3 0 0 1-4 0l-3-3a3 3 0 0 1 0-4z M16 5l3 3"/></svg>Bordkort</button>    <button data-tab="moon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16v16H4z M4 9h16 M9 9v11"/></svg>Menu til kunder</button>
-    <button data-tab="stats"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V11M10 20V5M16 20v-6M2 20h20"/></svg>Salg og statistik</button>
-    <div class="nav-label hive-only">Hive</div>
-    <button data-tab="hive"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l8 4.6v9.2L12 22l-8-6.2V6.6z M12 8l3.5 2v4L12 16l-3.5-2v-4z"/></svg>Hive bordkort</button>
-    <button data-tab="hivesalg"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V11M10 20V5M16 20v-6M2 20h20"/><circle cx="19" cy="5" r="2"/></svg>Hive salg</button>
-    <div class="nav-label">Andet</div>
-    <button data-tab="crew" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.4 6.8 19.1l1-5.8L3.5 9.2l5.9-.9z"/></svg>Underpromotere</button>    <button data-tab="kunder"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.9M16 3.1a4 4 0 0 1 0 7.8"/></svg>Bedste kunder</button>    <button data-tab="noter"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-3.5 10.9c.6.4 1 1.1 1 1.9V16h5v-.2c0-.8.4-1.5 1-1.9A6 6 0 0 0 12 3z"/></svg>Noter og selskaber</button>
+    <button data-tab="home"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg>Hjem</button>
+    <button data-tab="borde"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M8 9h3v3H8zM13 12h3v3h-3z"/></svg>Borde</button>
+    <button data-tab="liste"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6h11M9 12h11M9 18h11M4 6h.01M4 12h.01M4 18h.01"/></svg>Gæsteliste</button>
+    <button data-tab="stats"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V11M10 20V5M16 20v-6M2 20h20"/></svg>Salg</button>
+    <div class="nav-label">Mere</div>
+    <button data-tab="beskeder" class="crew-only"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z"/></svg>Beskeder</button>
+    <button data-tab="crew" class="boss-only" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.4 6.8 19.1l1-5.8L3.5 9.2l5.9-.9z"/></svg>Underpromotere</button>
+    <button data-tab="events"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>Alle aftener</button>
+    <button data-tab="moon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16v16H4zM8 8h8M8 12h8M8 16h5"/></svg>Menu til kunder</button>
+    <button data-tab="kunder"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM22 21v-2a4 4 0 0 0-3-3.9M16 3.1a4 4 0 0 1 0 7.8"/></svg>Bedste kunder</button>
+    <button data-tab="noter"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-3.5 10.9c.6.4 1 1.1 1 1.9V16h5v-.2c0-.8.4-1.5 1-1.9A6 6 0 0 0 12 3z"/></svg>Noter og selskaber</button>
     <button data-act="scan"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8V5a1 1 0 0 1 1-1h3M16 4h3a1 1 0 0 1 1 1v3M20 16v3a1 1 0 0 1-1 1h-3M8 20H5a1 1 0 0 1-1-1v-3M7 12h10"/></svg>Scan fra Nyx</button>
   </nav>
   <button class="me-card" data-act="profile"><span class="avatar" id="sideAvatar">?</span><span><b id="sideName">Din profil</b><small>Rediger profil</small></span></button>
 </aside>
 <nav class="tabs" aria-label="Sektioner"><div class="in">
-  <button data-tab="home"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg>Overblik</button>
-  <button data-tab="events"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>Events</button>
-  <button data-tab="borde" class="boss-only"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12c2.5-3 5-3 7.5 0s5 3 7.5 0 3.5-2 5 0 M2 17c2.5-3 5-3 7.5 0s5 3 7.5 0 3.5-2 5 0 M7 8a5 5 0 0 1 10 0"/></svg>Sø</button>
-  <button data-tab="hive"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l8 4.6v9.2L12 22l-8-6.2V6.6z M12 8l3.5 2v4L12 16l-3.5-2v-4z"/></svg>Hive</button>
-  <button data-tab="liste" class="crew-only"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6h11M9 12h11M9 18h11M4 6h.01M4 12h.01M4 18h.01"/></svg>Liste</button>
+  <button data-tab="home"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg>Hjem</button>
+  <button data-tab="borde"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M8 9h3v3H8zM13 12h3v3h-3z"/></svg>Borde</button>
+  <button data-tab="liste"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6h11M9 12h11M9 18h11M4 6h.01M4 12h.01M4 18h.01"/></svg>Liste</button>
   <button data-tab="stats"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V11M10 20V5M16 20v-6M2 20h20"/></svg>Salg</button>
-  <button data-open-side><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>Mere</button>
+  <button data-tab="mere"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="5" cy="12" r="1.3"/><circle cx="12" cy="12" r="1.3"/><circle cx="19" cy="12" r="1.3"/></svg>Mere<span class="mdot" id="moreDot" hidden></span></button>
 </div></nav>
 <div id="sheetRoot"></div>
 
@@ -698,15 +736,18 @@ const store = {
     if (res.error && /team/.test(res.error.message)) res = await this.sb.from("nyx_docs").select("col,id,data,owner");
     const { data, error } = res;
     if (error) { setStatus(/does not exist|schema cache/i.test(error.message) ? "Tabellen findes ikke endnu. Kør supabase/nyx.sql i Supabase." : "Kunne ikke hente dine tal: " + error.message); S.ready = true; render(); return; }
-    const by = { bookings: [], nights: [], notes: [] }; let settings = {}; this.meta = {};
+    const by = { bookings: [], nights: [], notes: [] }; let settings = {}, inbox = null; this.meta = {};
     data.forEach((r) => {
       this.meta[r.col + ":" + r.id] = { owner: r.owner, team: r.team || null };
       const own = r.owner === this.uid;
       if (r.col === "settings") { if (own) settings = r.data; }
+      else if (r.col === "inbox") { if (own) inbox = r.data || {}; }
       else if (r.col === "bookings" || own || (r.col === "notes" && r.data && r.data.kind === "gaest")) by[r.col] && by[r.col].push({ ...r.data, id: r.id });
     });
     await this.loadTeam();
     await this.loadRole();
+    this.inbox = inbox;
+    if (!inbox && this.boss) { this.inbox = { msgs: [], seen: Date.now() }; this.sb.from("nyx_docs").upsert({ owner: this.uid, col: "inbox", id: "main", data: this.inbox, updated_at: new Date().toISOString() }).then(() => {}, () => {}); }
     Object.assign(S, by, { settings: { pct: 0, ...settings }, ready: true });
     render();
   },
@@ -868,6 +909,11 @@ function badge() {
   if (!el) { el = document.createElement("span"); el.className = "badge"; b.appendChild(el); }
   el.textContent = n > 9 ? "9+" : n;
 }
+function goTab(tab) {
+  if (tab === "borde") return ui.club === "hive" ? go("hive") : go("night", { date: ui.date || nextNight() });
+  if (tab === "stats") return go(ui.club === "hive" ? "hivesalg" : "stats");
+  go(tab);
+}
 function setClub(c, quiet) { ui.club = c; try { localStorage.setItem("bordbog-club", c); } catch {} if (!quiet) render(); }
 function pickClub(c) {
   setClub(c, true);
@@ -886,14 +932,14 @@ function clubSeg() {
   return `<div class="seg" style="margin-bottom:10px"><button data-pickclub="so" aria-pressed="${ui.club !== "hive"}">Søpavillonen</button><button data-pickclub="hive" aria-pressed="${ui.club === "hive"}">Hive</button></div>`;
 }
 function render() {
-  if (isCrew() && ui.tab === "liste" && ui.club === "hive") setClub("so", true);
   if (ui.tab === "hive" || ui.tab === "hivesalg") setClub("hive", true); else if (ui.tab === "stats" || ui.tab === "night") setClub("so", true);
   document.body.classList.toggle("club-hive", ui.club === "hive");
   { const cn = document.getElementById("clubName"); if (cn) cn.textContent = ui.club === "hive" ? "Hive" : "Søpavillonen"; }
-  const cur = ui.tab === "night" ? "borde" : ui.tab;
+  const cur = ["night", "hive", "borde"].includes(ui.tab) ? "borde" : ui.tab === "hivesalg" ? "stats" : MORE_TABS.includes(ui.tab) ? "mere" : ui.tab;
   { const cb = document.querySelector('.snav [data-tab="crew"]'); if (cb) cb.hidden = !(isBoss() && store.crewOk); }
   document.body.classList.toggle("crew", isCrew());
-  document.querySelectorAll("nav.tabs [data-tab], .snav [data-tab]").forEach((b) => b.setAttribute("aria-current", b.dataset.tab === cur || (cur === "borde" && b.dataset.tab === "events" && b.closest("nav.tabs") && isCrew()) || (cur === "hivesalg" && b.dataset.tab === "stats" && b.closest("nav.tabs")) ? "page" : "false"));
+  document.querySelectorAll("nav.tabs [data-tab], .snav [data-tab]").forEach((b) => b.setAttribute("aria-current", (b.closest(".snav") ? b.dataset.tab === (ui.tab === "night" || ui.tab === "hive" ? "borde" : ui.tab === "hivesalg" ? "stats" : ui.tab) : b.dataset.tab === cur) ? "page" : "false"));
+  { const md = document.getElementById("moreDot"); if (md) md.hidden = !(isCrew() && inboxUnread().length); }
   const ini = esc(initials(profile().name || meNyx()));
   ["topAvatar", "sideAvatar"].forEach((id) => { const el = document.getElementById(id); if (el) el.innerHTML = ini; });
   const sn = document.getElementById("sideName"); if (sn) sn.textContent = profile().name || "Din profil";
@@ -901,12 +947,16 @@ function render() {
   if (!S.ready) return;
   const y = window.scrollY;
   badge();
-  view.innerHTML = { home: vHome, hivesalg: vHiveSales, hive: vHive, events: vEvents, borde: vNight, night: vNight, stats: vStats, noter: vNoter, kunder: vKunder, crew: vCrew, liste: vListe, moon: vMoon }[ui.tab]();
+  let html = { home: vHome, hivesalg: vHiveSales, hive: vHive, events: vEvents, borde: vNight, night: vNight, stats: vStats, noter: vNoter, kunder: vKunder, crew: vCrew, liste: vListe, moon: vMoon, mere: vMore, opfolg: vFollow, beskeder: vInbox }[ui.tab]();
+  if (MORE_TABS.includes(ui.tab) && ui.tab !== "mere") html = html.replace('<div class="top"><span></span>', '<div class="top"><button class="pillbtn" data-tab-go="mere">‹ Mere</button>');
+  view.innerHTML = html;
+  whatsNew();
   if (ui.tab !== ui._lastTab) { enterAnim(ui._lastTab); ui._lastTab = ui.tab; }
   slideSegs();
   if (ui.keepScroll) window.scrollTo(0, y);
   ui.keepScroll = true;
 }
+const MORE_TABS = ["mere", "crew", "events", "moon", "kunder", "noter", "beskeder"];
 const go = (tab, extra = {}) => { Object.assign(ui, extra, { tab }); ui.keepScroll = false; render(); window.scrollTo(0, 0); };
 
 /* ---------- events ---------- */
@@ -924,13 +974,8 @@ function vEvents() {
   [...S.bookings.filter((b) => !b.club).map((b) => b.date), ...S.nights.map((n) => n.id)].forEach((x) => x && x >= today && okDay(x) && set.add(x));
   const upcoming = [...set].sort();
   const past = [...new Set([...S.bookings.filter((b) => !b.club).map((b) => b.date), ...S.nights.map((n) => n.id)])].filter((x) => x && x < today && okDay(x)).sort().reverse();
-  const todo = S.bookings.filter((b) => b.date < today && (b.status === "booket" || (b.status === "kom" && !num(b.spent))));
-  return `<div class="top"><span></span><div class="title"><b>Events</b></div><span></span></div>
-  <button class="btn teal scanbtn" data-act="scan">Scan screenshots fra Nyx</button>
-  ${todo.length ? `<button class="ev todo" data-act="todo"><div class="r1"><span class="wd thu">Mangler beløb</span></div><div class="r2"><span class="name">${todo.length} ${todo.length === 1 ? "bord" : "borde"} mangler hvad de brugte</span><span class="stats">Udfyld</span></div></button>` : ""}
-  ${newsSection()}${followSection(today)}${bdaySection(today)}
-  ${isCrew() ? "" : clubSection(today)}
-  <h2>Kommende på ${HOME}</h2>${upcoming.map(eventCard).join("")}
+  return `<div class="top"><span></span><div class="title"><b>Alle aftener</b><span>${HOME}</span></div><span></span></div>
+  <h2>Kommende</h2>${upcoming.map(eventCard).join("")}
   ${isCrew() ? "" : `<h2>Andet event på ${HOME}</h2>
   <div class="addrow"><label class="f" style="flex:1"><span>Dato</span><input type="date" id="addDate" min="${today}"></label><button class="btn" data-act="addnight" style="align-self:flex-end">Åbn</button></div>`}
   ${past.length ? `<h2>Tidligere</h2>${(ui.showPast ? past : past.slice(0, 5)).map(eventCard).join("")}${past.length > 5 && !ui.showPast ? `<button class="btn" data-act="showpast">Vis alle ${past.length}</button>` : ""}` : ""}`;
@@ -997,17 +1042,19 @@ function vNight() {
   const e = eventFor(date), A = AREAS[ui.area], bs = bookingsOn(date);
   const inArea = bs.filter((b) => b.area === A.name && active(b));
   const cnt = (s) => inArea.filter((b) => b.status === s).length;
-  const top = `<div class="top"><button class="pillbtn" data-act="back">‹ Events</button>
-    <div class="title"><span class="d">${dayLabel(date)}</span><br><span>${esc(e.name)}</span></div><button class="pillbtn right" data-act="editnight">Ret</button></div>
-    <div class="seg"><button data-mode="liste" aria-pressed="${ui.mode === "liste"}">Liste</button><button data-mode="kort" aria-pressed="${ui.mode === "kort"}">Kort</button></div>
-    <div class="glist"><div><div style="font-weight:600">Din gæsteliste${e.names ? ` · ${e.guestlist} i alt` : ""}</div><div class="k">${e.names ? `${e.names} fra gæstelisten${isBoss() && (store.crew || []).length ? " (inkl. dit team)" : ""} + ekstra her` : "Antal du har sat på liste"}</div></div>
-    <div class="step"><button data-gl="-1" aria-label="Færre">−</button><input id="gl" class="num" inputmode="numeric" value="${e.manual}"><button data-gl="1" aria-label="Flere">+</button></div></div>`;
+  const actB = bs.filter(active), expN = actB.reduce((a, b) => a + num(b.expected), 0);
+  const top = `${clubSeg()}
+    <div class="daybar"><button data-nday="-1" aria-label="Forrige aften">‹</button>
+      <label class="dpick"><b>${esc(e.name)}</b><span>${dayLabel(date)} <em>▾</em></span><input type="date" id="nightDate" value="${date}" aria-label="Vælg dato"></label>
+      <button data-nday="1" aria-label="Næste aften">›</button></div>
+    <div class="nsum num"><span>${nBorde(actB.length)}</span>${expN ? `<span>${kr(expN)}</span>` : ""}<span>${e.guestlist} på liste</span>${isCrew() ? "" : `<button data-act="editnight">Ret aften</button>`}</div>
+    <div class="seg"><button data-mode="kort" aria-pressed="${ui.mode !== "liste"}">Bordkort</button><button data-mode="liste" aria-pressed="${ui.mode === "liste"}">Liste</button></div>`;
   if (ui.mode === "liste") {
     const rows = bs.slice().sort((a, b) => a.area.localeCompare(b.area) || num(a.table) - num(b.table));
     const exp = rows.filter(active).reduce((a, b) => a + num(b.expected), 0), sp = rows.reduce((a, b) => a + sold(b), 0);
     return top + `<h2>${rows.filter(active).length} borde · forventet ${kr(exp)}${sp ? " · solgt " + kr(sp) : ""}</h2>
       ${rows.length ? `<div class="list">${rows.map(bookingRow).join("")}</div>` : `<div class="empty">Ingen borde denne aften endnu. Skift til <b>Kort</b> og tryk på et bord.</div>`}
-      <div class="btns" style="margin-top:12px"><button class="btn" data-act="newfree">+ Bord uden for kortet</button><button class="btn" data-act="scan">Scan fra Nyx</button></div>`;
+      <div class="btns" style="margin-top:12px"><button class="btn" data-act="newfree">+ Bord uden for kortet</button><button class="btn" data-act="scan">Scan fra Nyx</button><button class="btn" data-tab-go="events">Alle aftener</button></div>`;
   }
   const items = A.items.map((it) => {
     const pos = `left:${it.x / 9.2}%;top:${(it.y - A.y0) / A.h * 100}%;width:${it.w / 9.2}%;height:${it.h / A.h * 100}%`;
@@ -1019,7 +1066,7 @@ function vNight() {
   return top + `<div class="areabar"><div class="nav"><button data-area="-1" aria-label="Forrige område">‹</button><span class="nm">${esc(A.name)} (${ui.area + 1}/${AREAS.length})</span><button data-area="1" aria-label="Næste område">›</button></div>
     <div class="counts num"><span class="c-green" title="Booket">${cnt("booket")}</span><span class="c-blue" title="Kom">${cnt("kom")}</span><span class="c-red" title="Udeblev">${cnt("udeblev")}</span></div></div>
     ${moveBar()}<div class="map ${ui.move ? "movemode" : ""}" style="aspect-ratio:920/${A.h}">${items}</div>
-    <p class="maptip">Tryk på et bord for at booke det. Hold fingeren på et booket bord for at flytte det. Bordeaux er booket, oliven kom, rød udeblev.</p>`;
+    <p class="maptip">Tryk på et bord for at booke det. Hold fingeren på et bord for at flytte det. Bordeaux = booket, grøn = kom, rød = udeblev.</p>`;
 }
 const isHiveClub = (c) => /^\s*hive\b/i.test(c || "");
 const hiveAt = (date, table) => S.bookings.find((b) => isHiveClub(b.club) && b.date === date && String(b.table) === String(table) && active(b));
@@ -1034,12 +1081,14 @@ function vHive() {
     return `<button class="tb ${it.k === "r" ? "round" : ""} ${b ? b.status : ""} ${b && ui.move && ui.move.id === b.id ? "moving" : ""}" style="${pos}" data-hive="${it.id}"${b ? ` data-bid="${esc(b.id)}"` : ""} aria-label="Hive bord ${it.id}${b ? ", " + esc(b.name) : ", ledigt"}"><b>${it.id}</b><small>${b ? esc(shortName(b.name)) : esc(it.cap)}</small></button>`;
   }).join("");
   const exp = bs.filter(active).reduce((a, b) => a + num(b.expected), 0);
-  return `${hiveTabs("hive")}<div class="top"><button class="pillbtn" data-hday="-1" aria-label="Dagen før">‹</button>
-    <div class="title"><span class="d">${dayLabel(date)}</span><br><span>Hive Copenhagen</span></div><button class="pillbtn right" data-hday="1" aria-label="Dagen efter">›</button></div>
-    <div class="addrow" style="margin-bottom:10px"><label class="f" style="flex:1"><span>Dato</span><input type="date" id="hiveDate" value="${date}"></label></div>
+  return `${clubSeg()}
+    <div class="daybar"><button data-hday="-1" aria-label="Dagen før">‹</button>
+      <label class="dpick"><b>Hive</b><span>${dayLabel(date)} <em>▾</em></span><input type="date" id="hiveDate" value="${date}" aria-label="Vælg dato"></label>
+      <button data-hday="1" aria-label="Dagen efter">›</button></div>
+    <div class="nsum num"><span>${nBorde(bs.filter(active).length)}</span>${exp ? `<span>${kr(exp)}</span>` : ""}</div>
     ${moveBar()}<div class="map ${ui.move ? "movemode" : ""}" style="aspect-ratio:920/${A.h}">${items}</div>
-    <p class="maptip">Tryk på et bord for at booke det på Hive. Hold fingeren på et booket bord for at flytte det.${store.team ? " Det bliver delt med holdet, så de får besked og kan skrive tallene ind." : ""}</p>
-    <h2>${bs.filter(active).length} borde på Hive${exp ? " · " + kr(exp) : ""}</h2>
+    <p class="maptip">Tryk på et bord for at booke det. Hold fingeren på et bord for at flytte det.</p>
+    <h2>Borde denne dag</h2>
     ${bs.length ? `<div class="list">${bs.map(bookingRow).join("")}</div>` : `<div class="empty">Ingen borde på Hive denne dag.</div>`}`;
 }
 /* ---------- profil ---------- */
@@ -1103,38 +1152,36 @@ function vHome() {
   const waiting = allB().filter((b) => (b.date <= today && b.status === "kom" && !num(b.spent)) || (b.date < today && b.status === "booket"));
   if (waiting.length) todo.push(`<button class="row todo-row" data-act="todo"><span class="bub">${waiting.length}</span><span class="mid"><span class="t">${waiting.length === 1 ? "Et bord mangler" : waiting.length + " borde mangler"} hvad de brugte</span><span class="s">Skriv merspend, så tallene passer</span></span><span class="right">›</span></button>`);
   const un = typeof unread === "function" && store.team ? unread() : [];
-  if (un.length) todo.push(`<button class="row todo-row" data-tab-go="events"><span class="bub olive">${un.length}</span><span class="mid"><span class="t">Nyt fra holdet</span><span class="s">${esc(un[0].text)}</span></span><span class="right">›</span></button>`);
+  if (un.length) todo.push(`<button class="row todo-row" data-tab-go="opfolg"><span class="bub olive">${un.length}</span><span class="mid"><span class="t">Nyt fra holdet</span><span class="s">${esc(un[0].text)}</span></span><span class="right">›</span></button>`);
   const fu = followups(today);
-  if (fu.length) todo.push(`<button class="row todo-row" data-tab-go="events"><span class="bub gold">${fu.length}</span><span class="mid"><span class="t">Skriv tak til ${fu.length === 1 ? esc(first(fu[0].name)) : fu.length + " kunder"}</span><span class="s">Fra de seneste aftener</span></span><span class="right">›</span></button>`);
+  if (fu.length) todo.push(`<button class="row todo-row" data-tab-go="opfolg"><span class="bub gold">${fu.length}</span><span class="mid"><span class="t">Skriv tak til ${fu.length === 1 ? esc(first(fu[0].name)) : fu.length + " kunder"}</span><span class="s">Fra de seneste aftener</span></span><span class="right">›</span></button>`);
   const bd = upcomingBirthdays(today, 14);
-  if (bd.length) todo.push(`<button class="row todo-row" data-tab-go="events"><span class="bub gold">🎂</span><span class="mid"><span class="t">${esc(bd[0].name)} fylder ${bd[0].age}</span><span class="s">${bd[0].days === 0 ? "I dag" : "Om " + bd[0].days + " dage"}${bd.length > 1 ? " · og " + (bd.length - 1) + " mere" : ""}</span></span><span class="right">›</span></button>`);
-  const upcoming = [...new Set([next, ...[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((i) => addDays(today, i)).filter((x) => NIGHT_DAYS().includes(d(x).getDay()))])].filter((x) => x > next).slice(0, 3);
+  if (bd.length) todo.push(`<button class="row todo-row" data-tab-go="opfolg"><span class="bub gold">🎂</span><span class="mid"><span class="t">${esc(bd[0].name)} fylder ${bd[0].age}</span><span class="s">${bd[0].days === 0 ? "I dag" : "Om " + bd[0].days + " dage"}${bd.length > 1 ? " · og " + (bd.length - 1) + " mere" : ""}</span></span><span class="right">›</span></button>`);
+  const tot = so.sold + hv.sold, totB = so.came.length + hv.came.length;
+  if (isBoss()) { const nyx = crewTodo(); if (nyx) todo.unshift(`<button class="row todo-row" data-tab-go="crew"><span class="bub">${nyx}</span><span class="mid"><span class="t">Fra dit team til Nyx</span><span class="s">Borde og navne der skal skrives ind</span></span><span class="right">›</span></button>`); }
+  const msg = isCrew() ? inboxUnread()[0] : null;
   return `<div class="hello-date">${new Date().toLocaleDateString("da-DK", { weekday: "long", day: "numeric", month: "long" })}</div>
     <h1 class="hello">${greeting()}, ${esc(first(pr.name || meNyx()))}</h1>
     ${needsCode() ? `<form class="genvej" id="homeJoin" style="margin:0 0 14px"><b>Er du underpromoter?</b><span class="s">Skriv koden, du har fået af din promoter, så bliver din konto koblet på.</span>
       <div style="display:flex;gap:8px;margin-top:8px"><input id="hj-code" placeholder="Fx 9E546A" autocapitalize="characters" autocomplete="off" style="flex:1;min-width:0;background:rgba(255,255,255,.6);border:1px solid var(--line);border-radius:10px;padding:10px 12px;font-size:16px"><button class="btn teal">Tilslut</button></div></form>` : ""}
+    ${msg ? `<section class="msgc"><div class="l">Besked fra ${esc(first(msg.from || (store.boss && store.boss.name) || "din promoter"))}</div><p>${esc(msg.text)}</p><button data-act="seenmsg">Set ✓</button>${inboxUnread().length > 1 ? ` <button data-tab-go="beskeder">Se alle ${inboxUnread().length}</button>` : ""}</section>` : ""}
     <button class="hero" data-night="${next}"><div class="lab">Næste aften · ${when}</div><div class="ttl">${esc(ne.name)}</div>
       <div class="sub">${dayLabel(next)} · ${esc(ne.time)}${ne.age ? " · " + esc(ne.age) : ""}</div>
       <div class="chips"><span class="chip">${nb.length} ${nb.length === 1 ? "bord" : "borde"}</span>${nexp ? `<span class="chip">${kr(nexp)}</span>` : ""}${ne.guestlist ? `<span class="chip">${ne.guestlist} på liste</span>` : ""}<span class="chip">Åbn bordkort ›</span></div></button>
     <div class="quick">
-      <button class="qa" data-act="scan">${svgI("scan")}Scan Nyx</button>
-      <button class="qa" data-tab-go="hive">${svgI("hive")}Book Hive</button>
-      <button class="qa crew-only" data-tab-go="events"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>Book bord</button>
-      <button class="qa crew-only" data-tab-go="liste"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6h11M9 12h11M9 18h11M4 6h.01M4 12h.01M4 18h.01"/></svg>Gæsteliste</button>
-      <button class="qa" data-act="newparty">${svgI("noter")}Nyt selskab</button>
+      <button class="qa" data-act="booknight">${svgI("borde")}Book bord</button>
+      <button class="qa" data-act="bookhive">${svgI("hive")}Book Hive</button>
+      <button class="qa" data-tab-go="liste">${svgI("liste")}Gæsteliste</button>
     </div>
-    <h2>${payName(ym)}</h2>
-    <div class="kpis num">
-      <button class="kpi" data-tab-go="stats"><div class="l">Søpavillonen</div><div class="v">${kr(so.sold)}</div><div class="s">${nBorde(so.came.length)} solgt</div></button>
-      <button class="kpi" data-tab-go="hivesalg"><div class="l">Hive · ${esc(monthName(hym).split(" ")[0])}</div><div class="v">${kr(hv.sold)}</div><div class="s">${nBorde(hv.came.length)} solgt</div></button>
-      ${isCrew() ? `<div class="kpi"><div class="l">Borde booket</div><div class="v">${so.act.length + hv.act.length}</div><div class="s">i lønperioden</div></div>` : `<div class="kpi"><div class="l">Din provision</div><div class="v">${pctS || pctH ? kr(prov) : "–"}</div><div class="s">${pctS || pctH ? `${pctS} % / ${pctH} % på Hive` : "Sæt procent i din profil"}</div></div>`}
-      <div class="kpi"><div class="l">Merspend</div><div class="v">${kr(mer)}</div><div class="s">${nBorde(so.withMer.length + hv.withMer.length)} brugte mere</div></div>
-    </div>
+    <button class="mcard num" data-tab-go="stats"><div class="l">Solgt · ${payName(ym)}</div><div class="v">${kr(tot)}</div>
+      <div class="r"><span>Søpavillonen <b>${kr(so.sold)}</b></span><span>Hive ${esc(monthName(hym).split(" ")[0])} <b>${kr(hv.sold)}</b></span><span>${nBorde(totB)} kom</span>${mer ? `<span>Merspend <b>${kr(mer)}</b></span>` : ""}</div>
+      ${isCrew() ? "" : `<div class="pv"><span>Din provision</span>${pctS || pctH ? `<b>${kr(prov)}</b>` : `<span class="note">Sæt procent i din profil ›</span>`}</div>`}</button>
     ${todo.length ? `<h2>Til dig</h2><div class="list">${todo.join("")}</div>` : ""}
-    ${hiveNext.length ? `<h2>Kommende på Hive</h2><div class="list">${hiveNext.slice(0, 3).map(bookingRow).join("")}</div>` : ""}
-    ${upcoming.length ? `<h2>Senere på Søpavillonen</h2>${upcoming.map(eventCard).join("")}` : ""}`;
+    ${hiveNext.length ? `<h2>Kommende på Hive</h2><div class="list">${hiveNext.slice(0, 3).map(bookingRow).join("")}</div>` : ""}`;
 }
 const SVGS = {
+  borde: '<rect x="3" y="4" width="18" height="16" rx="3"/><path d="M8 9h3v3H8zM13 12h3v3h-3z"/>',
+  liste: '<path d="M9 6h11M9 12h11M9 18h11M4 6h.01M4 12h.01M4 18h.01"/>',
   scan: '<path d="M4 8V5a1 1 0 0 1 1-1h3M16 4h3a1 1 0 0 1 1 1v3M20 16v3a1 1 0 0 1-1 1h-3M8 20H5a1 1 0 0 1-1-1v-3M7 12h10"/>',
   hive: '<path d="M12 2l8 4.6v9.2L12 22l-8-6.2V6.6z M12 8l3.5 2v4L12 16l-3.5-2v-4z"/>',
   noter: '<path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-3.5 10.9c.6.4 1 1.1 1 1.9V16h5v-.2c0-.8.4-1.5 1-1.9A6 6 0 0 0 12 3z"/>',
@@ -1227,10 +1274,8 @@ function salesKpis(m, hive) {
   return `<div class="kpis num">
     <div class="kpi"><div class="l">Merspend</div><div class="v">${kr(mer)}</div><div class="s">${m.withMer.length} af ${m.withMer.length + m.noMer.length} borde brugte mere</div></div>
     <div class="kpi"><div class="l">Snit pr. bord</div><div class="v">${kr(m.avgSold || m.avgExp)}</div><div class="s">${m.avgSold ? "solgt" : "forventet"} pr. bord</div></div>
-    <div class="kpi"><div class="l">Mødte op</div><div class="v">${m.show === null ? "–" : m.show + " %"}</div><div class="s">${m.tableGuests} gæster ved bordene</div></div>
-    ${hive ? `<div class="kpi"><div class="l">Borde booket</div><div class="v">${m.act.length}</div><div class="s">${kr(m.expected)} forventet</div></div>`
-      : `<div class="kpi"><div class="l">Gæsteliste</div><div class="v">${m.guests}</div><div class="s">${m.guestNights ? (m.crewGuests ? "heraf " + m.crewGuests + " fra dit team · " : "") + "ca. " + Math.round(m.guests / m.guestNights) + " pr. aften" : "ingen aftener endnu"}</div></div>`}
-  </div>`;
+  </div>
+  <p class="note" style="margin:8px 2px 0">${m.show === null ? "" : "Mødte op: " + m.show + " % · "}${m.tableGuests} gæster ved bordene${hive ? "" : ` · Gæsteliste: ${m.guests}${m.crewGuests ? " (heraf " + m.crewGuests + " fra dit team)" : ""}`}</p>`;
 }
 function periodTables(m) {
   const all = m.bs.slice().sort((a, b) => a.date.localeCompare(b.date) || String(a.table).localeCompare(String(b.table), "da", { numeric: true }));
@@ -1283,17 +1328,14 @@ const monthSw = (h) => h ? `<div class="monthsw"><button data-hmonth="-1" aria-l
 function vHiveSales() {
   ui.hmonth ||= payYm(todayISO(), true);
   const m = monthStats(ui.hmonth, hiveB), pct = num(S.settings.hivePct);
-  return `<div class="top"><span></span><div class="title"><b>Hive</b><span>${isCrew() ? "Salg" : "Salg og provision"}</span></div><span></span></div>
+  return `<div class="top"><span></span><div class="title"><b>Salg</b><span>Hive</span></div><span></span></div>
     ${clubSeg()}
-    ${hiveTabs("hivesalg")}
     ${monthSw(true)}
     ${salesHero(m, pct, "på Hive")}
     ${salesAlert(m)}
     ${salesKpis(m, true)}
     ${salesBody(m, hiveB)}
-    ${isCrew() ? "" : `<details class="more"><summary>Provision på Hive</summary>
-    <form class="form" id="hivePctForm"><label class="f">Procent af bordsalg (%)<input id="h-pct" inputmode="decimal" value="${pct || ""}" placeholder="Fx 10"></label>
-    <div style="align-self:end"><button class="btn teal" type="submit">Gem</button></div></form></details>`}`;
+`;
 }
 function totalCard(m, h, pct, hpct) {
   if (!h.act.length) return "";
@@ -1306,9 +1348,7 @@ function totalCard(m, h, pct, hpct) {
 function vStats() {
   ui.month ||= payYm(todayISO());
   const m = monthStats(ui.month), pct = num(S.settings.pct);
-  const team = typeof teamSection === "function" ? teamSection() : "";
-  const sky = typeof store !== "undefined" && store.mode === "sky";
-  return `<div class="top"><span></span><div class="title"><b>Søpavillonen</b><span>Salg og statistik</span></div><span></span></div>
+  return `<div class="top"><span></span><div class="title"><b>Salg</b><span>Søpavillonen</span></div><span></span></div>
   ${clubSeg()}
   ${monthSw()}
   ${salesHero(m, pct, "på Søpavillonen")}
@@ -1316,13 +1356,7 @@ function vStats() {
   ${salesAlert(m)}
   ${typeof poolSection === "function" ? poolSection() : ""}
   ${salesKpis(m, false)}
-  ${salesBody(m)}
-  <details class="more"><summary>Indstillinger${team ? " og hold" : ""}</summary>
-  ${isCrew() ? "" : `<form class="form" id="setForm"><label class="f">Provision af bordsalg (%)<input id="s-pct" inputmode="decimal" value="${pct || ""}" placeholder="Fx 10"></label>
-  <div style="align-self:end"><button class="btn teal" type="submit">Gem</button></div></form>`}
-  ${team}
-  ${sky ? `<h2>Konto</h2><div class="btns"><button class="btn" data-act="logout">Log ud</button></div>
-  <p class="note">Læg appen på hjemmeskærmen: Safari → Del → Føj til hjemmeskærm.</p>` : ""}</details>`;
+  ${salesBody(m)}`;
 }
 
 /* ---------- kunder: bedste bord- og pre-kunder ---------- */
@@ -1398,10 +1432,129 @@ function slideSegs() {
   if (nav) { const bs = [...nav.querySelectorAll("button")].filter((b) => getComputedStyle(b).display !== "none"); const i = bs.findIndex((b) => b.getAttribute("aria-current") === "page"); nav.style.setProperty("--on", i < 0 ? 0 : 1); if (i >= 0) nav.style.setProperty("--i", i); }
 }
 function enterAnim(prevTab) {
-  const TAB_ORDER = ["home", "events", "borde", "night", "stats", "hive", "hivesalg", "kunder", "noter"];
+  const TAB_ORDER = ["home", "opfolg", "borde", "night", "hive", "events", "liste", "stats", "hivesalg", "mere", "beskeder", "crew", "moon", "kunder", "noter"];
   const a = TAB_ORDER.indexOf(prevTab), b = TAB_ORDER.indexOf(ui.tab);
   view.classList.remove("enter", "enter-r", "enter-l"); void view.offsetWidth;
   view.classList.add(prevTab == null ? "enter" : b >= a ? "enter-r" : "enter-l");
+}
+/* ---------- Mere ---------- */
+function vMore() {
+  const row = (attr, icon, t, sub, cnt) => `<button class="row" ${attr}><span class="ico">${icon}</span><span class="mid"><span class="t">${t}</span>${sub ? `<span class="s">${sub}</span>` : ""}</span><span class="right">${cnt ? `<span class="cnt">${cnt}</span>` : ""}›</span></button>`;
+  const S2 = (k) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${MORE_IC[k]}</svg>`;
+  const team = typeof teamSection === "function" ? teamSection() : "";
+  const crewRow = isBoss() && store.crewOk ? row('data-tab-go="crew"', S2("star"), "Underpromotere", "Til Nyx, beskeder og salg pr. person", crewTodo()) : "";
+  return `<div class="top"><span></span><div class="title"><b>Mere</b></div><span></span></div>
+  <div class="list mlist">
+    ${isCrew() ? row('data-tab-go="beskeder"', S2("msg"), "Beskeder", "Fra " + esc(first((store.boss && store.boss.name) || "din promoter")), inboxUnread().length) : crewRow}
+    ${row('data-tab-go="events"', S2("cal"), "Alle aftener", "Kommende og tidligere aftener")}
+    ${row('data-tab-go="moon"', S2("menu"), "Menu til kunder", "Menukort, bordkort og pakker")}
+    ${row('data-tab-go="kunder"', S2("users"), "Bedste kunder", "Dem der bruger mest")}
+    ${row('data-tab-go="noter"', S2("noter"), "Noter og selskaber", "")}
+  </div>
+  ${isCrew() ? "" : `<h2>Værktøjer</h2><div class="list mlist">
+    ${row('data-act="scan"', S2("scan"), "Scan fra Nyx", "Læg borde ind fra screenshots")}
+    ${row('data-act="newclub"', S2("plus"), "Bord på anden klub", "")}
+  </div>`}
+  <h2>Dig</h2><div class="list mlist">
+    ${row('data-act="profile"', S2("user"), "Profil", isCrew() ? "Navn og telefon" : "Navn, provision og iPhone-genvej")}
+    ${row('data-act="whatsnew"', S2("spark"), "Nyt i Bordbog", "Se hvad der er ændret")}
+    ${store.mode === "sky" ? row('data-act="logout"', S2("out"), "Log ud", esc(store.email || "")) : ""}
+  </div>
+  ${team ? `<details class="more" style="margin-top:16px"><summary>Hold</summary>${team}</details>` : ""}
+  <p class="note" style="text-align:center;margin-top:16px">Læg appen på hjemmeskærmen: Safari → Del → Føj til hjemmeskærm.</p>`;
+}
+const MORE_IC = {
+  star: '<path d="M12 3l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.4 6.8 19.1l1-5.8L3.5 9.2l5.9-.9z"/>',
+  msg: '<path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z"/>',
+  cal: '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/>',
+  menu: '<path d="M4 4h16v16H4zM8 8h8M8 12h8M8 16h5"/>',
+  users: '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM22 21v-2a4 4 0 0 0-3-3.9M16 3.1a4 4 0 0 1 0 7.8"/>',
+  noter: '<path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-3.5 10.9c.6.4 1 1.1 1 1.9V16h5v-.2c0-.8.4-1.5 1-1.9A6 6 0 0 0 12 3z"/>',
+  scan: '<path d="M4 8V5a1 1 0 0 1 1-1h3M16 4h3a1 1 0 0 1 1 1v3M20 16v3a1 1 0 0 1-1 1h-3M8 20H5a1 1 0 0 1-1-1v-3M7 12h10"/>',
+  plus: '<path d="M12 5v14M5 12h14"/>',
+  user: '<path d="M20 21a8 8 0 0 0-16 0M12 13a5 5 0 1 0 0-10 5 5 0 0 0 0 10z"/>',
+  spark: '<path d="M12 3v4M12 17v4M3 12h4M17 12h4M6 6l2.5 2.5M15.5 15.5L18 18M6 18l2.5-2.5M15.5 8.5L18 6"/>',
+  out: '<path d="M15 4h4a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1h-4M10 17l5-5-5-5M15 12H3"/>',
+};
+/* opgaver fra forsiden: tak-beskeder, fødselsdage og nyt fra holdet */
+function vFollow() {
+  const today = todayISO(), body = newsSection() + followSection(today) + bdaySection(today);
+  return `<div class="top"><button class="pillbtn" data-tab-go="home">‹ Hjem</button><div class="title"><b>Følg op</b></div><span></span></div>
+  ${body || `<div class="empty" style="margin-top:12px">Ingen at følge op på lige nu.</div>`}`;
+}
+/* hvor mange borde og navne fra teamet der mangler at blive skrevet ind i Nyx (de næste aftener) */
+function crewTodo() {
+  if (!isBoss() || !(store.crew || []).length) return 0;
+  const ids = store.crew.map((c) => c.id), today = todayISO();
+  return S.bookings.filter((b) => !b.club && b.date >= today && active(b) && !b.nyx && ids.includes(ownerOf(b))).length
+    + S.notes.filter((n) => n.kind === "gaest" && n.date >= today && !n.nyx && ids.includes(noteOwner(n))).length;
+}
+/* ---------- beskeder fra chefen til underpromoteren ----------
+   Chefen skriver i underpromoterens "inbox"-dokument (må rette deres data) og sender en notifikation. */
+const inboxMsgs = () => ((store.inbox && store.inbox.msgs) || []).slice().sort((a, b) => b.at - a.at);
+const inboxUnread = () => inboxMsgs().filter((m) => m.at > ((store.inbox && store.inbox.seen) || 0));
+async function seenInbox() {
+  if (!store.inbox) return;
+  store.inbox = { ...store.inbox, seen: Date.now() };
+  if (store.mode === "sky") await safe(store.sb.from("nyx_docs").upsert({ owner: store.uid, col: "inbox", id: "main", data: store.inbox, updated_at: new Date().toISOString() }));
+  render();
+}
+function vInbox() {
+  const all = inboxMsgs(), seen = (store.inbox && store.inbox.seen) || 0;
+  if (inboxUnread().length) setTimeout(seenInbox, 1500);
+  const when = (t) => new Date(t).toLocaleString("da-DK", { weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
+  return `<div class="top"><span></span><div class="title"><b>Beskeder</b><span>Fra ${esc(first((store.boss && store.boss.name) || "din promoter"))}</span></div><span></span></div>
+  ${all.length ? `<div class="list">${all.map((m) => `<div class="msgrow ${m.at > seen ? "new" : ""}"><p>${esc(m.text)}</p><small>${when(m.at)}</small></div>`).join("")}</div>`
+    : `<div class="empty" style="margin-top:12px">Ingen beskeder endnu. Når ${esc(first((store.boss && store.boss.name) || "din promoter"))} skriver til dig, kommer de her og som notifikation.</div>`}`;
+}
+const MSG_QUICK = ["Husk at skrive dine gæster på listen i dag 🙏", "Skriv dine borde ind inden kl. 20", "Ring til mig når du kan", "Godt gået i går 🔥", "Vi mangler borde til torsdag, kan du skaffe flere?"];
+function msgSheet(id) {
+  const c = (store.crew || []).find((x) => x.id === id); if (!c) return;
+  const f = openSheet(`<h3>Besked til ${esc(first(c.name))}</h3><p class="sh">${esc(first(c.name))} får en notifikation og kan læse den i appen.</p>
+    <form class="form"><label class="f full">Besked<textarea id="m-text" rows="4" placeholder="Skriv din besked" required></textarea></label>
+    <div class="full qmsg">${MSG_QUICK.map((q, i) => `<button type="button" data-q="${i}">${esc(q)}</button>`).join("")}</div>
+    <div class="full btns"><button class="btn teal" type="submit" style="flex:1">Send</button><button class="btn" type="button" data-close>Annullér</button></div></form>`, async () => {
+      const text = v(f, "m-text"); if (!text) return false;
+      sendMsg(c, text); return true;
+    });
+  f.querySelectorAll("[data-q]").forEach((b) => b.addEventListener("click", () => { const ta = f.querySelector("#m-text"); ta.value = MSG_QUICK[b.dataset.q]; ta.focus(); }));
+}
+async function sendMsg(c, text) {
+  const me = profile().name || meNyx() || "Din promoter";
+  const msg = { id: newId(), text: text.slice(0, 500), at: Date.now(), from: first(me) };
+  let inApp = false;
+  if (store.mode === "sky") {
+    try {
+      const r = await store.sb.from("nyx_docs").select("data").match({ owner: c.id, col: "inbox", id: "main" }).maybeSingle();
+      if (r.data) {
+        const data = { ...(r.data.data || {}), msgs: [...((r.data.data && r.data.data.msgs) || []), msg].slice(-60) };
+        const u = await store.sb.from("nyx_docs").update({ data, updated_at: new Date().toISOString() }).match({ owner: c.id, col: "inbox", id: "main" });
+        inApp = !u.error;
+      }
+    } catch {}
+    let sent = 0;
+    try {
+      const { data } = await store.sb.auth.getSession();
+      const res = await fetch("/api/notify", { method: "POST", headers: { "Content-Type": "application/json", Authorization: "Bearer " + (data.session?.access_token || "") }, body: JSON.stringify({ title: "💬 " + first(me), body: msg.text, to: c.id }) });
+      sent = (await res.json().catch(() => ({}))).sent || 0;
+    } catch {}
+    toast(inApp || sent ? `Sendt til ${first(c.name)}` : `${first(c.name)} skal åbne den nye version af appen først`);
+  }
+}
+/* vis "Nyt i Bordbog" én gang efter opdateringen */
+function whatsNew(force) {
+  let seen = false; try { seen = localStorage.getItem("bordbog-v2") === "1"; } catch {}
+  if ((seen && !force) || !S.ready || document.querySelector("#sheetRoot .sheet")) return;
+  try { localStorage.setItem("bordbog-v2", "1"); } catch {}
+  const boss = !isCrew();
+  setTimeout(() => openSheet(`<form class="form newv" style="display:block"><h3>Ny Bordbog ✨</h3><p class="sh" style="margin:0">Alt er gjort enklere. Her er det vigtigste:</p>
+    <ol>
+      <li><b>Fem knapper i bunden</b><span>Hjem, Borde, Liste, Salg og Mere. Resten ligger under Mere.</span></li>
+      <li><b>Borde viser én aften ad gangen</b><span>Brug pilene for næste aften, eller tryk på datoen for at vælge en anden.</span></li>
+      <li><b>Søpavillonen eller Hive</b><span>Skift øverst på Borde og Salg. Begge steder følger hinanden.</span></li>
+      ${boss ? `<li><b>Send beskeder til dit team</b><span>Under Mere → Underpromotere kan du skrive til Gabriel. Han får en notifikation.</span></li>` : `<li><b>Beskeder</b><span>Når Niels skriver til dig, ser du det øverst på Hjem og under Mere → Beskeder.</span></li>`}
+    </ol>
+    <button class="btn teal" type="submit" style="width:100%;margin-top:16px">Kom i gang</button></form>`, () => true), 300);
 }
 /* ---------- underpromotere: chef (admin) og crew ---------- */
 const isCrew = () => !!store.boss;
@@ -1524,6 +1677,7 @@ function vCrew() {
   ${(store.invites || []).length ? `<div class="list" style="margin-top:10px">${store.invites.map((i) => `<div class="row"><span class="tag num" style="min-width:86px;letter-spacing:.08em">${esc(i.code)}</span><span class="mid"><span class="t">${esc(i.email || "Alle emails")}</span><span class="s">Ikke brugt endnu</span></span><button class="btn" data-copyinv="${esc(i.code)}" style="padding:8px 12px">Kopiér</button></div>`).join("")}</div>` : ""}
   <p class="note">De opretter en konto i Bordbog med deres email og skriver koden. De kan booke på Moon om torsdagen og på Hive, men ser ingen provision. Du kan se og rette alle deres borde.</p>`;
   return `<div class="top"><span></span><div class="title"><b>Underpromotere</b><span>Du er admin</span></div><span></span></div>
+  ${crew.length ? `<div class="crewhead">${crew.map((c) => `<button class="btn teal" data-msgto="${esc(c.id)}">💬 Send besked til ${esc(first(c.name))}</button>`).join("")}</div>` : ""}
   ${ps === "til" ? "" : notif}
   ${crew.length ? toNyxSection() : `<div class="empty" style="margin-top:12px">Ingen underpromotere endnu. Lav en kode herunder og giv den til dem.</div>${invites}`}
   ${crew.length ? `<details class="more" style="margin-top:16px"${ui.crewMore ? " open" : ""} data-crewmore><summary>Salg pr. person</summary>${monthSw()}${cards}</details>
@@ -1707,6 +1861,8 @@ function vListe() {
   <div class="monthsw"><button data-lday="-1" aria-label="Forrige aften">‹</button><strong>${dayLabel(date)}</strong><button data-lday="1" aria-label="Næste aften">›</button></div>
   <div class="seg lseg ${vip ? "vipon" : ""}" style="margin-top:12px"><button data-lseg="gaest" aria-pressed="${!vip}">Gæsteliste<span class="c num">${nG}</span></button><button data-lseg="vip" aria-pressed="${vip}">★ VIP<span class="c num">${nV}</span></button></div>
   ${hero}${pushBanner}
+  ${isBoss() && !vip ? `<div class="glist"><div><div style="font-weight:600">Ekstra uden navn</div><div class="k">Fx folk du har skrevet på direkte i Nyx</div></div>
+    <div class="step"><button data-gl="-1" aria-label="Færre">−</button><input id="gl" class="num" inputmode="numeric" value="${ev.manual}"><button data-gl="1" aria-label="Flere">+</button></div></div>` : ""}
   ${full ? `<div class="empty" style="margin-top:12px">Du har brugt alle ${VIP_MAX} VIP-pladser til denne aften.</div>` : `<form class="quick" id="gaestForm" style="margin-top:12px"><input id="g-name" placeholder="${vip ? "VIP-navn" : "Navn"}" autocomplete="off" autocorrect="off" spellcheck="false" enterkeyhint="done" required>
     <div class="gstep"><button type="button" data-gstep="-1" aria-label="Færre">−</button><b class="num" id="g-count">${ui.gcount}</b><button type="button" data-gstep="1" aria-label="Flere">+</button></div>
     <button class="btn ${vip ? "vip" : "teal"}" style="flex:none;padding:10px 14px">Tilføj</button></form>
@@ -2042,15 +2198,14 @@ async function importScan(rows) {
 const setSide = (open) => { document.getElementById("side").classList.toggle("open", open); document.getElementById("sideScrim").classList.toggle("open", open); };
 document.addEventListener("click", (e) => {
   if (e.target.closest("[data-open-side]")) return setSide(true);
+  if (e.target.closest("[data-tab=mere]") && e.target.closest("nav.tabs")) return go("mere");
   if (e.target.id === "sideScrim") return setSide(false);
   const inNav = e.target.closest("nav.tabs, #side, .topbar"); if (!inNav) return;
   const a = e.target.closest("[data-act]");
   if (a && !view.contains(a)) { setSide(false); if (a.dataset.act === "profile") return profileSheet(); if (a.dataset.act === "club") return clubSheet(); if (a.dataset.act === "scan") return startScan(); }
   const b = e.target.closest("[data-tab]"); if (!b) return;
   setSide(false);
-  if (b.dataset.tab === "borde") go("night", { date: ui.date || nextNight() });
-  else if (b.dataset.tab === "stats" && b.closest("nav.tabs") && ui.club === "hive") go("hivesalg");
-  else go(b.dataset.tab);
+  goTab(b.dataset.tab);
 });
 let glTimer = null;
 function setGuestlist(date, val) {
@@ -2060,7 +2215,7 @@ function setGuestlist(date, val) {
   clearTimeout(glTimer); glTimer = setTimeout(() => safe(store.put("nights", { ...n })), 600);
 }
 view.addEventListener("input", (e) => { if (e.target.id === "kq") { const q = e.target.value.trim().toLowerCase(); view.querySelectorAll(".crow").forEach((r) => { r.hidden = !!q && !r.textContent.toLowerCase().includes(q); }); } });
-view.addEventListener("input", (e) => { if (e.target.id === "gl") setGuestlist(ui.date, num(e.target.value)); });
+view.addEventListener("input", (e) => { if (e.target.id === "gl") setGuestlist(ui.tab === "liste" ? ui.listDate : ui.date, num(e.target.value)); });
 view.addEventListener("toggle", (e) => { if (e.target.matches && e.target.matches("[data-crewmore]")) ui.crewMore = e.target.open; }, true);
 { // hold fingeren på et booket bord → flyt det
   let lp = null, sx = 0, sy = 0;
@@ -2068,12 +2223,12 @@ view.addEventListener("toggle", (e) => { if (e.target.matches && e.target.matche
   view.addEventListener("pointerdown", (e) => {
     const tb = e.target.closest(".tb[data-bid]"); if (!tb || ui.move) return;
     sx = e.clientX; sy = e.clientY; stop();
-    lp = setTimeout(() => { lp = null; ui.lpDone = Date.now(); startMove(S.bookings.find((x) => x.id === tb.dataset.bid)); }, 480);
+    lp = setTimeout(() => { lp = null; ui.lpDone = Date.now(); ui.lpId = tb.dataset.bid; startMove(S.bookings.find((x) => x.id === tb.dataset.bid)); }, 480);
   });
   view.addEventListener("pointermove", (e) => { if (lp && Math.hypot(e.clientX - sx, e.clientY - sy) > 10) stop(); });
   ["pointerup", "pointercancel", "pointerleave"].forEach((ev) => view.addEventListener(ev, stop));
   view.addEventListener("contextmenu", (e) => { if (e.target.closest(".tb")) e.preventDefault(); });
-  view.addEventListener("click", (e) => { if (ui.lpDone && Date.now() - ui.lpDone < 700 && e.target.closest(".tb")) { e.stopImmediatePropagation(); e.preventDefault(); } }, true);
+  view.addEventListener("click", (e) => { const tb2 = e.target.closest(".tb"); if (ui.lpDone && Date.now() - ui.lpDone < 700 && tb2 && tb2.dataset.bid === ui.lpId) { e.stopImmediatePropagation(); e.preventDefault(); } }, true);
 }
 view.addEventListener("submit", (e) => {
   e.preventDefault();
@@ -2102,18 +2257,20 @@ view.addEventListener("submit", (e) => {
 });
 view.addEventListener("change", (e) => {
   if (e.target.id === "hiveDate" && e.target.value) { ui.hiveDate = e.target.value; return render(); }
+  if (e.target.id === "nightDate" && e.target.value) { if (!okDay(e.target.value)) { toast("Du kan kun booke torsdage (Moon)"); return render(); } ui.date = e.target.value; return render(); }
   const id = e.target.dataset.done; if (!id) return;
   const n = S.notes.find((x) => x.id === id); if (n) safe(store.put("notes", { ...n, done: e.target.checked }));
 });
 view.addEventListener("click", (e) => {
   const t = (s) => e.target.closest(s);
   let x;
-  if ((x = t("[data-tab-go]"))) return go(x.dataset.tabGo);
+  if ((x = t("[data-tab-go]"))) return goTab(x.dataset.tabGo);
   if ((x = t("[data-night]"))) return go("night", { date: x.dataset.night });
   if ((x = t("[data-mode]"))) { ui.mode = x.dataset.mode; return render(); }
   if ((x = t("[data-area]"))) { ui.area = (ui.area + Number(x.dataset.area) + AREAS.length) % AREAS.length; return render(); }
-  if ((x = t("[data-gl]"))) { const inp = view.querySelector("#gl"); const nv = Math.max(0, num(inp.value) + Number(x.dataset.gl)); inp.value = nv; return setGuestlist(ui.date, nv); }
+  if ((x = t("[data-gl]"))) { const inp = view.querySelector("#gl"); const nv = Math.max(0, num(inp.value) + Number(x.dataset.gl)); inp.value = nv; return setGuestlist(ui.tab === "liste" ? ui.listDate : ui.date, nv); }
   if ((x = t("[data-hive]"))) { const id = x.dataset.hive; return bookingSheet(hiveAt(ui.hiveDate, id) || { ...newBooking(ui.hiveDate, "Hive", id), club: "Hive" }); }
+  if ((x = t("[data-nday]"))) { ui.date = stepNight(ui.date, Number(x.dataset.nday)); return render(); }
   if ((x = t("[data-hday]"))) { ui.hiveDate = addDays(ui.hiveDate, Number(x.dataset.hday)); return render(); }
   if (t("[data-movecancel]")) { ui.move = null; return render(); }
   if (ui.move && (x = t("[data-table]"))) return finishMove(AREAS[ui.area].name, x.dataset.table);
@@ -2138,6 +2295,7 @@ view.addEventListener("click", (e) => {
   if ((x = t("[data-gdone]"))) { const n = S.notes.find((y) => y.id === x.dataset.gdone); return n && markWritten([n], !n.nyx); }
   if ((x = t("[data-gdoneall]"))) { const ids = x.dataset.gdoneall.split(","); x.disabled = true; return markWritten(S.notes.filter((y) => ids.includes(y.id)), true).then(() => toast("Markeret som skrevet på")); }
   if ((x = t("[data-nyxdone]"))) { const b = S.bookings.find((y) => y.id === x.dataset.nyxdone); return b && safe(store.put("bookings", { ...b, nyx: !b.nyx })); }
+  if ((x = t("[data-msgto]"))) return msgSheet(x.dataset.msgto);
   if ((x = t("[data-crewopen]"))) { ui.crewOpen = ui.crewOpen === x.dataset.crewopen ? null : x.dataset.crewopen; return render(); }
   if ((x = t("[data-copyinv]"))) return copyText(`Hej! Hent Bordbog på ${location.origin}, tryk "Opret ny konto", brug din email og skriv koden ${x.dataset.copyinv}.`);
   if ((x = t("[data-act=pushon]"))) return pushOn();
@@ -2166,11 +2324,15 @@ view.addEventListener("click", (e) => {
   if (act === "seenall") { try { localStorage.setItem(seenKey(), new Date().toISOString()); } catch {} return render(); }
   if (act === "allnews") { ui.allNews = true; return render(); }
   if (act === "back") go("events");
+  if (act === "whatsnew") return whatsNew(true);
+  if (act === "seenmsg") return seenInbox();
   if (act === "profile") return profileSheet();
   if (act === "scan") startScan();
   if (act === "editnight") nightSheet(ui.date);
   if (act === "newfree") bookingSheet(newBooking(ui.date, "Andet", ""));
   if (act === "newclub") bookingSheet({ ...newBooking(nextNight(), "Andet", ""), club: clubNames().slice(-1)[0] || "Hive" });
+  if (act === "booknight") { setClub("so", true); return go("night", { date: nextNight() }); }
+  if (act === "bookhive") { setClub("hive", true); return go("hive"); }
   if (act === "newparty") partySheet({ id: newId(), title: "", date: "", people: "", contact: "", expected: "", stage: "ide", text: "", created: Date.now() });
   if (act === "showpast") { ui.showPast = true; render(); }
   if (act === "addnight") { const dt = view.querySelector("#addDate").value; if (dt) go("night", { date: dt }); }
@@ -2187,9 +2349,9 @@ view.addEventListener("click", (e) => {
   view.addEventListener("touchend", (e) => {
     if (!ok) return; const t = e.changedTouches[0], dx = t.clientX - sx, dy = t.clientY - sy;
     if (Math.abs(dx) < 80 || Math.abs(dy) > 45 || sx < 24) return;
-    const SWIPE_TABS = ui.club === "hive" ? ["home", "events", "hive", "hivesalg"] : isCrew() ? ["home", "events", "liste", "stats"] : ["home", "events", "borde", "stats"];
-    const cur = SWIPE_TABS.indexOf(ui.tab === "night" ? "borde" : ui.tab); if (cur < 0) return;
-    const nx = SWIPE_TABS[cur + (dx < 0 ? 1 : -1)]; if (nx === "borde") go("night", { date: ui.date || nextNight() }); else if (nx) go(nx);
+    const SWIPE_TABS = ["home", "borde", "liste", "stats", "mere"];
+    const cur = SWIPE_TABS.indexOf(["night", "hive"].includes(ui.tab) ? "borde" : ui.tab === "hivesalg" ? "stats" : ui.tab); if (cur < 0) return;
+    const nx = SWIPE_TABS[cur + (dx < 0 ? 1 : -1)]; if (nx) goTab(nx);
   }, { passive: true });
   // træk et ark ned for at lukke det
   let dy0 = null, sh = null, last = 0;
