@@ -1603,8 +1603,26 @@ async function moonCopy(k) {
     toast(MOON_IMG[k][2] + " er kopieret");
   } catch { toast("Kunne ikke kopiere. Hold fingeren på billedet og vælg Kopiér."); }
 }
+/* Moon-pakkerne hver for sig, så de kan sendes enkeltvis */
+const MOON_PKGS = [
+  [1, "6.000", "6K", "8 pax", "Orangerie", "", ["1 × Belvedere 1,75L", "1 × Moët 0,7L", "8 × Heineken", "12 mixers of choice"]],
+  [2, "8.000", "8K", "10–12 pax", "Loungen", "", ["1 × Belvedere 3L", "1 × Moët 0,7L", "1 × Moon Bubbles", "24 mixers of choice"]],
+  [3, "10.000", "10K", "12–14 pax", "\"The Corner\"", "", ["1 × Belvedere 3L", "1 × Belvedere 10 0,7L", "24 mixers of choice", "2 × confetti cannons"]],
+  [4, "15.000", "15K", "14–16 pax", "Main", "Custom sign & show", ["1 × Belvedere 3L", "1 × Belvedere 10 0,7L", "1 × Dom Pérignon 0,75L", "2 × Moon Bubbles", "30 mixers of choice", "2 × confetti cannons"]],
+  [5, "25.000", "25K", "18+ pax", "Main", "Custom sign & show", ["2 × Belvedere 3L", "1 × Dom Pérignon 0,75L", "1 × Clase Azul Reposado", "2 × Moon Bubbles", "48 mixers of choice", "2 × confetti cannons"]],
+].map(([n, kr, k, pax, acc, show, items]) => ({ id: "moon" + n, name: `Pakke ${n} · ${k}`, price: kr + " kr. + SC", text: `Moon – Pakke ${n} (${k})
+
+${pax} · Access: ${acc}${show ? " · " + show : ""}
+
+${items.map((i) => "• " + i).join("\n")}
+
+Pris
+${kr} kr. + 10% service fee
+
+Gælder torsdag. Kan ikke købes efter kl. 22:00.` }));
 /* ekstra pakker som tekst, klar til at sende til kunder */
 const PACKAGES = [
+  ...MOON_PKGS,
   { id: "12k", name: "12K-pakken", price: "12.000 kr. + SC", text: `12K-pakken
 
 Runde 1
@@ -1629,6 +1647,7 @@ function vMoon() {
   <button class="btn teal" data-moonshare="menu,kort" style="width:100%;margin:6px 0 4px;padding:13px">Send menukort + bordkort</button>
   <p class="note" style="margin:4px 0 6px">"Del" åbner iPhonens delemenu, så du kan sende direkte på Instagram, Snap eller SMS.</p>
   <h2>Pakker</h2>
+  <p class="note" style="margin:-4px 0 8px">Tryk "Kopiér tekst" på en pakke og sæt den ind i en besked, eller "Del" for at sende den direkte.</p>
   ${PACKAGES.map((pk) => `<section class="cmp pkg"><div class="nyxh" style="margin-top:0"><b style="font-size:17px">${esc(pk.name)}</b><span class="pkgp">${esc(pk.price)}</span></div>
     <pre class="nyxpre">${esc(pk.text.split("\n").slice(1).join("\n").trim())}</pre>
     <div class="moonb"><button class="btn teal" data-pkgshare="${pk.id}">Del</button><button class="btn" data-pkgcopy="${pk.id}">Kopiér tekst</button></div></section>`).join("")}
