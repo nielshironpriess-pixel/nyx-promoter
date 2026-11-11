@@ -1160,11 +1160,15 @@ function vHome() {
   const tot = so.sold + hv.sold, totB = so.came.length + hv.came.length;
   if (isBoss()) { const nyx = crewTodo(); if (nyx) todo.unshift(`<button class="row todo-row" data-tab-go="crew"><span class="bub">${nyx}</span><span class="mid"><span class="t">Fra dit team til Nyx</span><span class="s">Borde og navne der skal skrives ind</span></span><span class="right">›</span></button>`); }
   const msg = isCrew() ? inboxUnread()[0] : null;
+  if (isCrew() && !ui.pushNow) pushState().then((st) => { ui.pushNow = st; if (ui.tab === "home" && st !== "til") render(); });
+  const pushAsk = isCrew() && ui.pushNow && ui.pushNow !== "til" && ui.pushNow !== "nej"
+    ? `<div class="list" style="margin:0 0 14px"><div class="row todo-row"><span class="bub">🔔</span><span class="mid"><span class="t">Slå notifikationer til</span><span class="s">${ui.pushNow === "afvist" ? "Gå til Indstillinger → Bordbog → Notifikationer og slå dem til." : !standalone() && /iPhone|iPad/.test(navigator.userAgent) ? "Læg Bordbog på hjemmeskærmen først (Del → Føj til hjemmeskærm) og åbn den derfra." : "Så får du en notifikation, når " + esc(first((store.boss && store.boss.name) || "din promoter")) + " skriver til dig."}</span></span>${ui.pushNow === "afvist" || (!standalone() && /iPhone|iPad/.test(navigator.userAgent)) ? "" : `<button class="btn teal" data-act="pushon" style="padding:8px 12px">Slå til</button>`}</div></div>`
+    : "";
   return `<div class="hello-date">${new Date().toLocaleDateString("da-DK", { weekday: "long", day: "numeric", month: "long" })}</div>
     <h1 class="hello">${greeting()}, ${esc(first(pr.name || meNyx()))}</h1>
     ${needsCode() ? `<form class="genvej" id="homeJoin" style="margin:0 0 14px"><b>Er du underpromoter?</b><span class="s">Skriv koden, du har fået af din promoter, så bliver din konto koblet på.</span>
       <div style="display:flex;gap:8px;margin-top:8px"><input id="hj-code" placeholder="Fx 9E546A" autocapitalize="characters" autocomplete="off" style="flex:1;min-width:0;background:rgba(255,255,255,.6);border:1px solid var(--line);border-radius:10px;padding:10px 12px;font-size:16px"><button class="btn teal">Tilslut</button></div></form>` : ""}
-    ${msg ? `<section class="msgc"><div class="l">Besked fra ${esc(first(msg.from || (store.boss && store.boss.name) || "din promoter"))}</div><p>${esc(msg.text)}</p><button data-act="seenmsg">Set ✓</button>${inboxUnread().length > 1 ? ` <button data-tab-go="beskeder">Se alle ${inboxUnread().length}</button>` : ""}</section>` : ""}
+    ${pushAsk}${msg ? `<section class="msgc"><div class="l">Besked fra ${esc(first(msg.from || (store.boss && store.boss.name) || "din promoter"))}</div><p>${esc(msg.text)}</p><button data-act="seenmsg">Set ✓</button>${inboxUnread().length > 1 ? ` <button data-tab-go="beskeder">Se alle ${inboxUnread().length}</button>` : ""}</section>` : ""}
     <button class="hero" data-night="${next}"><div class="lab">Næste aften · ${when}</div><div class="ttl">${esc(ne.name)}</div>
       <div class="sub">${dayLabel(next)} · ${esc(ne.time)}${ne.age ? " · " + esc(ne.age) : ""}</div>
       <div class="chips"><span class="chip">${nb.length} ${nb.length === 1 ? "bord" : "borde"}</span>${nexp ? `<span class="chip">${kr(nexp)}</span>` : ""}${ne.guestlist ? `<span class="chip">${ne.guestlist} på liste</span>` : ""}<span class="chip">Åbn bordkort ›</span></div></button>
@@ -1530,6 +1534,10 @@ async function sendMsg(c, text) {
         const data = { ...(r.data.data || {}), msgs: [...((r.data.data && r.data.data.msgs) || []), msg].slice(-60) };
         const u = await store.sb.from("nyx_docs").update({ data, updated_at: new Date().toISOString() }).match({ owner: c.id, col: "inbox", id: "main" });
         inApp = !u.error;
+      } else {
+        /* indbakken findes ikke endnu: chefen opretter den (kræver supabase/crew-inbox.sql) */
+        const u = await store.sb.from("nyx_docs").insert({ owner: c.id, col: "inbox", id: "main", data: { msgs: [msg], seen: 0 }, updated_at: new Date().toISOString() });
+        inApp = !u.error;
       }
     } catch {}
     let sent = 0;
@@ -1538,7 +1546,9 @@ async function sendMsg(c, text) {
       const res = await fetch("/api/notify", { method: "POST", headers: { "Content-Type": "application/json", Authorization: "Bearer " + (data.session?.access_token || "") }, body: JSON.stringify({ title: "💬 " + first(me), body: msg.text, to: c.id }) });
       sent = (await res.json().catch(() => ({}))).sent || 0;
     } catch {}
-    toast(inApp || sent ? `Sendt til ${first(c.name)}` : `${first(c.name)} skal åbne den nye version af appen først`);
+    const n = first(c.name);
+    toast(inApp && sent ? `Sendt til ${n} som notifikation` : sent ? `Notifikation sendt til ${n}` : inApp ? `Sendt til ${n} i appen. ${n} har ikke slået notifikationer til endnu` : `Kunne ikke sende til ${n}. ${n} skal slå notifikationer til i appen`);
+    ui.crewPush = null; if (ui.tab === "crew") render();
   }
 }
 /* vis "Nyt i Bordbog" én gang efter opdateringen */
@@ -1646,6 +1656,18 @@ async function joinCrew(code, name) {
   try { localStorage.removeItem("nyx-crew-code"); } catch {}
   await store.loadAll();
 }
+/* om underpromoteren har slået notifikationer til (antal telefoner) */
+function crewPushLine(c) {
+  if (!ui.crewPush) {
+    ui.crewPush = {};
+    Promise.all((store.crew || []).map(async (x) => { const { data, error } = await store.sb.rpc("nyx_member_push", { p_member: x.id }); ui.crewPush[x.id] = error ? -1 : (data || []).length; }))
+      .then(() => { if (ui.tab === "crew") render(); });
+  }
+  const n = ui.crewPush[c.id], nm = esc(first(c.name));
+  if (n == null) return "Tjekker notifikationer…";
+  if (n < 0) return "Notifikationer virker ikke endnu. Kør supabase/crew-push.sql i Supabase.";
+  return n ? `🔔 ${nm} får notifikationer` : `🔕 ${nm} har ikke slået notifikationer til. Bed ${nm} åbne Bordbog fra hjemmeskærmen og trykke "Slå til" på Hjem.`;
+}
 function vCrew() {
   if (!store.crewOk) return `<div class="top"><span></span><div class="title"><b>Underpromotere</b></div><span></span></div>
     <div class="empty">Kør <b>supabase/crew.sql</b> i Supabase først (SQL Editor → New query → Run). Så kan du lave koder og følge med her.</div>`;
@@ -1677,7 +1699,8 @@ function vCrew() {
   ${(store.invites || []).length ? `<div class="list" style="margin-top:10px">${store.invites.map((i) => `<div class="row"><span class="tag num" style="min-width:86px;letter-spacing:.08em">${esc(i.code)}</span><span class="mid"><span class="t">${esc(i.email || "Alle emails")}</span><span class="s">Ikke brugt endnu</span></span><button class="btn" data-copyinv="${esc(i.code)}" style="padding:8px 12px">Kopiér</button></div>`).join("")}</div>` : ""}
   <p class="note">De opretter en konto i Bordbog med deres email og skriver koden. De kan booke på Moon om torsdagen og på Hive, men ser ingen provision. Du kan se og rette alle deres borde.</p>`;
   return `<div class="top"><span></span><div class="title"><b>Underpromotere</b><span>Du er admin</span></div><span></span></div>
-  ${crew.length ? `<div class="crewhead">${crew.map((c) => `<button class="btn teal" data-msgto="${esc(c.id)}">💬 Send besked til ${esc(first(c.name))}</button>`).join("")}</div>` : ""}
+  ${crew.length ? `<div class="crewhead">${crew.map((c) => `<button class="btn teal" data-msgto="${esc(c.id)}">💬 Send besked til ${esc(first(c.name))}</button>
+    <p class="note" style="margin:6px 2px 0">${crewPushLine(c)}</p>`).join("")}</div>` : ""}
   ${ps === "til" ? "" : notif}
   ${crew.length ? toNyxSection() : `<div class="empty" style="margin-top:12px">Ingen underpromotere endnu. Lav en kode herunder og giv den til dem.</div>${invites}`}
   ${crew.length ? `<details class="more" style="margin-top:16px"${ui.crewMore ? " open" : ""} data-crewmore><summary>Salg pr. person</summary>${monthSw()}${cards}</details>
