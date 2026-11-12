@@ -1975,6 +1975,8 @@ function bookingSheet(b) {
   const free = b.area === "Andet", other = b.club != null;
   const f = openSheet(`<h3>${other ? "Bord" + (b.table ? " " + esc(b.table) : "") + " på " + esc(b.club || "anden klub") : free ? "Bord" : esc(b.area) + ", bord " + esc(b.table)}</h3><p class="sh">${other ? "Booking uden for " + HOME : dayLabel(b.date) + " · " + esc(eventFor(b.date).name)}${!mine(b) ? " · delt af " + esc(memberName(ownerOf(b))) : ""}</p>
   <form class="form">
+    ${!exists && !free ? `<button type="button" class="btn teal full" data-quicksold style="padding:14px;font-size:17px">✓ Solgt</button>
+    <p class="full note" style="margin:-6px 0 2px;text-align:center">Ét tryk: bordet står som solgt. Navn og pris kan skrives på senere.</p>` : ""}
     ${other ? `<label class="f">Klub<input id="b-club" list="clubs" value="${esc(b.club)}" required autocomplete="off"><datalist id="clubs">${clubNames().map((c) => `<option value="${esc(c)}">`).join("")}</datalist></label>
 ` : ""}
     <label class="f full">Dato<input id="b-date" type="date" value="${esc(b.date)}" required></label>
@@ -2009,6 +2011,13 @@ function bookingSheet(b) {
     if (ui.todoRun && o.spent) { (ui.todoDone ||= new Set()).add(o.id); setTimeout(() => { const n = nextTodo(); if (n) bookingSheet(n); else ui.todoRun = false; }, 250); }
   }, () => safe(store.del("bookings", b.id), "Slettet"));
   f.querySelectorAll("[data-st]").forEach((x) => x.addEventListener("click", () => f.querySelectorAll("[data-st]").forEach((y) => y.setAttribute("aria-pressed", y === x))));
+  const qs = f.querySelector("[data-quicksold]");
+  if (qs) qs.addEventListener("click", () => {
+    const o = { ...b, name: "Solgt", status: "booket" };
+    if (other) o.club = isHiveClub(b.club) ? "Hive" : b.club || "Anden klub";
+    if (!o.club && !okDay(o.date)) return toast("Du kan kun booke torsdage (Moon)");
+    safe(store.put("bookings", o), `Bord ${o.table} er solgt`); close();
+  });
   const $ = (id) => f.querySelector("#" + id);
   const merHint = () => { const sp = num(v(f, "b-spent")), ex = num(v(f, "b-expected")); $("b-mer").textContent = sp ? (sp > ex ? "Merspend +" + kr(sp - ex) : "Ingen merspend") : ""; };
   f.addEventListener("input", (e) => {
