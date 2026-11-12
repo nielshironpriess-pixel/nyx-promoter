@@ -99,6 +99,7 @@ h2{font-size:13px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;
 .tb.booket{background:var(--teal);color:var(--green-ink)}
 .tb.kom{background:var(--blue);color:var(--blue-ink)}
 .tb.udeblev{background:var(--red);color:var(--red-ink)}
+.tb.taken{background:repeating-linear-gradient(135deg,var(--line) 0 6px,transparent 6px 12px),var(--surface);color:var(--muted);box-shadow:none;opacity:.85}
 .maptip{font-size:13px;color:var(--muted);margin-top:8px}
 
 /* lists */
@@ -727,6 +728,7 @@ const store = {
     const later = () => { clearTimeout(t); t = setTimeout(() => this.loadAll(), 400); };
     this.sb.channel("nyx-" + this.uid).on("postgres_changes", { event: "*", schema: "public", table: "nyx_docs", filter: "owner=eq." + this.uid }, later).subscribe();
     this.later = later; this.listenTeam();
+    setInterval(() => { if (this.boss && document.visibilityState === "visible" && !document.querySelector(".sheet")) this.loadTaken().then((c) => c && render()); }, 20000);
     document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") this.loadAll(); });
     setStatus("Gemt i din konto og opdateres live på alle dine enheder.");
     if (!checkHashAdd()) checkHashScan();
@@ -746,10 +748,17 @@ const store = {
     });
     await this.loadTeam();
     await this.loadRole();
+    await this.loadTaken();
     this.inbox = inbox;
     if (!inbox && this.boss) { this.inbox = { msgs: [], seen: Date.now() }; this.sb.from("nyx_docs").upsert({ owner: this.uid, col: "inbox", id: "main", data: this.inbox, updated_at: new Date().toISOString() }).then(() => {}, () => {}); }
     Object.assign(S, by, { settings: { pct: 0, ...settings }, ready: true });
     render();
+  },
+  async loadTaken() {
+    if (!this.boss) { this.taken = []; return false; }
+    const { data, error } = await this.sb.rpc("nyx_taken", { p_from: addDays(todayISO(), -1) });
+    const next = error ? [] : (data || []), changed = JSON.stringify(next) !== JSON.stringify(this.taken || []);
+    this.taken = next; return changed;
   },
   async loadRole() {
     const { data, error } = await this.sb.rpc("nyx_role");
@@ -1029,12 +1038,18 @@ async function finishMove(area, table) {
   if (!b) return render();
   const hive = isHiveClub(b.club);
   if (String(b.table) === String(table) && (hive || b.area === area)) { toast("Bordet blev ikke flyttet"); return render(); }
+  const tk = takenAt(b.date, area, table, hive);
+  if (tk) { takenToast(tk); return render(); }
   const other = hive ? hiveAt(b.date, table) : bookingAt(b.date, area, table);
   const from = { area: b.area, table: b.table };
   await safe(store.put("bookings", { ...b, area: hive ? b.area : area, table: String(table) }));
   if (other) await safe(store.put("bookings", { ...other, area: from.area, table: String(from.table) }));
   toast(other ? `Byttet: ${first(b.name) || "bordet"} → ${table}, ${first(other.name) || "det andet"} → ${from.table}` : `${first(b.name) || "Bordet"} er flyttet til bord ${table}`);
 }
+/* borde solgt af chefen eller resten af holdet (underpromoteren ser kun at de er optaget) */
+const takenAt = (date, area, table, hive) => isCrew() && !(hive ? hiveAt(date, table) : bookingAt(date, area, table))
+  ? (store.taken || []).find((t) => t.date === date && String(t.table) === String(table) && (hive ? isHiveClub(t.club) : !t.club && t.area === area)) : null;
+function takenToast(t) { toast(`Bord ${t.table} er solgt${t.who ? " af " + first(t.who) : ""}`); }
 function bookingAt(date, area, table) { return S.bookings.find((b) => b.date === date && b.area === area && String(b.table) === String(table) && active(b)); }
 function vNight() {
   const date = ui.date || nextNight();
@@ -1060,8 +1075,8 @@ function vNight() {
     const pos = `left:${it.x / 9.2}%;top:${(it.y - A.y0) / A.h * 100}%;width:${it.w / 9.2}%;height:${it.h / A.h * 100}%`;
     if (it.k === "h") return `<div class="hatch" style="${pos}">${it.label || ""}</div>`;
     if (it.k === "b") return `<div class="blk ${it.v ? "v" : ""}" style="${pos}"><span>${esc(it.label)}</span></div>`;
-    const b = bookingAt(date, A.name, it.id);
-    return `<button class="tb ${it.k === "r" ? "round" : ""} ${b ? b.status : ""} ${b && ui.move && ui.move.id === b.id ? "moving" : ""}" style="${pos}" data-table="${it.id}"${b ? ` data-bid="${esc(b.id)}"` : ""} aria-label="Bord ${it.id}${b ? ", " + esc(b.name) : ", ledigt"}"><b>${it.id}</b><small>${b ? esc(shortName(b.name)) : esc(it.cap)}</small></button>`;
+    const b = bookingAt(date, A.name, it.id), tk = !b && takenAt(date, A.name, it.id);
+    return `<button class="tb ${it.k === "r" ? "round" : ""} ${b ? b.status : tk ? "taken" : ""} ${b && ui.move && ui.move.id === b.id ? "moving" : ""}" style="${pos}" data-table="${it.id}"${b ? ` data-bid="${esc(b.id)}"` : ""} aria-label="Bord ${it.id}${b ? ", " + esc(b.name) : tk ? ", solgt" : ", ledigt"}"><b>${it.id}</b><small>${b ? esc(shortName(b.name)) : tk ? "Solgt" : esc(it.cap)}</small></button>`;
   }).join("");
   return top + `<div class="areabar"><div class="nav"><button data-area="-1" aria-label="Forrige område">‹</button><span class="nm">${esc(A.name)} (${ui.area + 1}/${AREAS.length})</span><button data-area="1" aria-label="Næste område">›</button></div>
     <div class="counts num"><span class="c-green" title="Booket">${cnt("booket")}</span><span class="c-blue" title="Kom">${cnt("kom")}</span><span class="c-red" title="Udeblev">${cnt("udeblev")}</span></div></div>
@@ -1077,8 +1092,8 @@ function vHive() {
     const pos = `left:${it.x / 9.2}%;top:${(it.y - A.y0) / A.h * 100}%;width:${it.w / 9.2}%;height:${it.h / A.h * 100}%`;
     if (it.k === "h") return `<div class="hatch" style="${pos}">${it.label || ""}</div>`;
     if (it.k === "b") return `<div class="blk ${it.v ? "v" : ""}" style="${pos}"><span>${esc(it.label)}</span></div>`;
-    const b = hiveAt(date, it.id);
-    return `<button class="tb ${it.k === "r" ? "round" : ""} ${b ? b.status : ""} ${b && ui.move && ui.move.id === b.id ? "moving" : ""}" style="${pos}" data-hive="${it.id}"${b ? ` data-bid="${esc(b.id)}"` : ""} aria-label="Hive bord ${it.id}${b ? ", " + esc(b.name) : ", ledigt"}"><b>${it.id}</b><small>${b ? esc(shortName(b.name)) : esc(it.cap)}</small></button>`;
+    const b = hiveAt(date, it.id), tk = !b && takenAt(date, "Hive", it.id, true);
+    return `<button class="tb ${it.k === "r" ? "round" : ""} ${b ? b.status : tk ? "taken" : ""} ${b && ui.move && ui.move.id === b.id ? "moving" : ""}" style="${pos}" data-hive="${it.id}"${b ? ` data-bid="${esc(b.id)}"` : ""} aria-label="Hive bord ${it.id}${b ? ", " + esc(b.name) : tk ? ", solgt" : ", ledigt"}"><b>${it.id}</b><small>${b ? esc(shortName(b.name)) : tk ? "Solgt" : esc(it.cap)}</small></button>`;
   }).join("");
   const exp = bs.filter(active).reduce((a, b) => a + num(b.expected), 0);
   return `${clubSeg()}
@@ -2292,6 +2307,8 @@ view.addEventListener("click", (e) => {
   if ((x = t("[data-mode]"))) { ui.mode = x.dataset.mode; return render(); }
   if ((x = t("[data-area]"))) { ui.area = (ui.area + Number(x.dataset.area) + AREAS.length) % AREAS.length; return render(); }
   if ((x = t("[data-gl]"))) { const inp = view.querySelector("#gl"); const nv = Math.max(0, num(inp.value) + Number(x.dataset.gl)); inp.value = nv; return setGuestlist(ui.tab === "liste" ? ui.listDate : ui.date, nv); }
+  if (!ui.move && (x = t("[data-hive]")) && takenAt(ui.hiveDate, "Hive", x.dataset.hive, true)) return takenToast(takenAt(ui.hiveDate, "Hive", x.dataset.hive, true));
+  if (!ui.move && (x = t("[data-table]")) && takenAt(ui.date, AREAS[ui.area].name, x.dataset.table)) return takenToast(takenAt(ui.date, AREAS[ui.area].name, x.dataset.table));
   if ((x = t("[data-hive]"))) { const id = x.dataset.hive; return bookingSheet(hiveAt(ui.hiveDate, id) || { ...newBooking(ui.hiveDate, "Hive", id), club: "Hive" }); }
   if ((x = t("[data-nday]"))) { ui.date = stepNight(ui.date, Number(x.dataset.nday)); return render(); }
   if ((x = t("[data-hday]"))) { ui.hiveDate = addDays(ui.hiveDate, Number(x.dataset.hday)); return render(); }
