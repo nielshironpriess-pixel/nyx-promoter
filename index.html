@@ -1351,10 +1351,27 @@ function vHiveSales() {
     ${clubSeg()}
     ${monthSw(true)}
     ${salesHero(m, pct, "på Hive")}
+    ${allTimeCard()}
     ${salesAlert(m)}
     ${salesKpis(m, true)}
     ${salesBody(m, hiveB)}
 `;
+}
+/* All time: alt du har solgt, Søpavillonen og Hive hver for sig og samlet */
+function allTimeCard() {
+  const all = myBookings().filter((b) => b.status === "kom" && num(b.spent));
+  const so = all.filter((b) => !b.club), hv = all.filter(hiveB);
+  const sum = (xs) => xs.reduce((a, b) => a + num(b.spent), 0);
+  const sS = sum(so), sH = sum(hv), tot = sS + sH;
+  if (!tot) return "";
+  const first = all.map((b) => b.date).filter(Boolean).sort()[0];
+  const prov = sS * num(S.settings.pct) / 100 + sH * num(S.settings.hivePct) / 100;
+  return `<section class="cmp num" style="margin-top:10px">
+    <div style="display:flex;justify-content:space-between;align-items:baseline;gap:8px"><b style="font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)">All time</b>${first ? `<span class="sub">siden ${esc(dayLabel(first))}</span>` : ""}</div>
+    <div class="big" style="font-size:30px;margin-top:4px">${kr(tot)}</div>
+    <div class="sub">${nBorde(so.length + hv.length)} solgt${!isCrew() && prov ? " · provision " + kr(prov) : ""}</div>
+    <div class="cchips" style="margin-top:8px"><span>Søpavillonen ${kr(sS)} · ${nBorde(so.length)}</span><span>Hive ${kr(sH)} · ${nBorde(hv.length)}</span></div>
+  </section>`;
 }
 function totalCard(m, h, pct, hpct) {
   if (!h.act.length) return "";
@@ -1372,6 +1389,7 @@ function vStats() {
   ${monthSw()}
   ${salesHero(m, pct, "på Søpavillonen")}
   ${isCrew() ? "" : totalCard(m, monthStats(ui.month, hiveB), pct, num(S.settings.hivePct))}
+  ${allTimeCard()}
   ${salesAlert(m)}
   ${typeof poolSection === "function" ? poolSection() : ""}
   ${salesKpis(m, false)}
