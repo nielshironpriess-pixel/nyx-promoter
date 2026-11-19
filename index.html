@@ -29,6 +29,11 @@
 *{box-sizing:border-box}
 [hidden]{display:none!important}
 body:not(.crew) .crew-only{display:none!important}
+body.viewer nav.tabs,body.viewer .side,body.viewer .sidescrim,body.viewer .tb-menu,body.viewer #clubLbl{display:none!important}
+.vrow{display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center;padding:12px 14px;border-bottom:1px solid var(--line)}
+.vrow:last-child{border-bottom:0}.vrow .t{font-weight:700}.vrow .s{font-size:13px;color:var(--muted)}
+.vrow input{width:110px;padding:9px 10px;border-radius:10px;border:1px solid var(--line);background:var(--surface);font-size:16px;text-align:right}
+.vrow input.ok{border-color:var(--green)}
 body.crew .boss-only{display:none!important}
 body.crew [data-act=scan],body.crew .genvej-scan,body.crew [data-act=newclub]{display:none!important}
 html,body,button,a,input,select,textarea,label{touch-action:manipulation}
@@ -734,6 +739,9 @@ const store = {
     if (!checkHashAdd()) checkHashScan();
   },
   async loadAll() {
+    const vw = await this.sb.rpc("nyx_viewer_data");
+    this.viewer = !vw.error && vw.data ? vw.data : null;
+    if (this.viewer) { S.ready = true; render(); return; }
     let res = await this.sb.from("nyx_docs").select("col,id,data,owner,team");
     if (res.error && /team/.test(res.error.message)) res = await this.sb.from("nyx_docs").select("col,id,data,owner");
     const { data, error } = res;
@@ -918,6 +926,56 @@ function badge() {
   if (!el) { el = document.createElement("span"); el.className = "badge"; b.appendChild(el); }
   el.textContent = n > 9 ? "9+" : n;
 }
+/* ---------- Hive-løn: en person fra Hive ser kun dine Hive-borde ---------- */
+const vRows = () => ((store.viewer && store.viewer.rows) || []).filter((b) => b.status !== "aflyst" && b.date);
+function vViewer() {
+  const V = store.viewer, all = vRows();
+  ui.vmonth ||= todayISO().slice(0, 7);
+  const rows = all.filter((b) => b.date.slice(0, 7) === ui.vmonth).sort((a, b) => a.date.localeCompare(b.date) || num(a.table) - num(b.table));
+  const spent = rows.reduce((a, b) => a + num(b.spent), 0), missing = rows.filter((b) => b.date <= todayISO() && !num(b.spent)).length;
+  const days = [...new Set(rows.map((b) => b.date))];
+  const list = days.map((dt) => `<h2>${esc(dayLabel(dt))}</h2><div class="list">${rows.filter((b) => b.date === dt).map((b) => `<div class="vrow">
+      <span class="tag num">${esc(b.table || "?")}</span>
+      <span><span class="t">${esc(b.name || "Uden navn")}</span><br><span class="s">${[num(b.guests) ? num(b.guests) + " pers." : "", num(b.expected) ? "min. " + kr(b.expected) : ""].filter(Boolean).join(" · ") || "&nbsp;"}</span></span>
+      <input inputmode="numeric" data-vspent="${esc(b.id)}" value="${num(b.spent) ? Math.round(num(b.spent)) : ""}" placeholder="Brugt" aria-label="Brugt i alt bord ${esc(b.table)}" class="${num(b.spent) ? "ok" : ""}">
+    </div>`).join("")}</div>`).join("");
+  return `<div class="top"><span></span><div class="title"><b>Hive</b><span>Borde fra ${esc(first(V.boss))}</span></div><span></span></div>
+    <div class="monthsw"><button data-vmonth="-1" aria-label="Forrige måned">‹</button><strong>${esc(payName(ui.vmonth, true))}</strong><button data-vmonth="1" aria-label="Næste måned">›</button></div>
+    <section class="shero num" style="padding:14px 18px"><div class="lab">Brugt i alt</div><div class="amt" style="font-size:34px">${kr(spent)}</div>
+      <div class="row2"><span>${nBorde(rows.length)}</span><span>${missing ? missing + " mangler beløb" : "Alle beløb skrevet"}</span></div></section>
+    ${rows.length ? `<button class="btn" data-vcopy style="width:100%;margin-top:10px">Kopiér oversigt for måneden</button>${list}
+      <p class="note">Skriv hvad bordet brugte i feltet til højre. Det gemmes med det samme.</p>` : `<div class="empty" style="margin-top:12px">Ingen Hive-borde i ${esc(monthName(ui.vmonth))}.</div>`}`;
+}
+function vCopyText() {
+  const rows = vRows().filter((b) => b.date.slice(0, 7) === ui.vmonth).sort((a, b) => a.date.localeCompare(b.date));
+  const tot = rows.reduce((a, b) => a + num(b.spent), 0);
+  return [`Hive – ${first(store.viewer.boss)} – ${payName(ui.vmonth, true)}`, "", ...rows.map((b) => `${dayLabel(b.date)} · bord ${b.table || "?"} · ${b.name || "uden navn"} · ${num(b.spent) ? kr(b.spent) : "mangler beløb"}`), "", `I alt: ${kr(tot)} (${nBorde(rows.length)})`].join("\n");
+}
+async function vSaveSpent(id, val) {
+  const n = num(val);
+  const { error } = await store.sb.rpc("nyx_viewer_spent", { p_id: id, p_spent: n });
+  if (error) return toast("Kunne ikke gemme: " + error.message);
+  const b = (store.viewer.rows || []).find((x) => x.id === id); if (b) { b.spent = n; if (n > 0) b.status = "kom"; }
+  toast(n ? "Gemt: " + kr(n) : "Beløb fjernet"); render();
+}
+function viewerSheet() {
+  openSheet(`<h3>${esc(store.viewer.me || "Hive-løn")}</h3><p class="sh">Du kan se Hive-borde fra ${esc(store.viewer.boss)}.</p>
+    <form class="form"><div class="full btns"><button type="button" class="btn" data-close>Luk</button><button type="button" class="btn danger" data-vlogout>Log ud</button></div></form>`, () => {});
+  const lo = document.querySelector("[data-vlogout]"); if (lo) lo.addEventListener("click", () => store.signOut());
+}
+/* chefens side: lav kode og se hvem der har adgang */
+function vHiveLoen() {
+  if (!ui.vlist) { ui.vlist = "henter"; store.sb.rpc("nyx_viewer_list").then(({ data, error }) => { ui.vlist = error ? { err: error.message } : data || { viewers: [], codes: [] }; if (ui.tab === "hiveloen") render(); }); }
+  const L = ui.vlist;
+  const head = `<div class="top"><span></span><div class="title"><b>Hive-løn</b><span>Adgang til dine Hive-borde</span></div><span></span></div>
+    <p class="note" style="margin-top:8px">Giv den person fra Hive, der står for din løn, en kode. Personen ser <b>kun</b> dine Hive-borde: dato, bord, kunde, minimum og hvad de brugte. Personen kan skrive beløb på, men ser intet andet i appen.</p>`;
+  if (L === "henter") return head + `<p class="note">Henter…</p>`;
+  if (L.err) return head + `<div class="empty">Kør <b>supabase/hive-loen.sql</b> i Supabase først (SQL Editor → New query → Run).</div>`;
+  return head + `<button class="btn teal" data-act="vcode" style="width:100%;padding:13px">Lav kode til Hive-løn</button>
+    ${L.codes.length ? `<h2>Koder der ikke er brugt</h2><div class="list">${L.codes.map((c) => `<div class="row"><span class="tag num" style="min-width:86px;letter-spacing:.08em">${esc(c)}</span><span class="mid"><span class="t">Send koden til personen</span><span class="s">De opretter en konto i Bordbog og skriver koden på forsiden.</span></span><button class="btn" data-vcopycode="${esc(c)}" style="padding:8px 12px">Kopiér</button></div>`).join("")}</div>` : ""}
+    <h2>Har adgang</h2>
+    ${L.viewers.length ? `<div class="list">${L.viewers.map((x) => `<div class="row"><span class="mid"><span class="t">${esc(x.name)}</span><span class="s">${esc(x.email || "")}</span></span><button class="btn danger" data-vremove="${esc(x.id)}" style="padding:8px 12px">Fjern</button></div>`).join("")}</div>` : `<div class="empty">Ingen har adgang endnu.</div>`}`;
+}
 function goTab(tab) {
   if (tab === "borde") return ui.club === "hive" ? go("hive") : go("night", { date: ui.date || nextNight() });
   if (tab === "stats") return go(ui.club === "hive" ? "hivesalg" : "stats");
@@ -941,6 +999,8 @@ function clubSeg() {
   return `<div class="seg" style="margin-bottom:10px"><button data-pickclub="so" aria-pressed="${ui.club !== "hive"}">Søpavillonen</button><button data-pickclub="hive" aria-pressed="${ui.club === "hive"}">Hive</button></div>`;
 }
 function render() {
+  document.body.classList.toggle("viewer", !!store.viewer);
+  if (store.viewer) { if (S.ready) view.innerHTML = vViewer(); return; }
   if (ui.tab === "hive" || ui.tab === "hivesalg") setClub("hive", true); else if (ui.tab === "stats" || ui.tab === "night") setClub("so", true);
   document.body.classList.toggle("club-hive", ui.club === "hive");
   { const cn = document.getElementById("clubName"); if (cn) cn.textContent = ui.club === "hive" ? "Hive" : "Søpavillonen"; }
@@ -956,7 +1016,7 @@ function render() {
   if (!S.ready) return;
   const y = window.scrollY;
   badge();
-  let html = { home: vHome, hivesalg: vHiveSales, hive: vHive, events: vEvents, borde: vNight, night: vNight, stats: vStats, noter: vNoter, kunder: vKunder, crew: vCrew, liste: vListe, moon: vMoon, mere: vMore, opfolg: vFollow, beskeder: vInbox }[ui.tab]();
+  let html = { home: vHome, hivesalg: vHiveSales, hive: vHive, events: vEvents, borde: vNight, night: vNight, stats: vStats, noter: vNoter, kunder: vKunder, crew: vCrew, liste: vListe, moon: vMoon, mere: vMore, opfolg: vFollow, beskeder: vInbox, hiveloen: vHiveLoen }[ui.tab]();
   if (MORE_TABS.includes(ui.tab) && ui.tab !== "mere") html = html.replace('<div class="top"><span></span>', '<div class="top"><button class="pillbtn" data-tab-go="mere">‹ Mere</button>');
   view.innerHTML = html;
   whatsNew();
@@ -965,7 +1025,7 @@ function render() {
   if (ui.keepScroll) window.scrollTo(0, y);
   ui.keepScroll = true;
 }
-const MORE_TABS = ["mere", "crew", "events", "moon", "kunder", "noter", "beskeder"];
+const MORE_TABS = ["mere", "crew", "events", "moon", "kunder", "noter", "beskeder", "hiveloen"];
 const go = (tab, extra = {}) => { Object.assign(ui, extra, { tab }); ui.keepScroll = false; render(); window.scrollTo(0, 0); };
 
 /* ---------- events ---------- */
@@ -1181,7 +1241,7 @@ function vHome() {
     : "";
   return `<div class="hello-date">${new Date().toLocaleDateString("da-DK", { weekday: "long", day: "numeric", month: "long" })}</div>
     <h1 class="hello">${greeting()}, ${esc(first(pr.name || meNyx()))}</h1>
-    ${needsCode() ? `<form class="genvej" id="homeJoin" style="margin:0 0 14px"><b>Er du underpromoter?</b><span class="s">Skriv koden, du har fået af din promoter, så bliver din konto koblet på.</span>
+    ${needsCode() ? `<form class="genvej" id="homeJoin" style="margin:0 0 14px"><b>Har du fået en kode?</b><span class="s">Skriv koden, du har fået af din promoter, så bliver din konto koblet på.</span>
       <div style="display:flex;gap:8px;margin-top:8px"><input id="hj-code" placeholder="Fx 9E546A" autocapitalize="characters" autocomplete="off" style="flex:1;min-width:0;background:rgba(255,255,255,.6);border:1px solid var(--line);border-radius:10px;padding:10px 12px;font-size:16px"><button class="btn teal">Tilslut</button></div></form>` : ""}
     ${pushAsk}${msg ? `<section class="msgc"><div class="l">Besked fra ${esc(first(msg.from || (store.boss && store.boss.name) || "din promoter"))}</div><p>${esc(msg.text)}</p><button data-act="seenmsg">Set ✓</button>${inboxUnread().length > 1 ? ` <button data-tab-go="beskeder">Se alle ${inboxUnread().length}</button>` : ""}</section>` : ""}
     <button class="hero" data-night="${next}"><div class="lab">Næste aften · ${when}</div><div class="ttl">${esc(ne.name)}</div>
@@ -1487,6 +1547,7 @@ function vMore() {
     ${row('data-tab-go="moon"', S2("menu"), "Menu til kunder", "Menukort, bordkort og pakker")}
     ${row('data-tab-go="kunder"', S2("users"), "Bedste kunder", "Dem der bruger mest")}
     ${row('data-tab-go="noter"', S2("noter"), "Noter og selskaber", "")}
+    ${isBoss() ? row('data-tab-go="hiveloen"', S2("star"), "Hive-løn", "Giv Hive adgang til dine Hive-borde") : ""}
   </div>
   ${isCrew() ? "" : `<h2>Værktøjer</h2><div class="list mlist">
     ${row('data-act="scan"', S2("scan"), "Scan fra Nyx", "Læg borde ind fra screenshots")}
@@ -1601,7 +1662,7 @@ function whatsNew(force) {
 }
 /* ---------- underpromotere: chef (admin) og crew ---------- */
 const isCrew = () => !!store.boss;
-const isBoss = () => store.mode === "sky" && !store.boss;
+const isBoss = () => store.mode === "sky" && !store.boss && !store.viewer;
 const crewName = (uid) => ((store.crew || []).find((c) => c.id === uid) || {}).name;
 const b64uToU8 = (s) => { const r = atob(s.replace(/-/g, "+").replace(/_/g, "/")); return Uint8Array.from(r, (c) => c.charCodeAt(0)); };
 const standalone = () => matchMedia("(display-mode: standalone)").matches || navigator.standalone === true;
@@ -1684,6 +1745,11 @@ function notifyNote(n, what, prev) {
   notifyTimers["n" + n.id] = setTimeout(() => pushBoss(`${myFirst()} ${verb} ${kind}`, n.name || n.title || n.text || ""), 1500);
 }
 async function joinCrew(code, name) {
+  if (/^H/i.test(code.trim())) {
+    const { error } = await store.sb.rpc("nyx_viewer_join", { p_code: code, p_name: name || profile().name || "" });
+    if (error) throw new Error(error.message);
+    return store.loadAll();
+  }
   const { error } = await store.sb.rpc("nyx_crew_join", { p_code: code, p_name: name || profile().name || "" });
   if (error) throw new Error(error.message);
   try { localStorage.removeItem("nyx-crew-code"); } catch {}
@@ -2267,7 +2333,7 @@ document.addEventListener("click", (e) => {
   if (e.target.id === "sideScrim") return setSide(false);
   const inNav = e.target.closest("nav.tabs, #side, .topbar"); if (!inNav) return;
   const a = e.target.closest("[data-act]");
-  if (a && !view.contains(a)) { setSide(false); if (a.dataset.act === "profile") return profileSheet(); if (a.dataset.act === "club") return clubSheet(); if (a.dataset.act === "scan") return startScan(); }
+  if (a && !view.contains(a)) { setSide(false); if (a.dataset.act === "profile") return store.viewer ? viewerSheet() : profileSheet(); if (a.dataset.act === "club") return clubSheet(); if (a.dataset.act === "scan") return startScan(); }
   const b = e.target.closest("[data-tab]"); if (!b) return;
   setSide(false);
   goTab(b.dataset.tab);
@@ -2303,7 +2369,7 @@ view.addEventListener("submit", (e) => {
   if (e.target.id === "homeJoin") {
     const c = e.target.querySelector("#hj-code").value.trim(), btn = e.target.querySelector("button"); if (!c) return;
     btn.disabled = true; btn.textContent = "Tilslutter…";
-    return joinCrew(c, profile().name || emailName()).then(() => { toast("Du er nu koblet på " + (store.boss ? store.boss.name : "din promoter")); render(); }, (err) => { btn.disabled = false; btn.textContent = "Tilslut"; toast(err.message); });
+    return joinCrew(c, profile().name || emailName()).then(() => { toast("Du er nu koblet på " + (store.viewer ? store.viewer.boss : store.boss ? store.boss.name : "din promoter")); render(); }, (err) => { btn.disabled = false; btn.textContent = "Tilslut"; toast(err.message); });
   }
   if (e.target.id === "gaestForm") {
     const nm = e.target.querySelector("#g-name"), ct = e.target.querySelector("#g-count");
@@ -2321,6 +2387,7 @@ view.addEventListener("submit", (e) => {
   if (e.target.id === "ideaForm") { const t = e.target.querySelector("#ideaText").value.trim(); if (t) safe(store.put("notes", { id: newId(), kind: "ide", text: t, done: false, created: Date.now() })); }
 });
 view.addEventListener("change", (e) => {
+  if (e.target.dataset && e.target.dataset.vspent) return vSaveSpent(e.target.dataset.vspent, e.target.value);
   if (e.target.id === "hiveDate" && e.target.value) { ui.hiveDate = e.target.value; return render(); }
   if (e.target.id === "nightDate" && e.target.value) { if (!okDay(e.target.value)) { toast("Du kan kun booke torsdage (Moon)"); return render(); } ui.date = e.target.value; return render(); }
   const id = e.target.dataset.done; if (!id) return;
@@ -2329,6 +2396,11 @@ view.addEventListener("change", (e) => {
 view.addEventListener("click", (e) => {
   const t = (s) => e.target.closest(s);
   let x;
+  if ((x = t("[data-vmonth]"))) { ui.vmonth = shiftMonth(ui.vmonth, +x.dataset.vmonth); return render(); }
+  if (t("[data-vcopy]")) return copyText(vCopyText(), "Oversigten er kopieret");
+  if ((x = t("[data-vcopycode]"))) return copyText(`Hej! Hent Bordbog på ${location.origin}, tryk "Opret ny konto" og skriv koden ${x.dataset.vcopycode} på forsiden. Så kan du se mine borde på Hive.`, "Kopieret");
+  if (t("[data-act=vcode]")) return store.sb.rpc("nyx_viewer_code").then(({ error }) => { if (error) return toast(error.message); ui.vlist = null; render(); });
+  if ((x = t("[data-vremove]"))) { if (!x.dataset.armed) { x.dataset.armed = "1"; x.textContent = "Tryk igen"; return; } return store.sb.from("nyx_viewers").delete().eq("viewer", x.dataset.vremove).then(({ error }) => { if (error) return toast(error.message); toast("Adgang fjernet"); ui.vlist = null; render(); }); }
   if ((x = t("[data-tab-go]"))) return goTab(x.dataset.tabGo);
   if ((x = t("[data-night]"))) return go("night", { date: x.dataset.night });
   if ((x = t("[data-mode]"))) { ui.mode = x.dataset.mode; return render(); }
