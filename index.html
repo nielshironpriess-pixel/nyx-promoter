@@ -653,12 +653,12 @@ const shortName = (n) => { const p = String(n || "").trim().split(/\s+/); return
 const nightOf = (date) => S.nights.find((n) => n.id === date);
 /* special events og artister på Søpavillonen (fra klubbens plan). hemmelig = kun du ser navnet */
 const SPECIAL_EVENTS = {
-  "2026-12-21": { name: "Ozzy", k: "30K" },
-  "2026-12-22": { name: "Wicky", k: "40K" },
-  "2026-12-25": { name: "Gusto", k: "30K" },
-  "2026-12-26": { name: "Michael Williams", k: "40K" },
-  "2026-12-27": { name: "Faza", k: "40K" },
-  "2026-12-28": { name: "Westerlin", k: "100K" },
+  "2026-12-21": { name: "Ozzy", k: "30K", note: "Tys tys, ikke bekræftet. Sælg højt spend.", secret: true },
+  "2026-12-22": { name: "Wicky", k: "40K", note: "Tys tys, ikke bekræftet. Sælg højt spend.", secret: true },
+  "2026-12-25": { name: "Gusto", k: "30K", note: "Tys tys, ikke bekræftet. Sælg højt spend.", secret: true },
+  "2026-12-26": { name: "Michael Williams", k: "40K", note: "Tys tys, ikke bekræftet. Sælg højt spend.", secret: true },
+  "2026-12-27": { name: "Faza", k: "40K", note: "Tys tys, ikke bekræftet. Sælg højt spend.", secret: true },
+  "2026-12-28": { name: "Westerlin", k: "100K", note: "Tys tys, ikke bekræftet. Sælg højt spend.", secret: true },
   "2026-12-29": { name: "Offset", note: "Tys tys, ikke bekræftet. Sælg højt spend.", secret: true },
 };
 const specialEvent = (date) => { const e = SPECIAL_EVENTS[date]; if (!e) return null; return e.secret && isCrew() ? { name: "Special event", note: "Sælg højt spend" } : e; };
