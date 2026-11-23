@@ -30,6 +30,7 @@
 [hidden]{display:none!important}
 body:not(.crew) .crew-only{display:none!important}
 body.viewer nav.tabs,body.viewer .side,body.viewer .sidescrim,body.viewer .tb-menu,body.viewer #clubLbl{display:none!important}
+.hevt{margin:10px 0 0;padding:10px 14px;border-radius:14px;background:linear-gradient(135deg,var(--vip,#c9a227),#e8c86a);color:#2b2100;display:flex;flex-direction:column;gap:2px}.hevt b{font-size:16px}.hevt span{font-size:13px}
 .vrow{display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center;padding:12px 14px;border-bottom:1px solid var(--line)}
 .vrow:last-child{border-bottom:0}.vrow .t{font-weight:700}.vrow .s{font-size:13px;color:var(--muted)}
 .vrow input{width:110px;padding:9px 10px;border-radius:10px;border:1px solid var(--line);background:var(--surface);font-size:16px;text-align:right}
@@ -650,6 +651,18 @@ const shiftMonth = (ym, k) => { const [y, m] = ym.split("-").map(Number); const 
 const newId = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
 const shortName = (n) => { const p = String(n || "").trim().split(/\s+/); return p.length > 1 ? p[0] + " " + p[p.length - 1][0] + "." : p[0] || ""; };
 const nightOf = (date) => S.nights.find((n) => n.id === date);
+/* special events og artister på Hive (fra klubbens plan). hemmelig = kun du ser navnet */
+const HIVE_EVENTS = {
+  "2026-12-21": { name: "Ozzy", k: "30K" },
+  "2026-12-22": { name: "Wicky", k: "40K" },
+  "2026-12-25": { name: "Gusto", k: "30K" },
+  "2026-12-26": { name: "Michael Williams", k: "40K" },
+  "2026-12-27": { name: "Faza", k: "40K" },
+  "2026-12-28": { name: "Westerlin", k: "100K" },
+  "2026-12-29": { name: "Offset", note: "Tys tys, ikke bekræftet. Sælg højt spend.", secret: true },
+};
+const hiveEvent = (date) => { const e = HIVE_EVENTS[date]; if (!e) return null; return e.secret && isCrew() ? { name: "Special event", note: "Sælg højt spend" } : e; };
+const hiveEventLine = (e) => `★ ${esc(e.name)}${e.k ? " (" + esc(e.k) + ")" : ""}${e.secret ? " 🤫" : ""}`;
 function eventFor(date) {
   const n = nightOf(date), def = DEFAULT_EVENTS[d(date).getDay()] || ["Aften", "", ""];
   const manual = n ? num(n.guestlist) : 0, names = S.notes.filter((x) => x.kind === "gaest" && x.date === date).reduce((a, x) => a + (num(x.count) || 1), 0);
@@ -1160,6 +1173,7 @@ function vHive() {
     <div class="daybar"><button data-hday="-1" aria-label="Dagen før">‹</button>
       <label class="dpick"><b>Hive</b><span>${dayLabel(date)} <em>▾</em></span><input type="date" id="hiveDate" value="${date}" aria-label="Vælg dato"></label>
       <button data-hday="1" aria-label="Dagen efter">›</button></div>
+    ${hiveEvent(date) ? `<div class="hevt"><b>${hiveEventLine(hiveEvent(date))}</b>${hiveEvent(date).note ? `<span>${esc(hiveEvent(date).note)}</span>` : ""}</div>` : ""}
     <div class="nsum num"><span>${nBorde(bs.filter(active).length)}</span>${exp ? `<span>${kr(exp)}</span>` : ""}</div>
     ${moveBar()}<div class="map ${ui.move ? "movemode" : ""}" style="aspect-ratio:920/${A.h}">${items}</div>
     <p class="maptip">Tryk på et bord for at booke det. Hold fingeren på et bord for at flytte det.</p>
@@ -1256,6 +1270,7 @@ function vHome() {
       <div class="r"><span>Søpavillonen <b>${kr(so.sold)}</b></span><span>Hive ${esc(monthName(hym).split(" ")[0])} <b>${kr(hv.sold)}</b></span><span>${nBorde(totB)} kom</span>${mer ? `<span>Merspend <b>${kr(mer)}</b></span>` : ""}</div>
       ${isCrew() ? "" : `<div class="pv"><span>Din provision</span>${pctS || pctH ? `<b>${kr(prov)}</b>` : `<span class="note">Sæt procent i din profil ›</span>`}</div>`}</button>
     ${todo.length ? `<h2>Til dig</h2><div class="list">${todo.join("")}</div>` : ""}
+    ${(() => { const ev = Object.keys(HIVE_EVENTS).filter((x) => x >= today && x <= addDays(today, 45)).sort().slice(0, 4); return ev.length ? `<h2>Events på Hive</h2><div class="list">${ev.map((x) => { const e = hiveEvent(x); return `<button class="row" data-hevt="${x}"><span class="tag num">${d(x).getDate()}/${d(x).getMonth() + 1}</span><span class="mid"><span class="t">${hiveEventLine(e)}</span><span class="s">${esc(dayLabel(x))}${e.note ? " · " + esc(e.note) : ""}</span></span><span class="right">›</span></button>`; }).join("")}</div>` : ""; })()}
     ${hiveNext.length ? `<h2>Kommende på Hive</h2><div class="list">${hiveNext.slice(0, 3).map(bookingRow).join("")}</div>` : ""}`;
 }
 const SVGS = {
@@ -2396,6 +2411,7 @@ view.addEventListener("change", (e) => {
 view.addEventListener("click", (e) => {
   const t = (s) => e.target.closest(s);
   let x;
+  if ((x = t("[data-hevt]"))) return go("hive", { hiveDate: x.dataset.hevt });
   if ((x = t("[data-vmonth]"))) { ui.vmonth = shiftMonth(ui.vmonth, +x.dataset.vmonth); return render(); }
   if (t("[data-vcopy]")) return copyText(vCopyText(), "Oversigten er kopieret");
   if ((x = t("[data-vcopycode]"))) return copyText(`Hej! Hent Bordbog på ${location.origin}, tryk "Opret ny konto" og skriv koden ${x.dataset.vcopycode} på forsiden. Så kan du se mine borde på Hive.`, "Kopieret");
