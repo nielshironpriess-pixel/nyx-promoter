@@ -1134,6 +1134,31 @@ async function finishMove(area, table) {
   if (other) await safe(store.put("bookings", { ...other, area: from.area, table: String(from.table) }));
   toast(other ? `Byttet: ${first(b.name) || "bordet"} → ${table}, ${first(other.name) || "det andet"} → ${from.table}` : `${first(b.name) || "Bordet"} er flyttet til bord ${table}`);
 }
+/* borde solgt af andre promotere i Nyx: pris + overbud (mindst 50 % over) */
+const CLUB_SOLD = {
+  "2026-12-17": [
+    { area: "SØ Main", table: "4", price: 15000, name: "Pakke 4", who: "Nels Andersen" },
+    { area: "SØ Main", table: "5", with: "4", name: "Malthe Hesselholt" },
+    { area: "SØ Main", table: "41", price: 33500, name: "Tik Tok", who: "Liva Wylich-Muxoll" },
+    { area: "SØ Main", table: "42", price: 40000, name: "Brøndby U19", who: "Philip Warberg" },
+    { area: "SØ Main", table: "43", price: 40000, name: "FC Nordsjælland", who: "Jon Thomsen" },
+    { area: "SØ Main", table: "44", with: "43", name: "FC Nordsjælland" },
+  ],
+};
+const OVERBUD = 1.5;
+function nyxSoldAt(date, area, table) {
+  const L = CLUB_SOLD[date] || [], e = L.find((x) => x.area === area && String(x.table) === String(table));
+  if (!e) return null;
+  const main = e.with ? L.find((x) => x.area === area && String(x.table) === String(e.with)) || {} : e;
+  return { ...e, price: main.price || 0, who: main.who || e.who || "", min: Math.ceil((main.price || 0) * OVERBUD) };
+}
+const kShort = (n) => (Math.round(n / 100) / 10).toLocaleString("da-DK") + "K";
+function nyxSoldBox(n) {
+  return `<div class="full" style="padding:12px 14px;border-radius:14px;background:linear-gradient(135deg,#e9b93a,#c99a2e);color:#2b1d1f">
+    <b>Solgt i Nyx${n.price ? " for " + kr(n.price) : ""}</b>${n.with ? ` <span>(sammen med bord ${esc(n.with)})</span>` : ""}<br>
+    <span style="font-size:14px">${esc([n.name, n.who].filter(Boolean).join(" · "))}</span><br>
+    <span style="font-size:17px;font-weight:800">Overbud: mindst ${kr(n.min)}</span> <span style="font-size:13px">(+50 %)</span></div>`;
+}
 /* borde solgt af chefen eller resten af holdet (underpromoteren ser kun at de er optaget) */
 const takenAt = (date, area, table, hive) => isCrew() && !(hive ? hiveAt(date, table) : bookingAt(date, area, table))
   ? (store.taken || []).find((t) => t.date === date && String(t.table) === String(table) && (hive ? isHiveClub(t.club) : !t.club && t.area === area)) : null;
@@ -1164,8 +1189,8 @@ function vNight() {
     const pos = `left:${it.x / 9.2}%;top:${(it.y - A.y0) / A.h * 100}%;width:${it.w / 9.2}%;height:${it.h / A.h * 100}%`;
     if (it.k === "h") return `<div class="hatch" style="${pos}">${it.label || ""}</div>`;
     if (it.k === "b") return `<div class="blk ${it.v ? "v" : ""}" style="${pos}"><span>${esc(it.label)}</span></div>`;
-    const b = bookingAt(date, A.name, it.id), tk = !b && takenAt(date, A.name, it.id);
-    return `<button class="tb ${it.k === "r" ? "round" : ""} ${b ? b.status : tk ? "taken" : ""} ${b && ui.move && ui.move.id === b.id ? "moving" : ""}" style="${pos}" data-table="${it.id}"${b ? ` data-bid="${esc(b.id)}"` : ""} aria-label="Bord ${it.id}${b ? ", " + esc(b.name) : tk ? ", solgt" : ", ledigt"}"><b>${it.id}</b><small>${b ? esc(shortName(b.name)) : tk ? "Solgt" : esc(it.cap)}</small></button>`;
+    const b = bookingAt(date, A.name, it.id), ns = !b && nyxSoldAt(date, A.name, it.id), tk = !b && (takenAt(date, A.name, it.id) || ns);
+    return `<button class="tb ${it.k === "r" ? "round" : ""} ${b ? b.status : tk ? "taken" : ""} ${b && ui.move && ui.move.id === b.id ? "moving" : ""}" style="${pos}" data-table="${it.id}"${b ? ` data-bid="${esc(b.id)}"` : ""} aria-label="Bord ${it.id}${b ? ", " + esc(b.name) : tk ? ", solgt" : ", ledigt"}"><b>${it.id}</b><small>${b ? esc(shortName(b.name)) : ns && ns.price ? "Solgt " + kShort(ns.price) : tk ? "Solgt" : esc(it.cap)}</small></button>`;
   }).join("");
   return top + `<div class="areabar"><div class="nav"><button data-area="-1" aria-label="Forrige område">‹</button><span class="nm">${esc(A.name)} (${ui.area + 1}/${AREAS.length})</span><button data-area="1" aria-label="Næste område">›</button></div>
     <div class="counts num"><span class="c-green" title="Booket">${cnt("booket")}</span><span class="c-blue" title="Kom">${cnt("kom")}</span><span class="c-red" title="Udeblev">${cnt("udeblev")}</span></div></div>
@@ -2099,6 +2124,7 @@ function bookingSheet(b) {
   const free = b.area === "Andet", other = b.club != null;
   const f = openSheet(`<h3>${other ? "Bord" + (b.table ? " " + esc(b.table) : "") + " på " + esc(b.club || "anden klub") : free ? "Bord" : esc(b.area) + ", bord " + esc(b.table)}</h3><p class="sh">${other ? "Booking uden for " + HOME : dayLabel(b.date) + " · " + esc(eventFor(b.date).name)}${!mine(b) ? " · delt af " + esc(memberName(ownerOf(b))) : ""}</p>
   <form class="form">
+    ${(() => { const n = !exists && !free && !other && nyxSoldAt(b.date, b.area, b.table); return n ? nyxSoldBox(n) : ""; })()}
     ${!exists && !free ? `<button type="button" class="btn teal full" data-quicksold style="padding:14px;font-size:17px">✓ Solgt</button>
     <p class="full note" style="margin:-6px 0 2px;text-align:center">Ét tryk: bordet står som solgt. Navn og pris kan skrives på senere.</p>` : ""}
     ${other ? `<label class="f">Klub<input id="b-club" list="clubs" value="${esc(b.club)}" required autocomplete="off"><datalist id="clubs">${clubNames().map((c) => `<option value="${esc(c)}">`).join("")}</datalist></label>
