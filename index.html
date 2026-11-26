@@ -1324,6 +1324,7 @@ function vHome() {
     <button class="mcard num" data-tab-go="stats"><div class="l">Solgt · ${payName(ym)}</div><div class="v">${kr(tot)}</div>
       <div class="r"><span>Søpavillonen <b>${kr(so.sold)}</b></span><span>Hive ${esc(monthName(hym).split(" ")[0])} <b>${kr(hv.sold)}</b></span><span>${nBorde(totB)} kom</span>${mer ? `<span>Merspend <b>${kr(mer)}</b></span>` : ""}</div>
       ${isCrew() ? "" : `<div class="pv"><span>Din provision</span>${pctS || pctH ? `<b>${kr(prov)}</b>` : `<span class="note">Sæt procent i din profil ›</span>`}</div>`}</button>
+    ${isBoss() ? teamHome(today) : ""}
     ${todo.length ? `<h2>Til dig</h2><div class="list">${todo.join("")}</div>` : ""}
     ${(() => { const ev = Object.keys(SPECIAL_EVENTS).filter((x) => x >= today && x <= addDays(today, 60) && okDay(x)).sort(); return ev.length ? `<h2>Events på Søpavillonen</h2><div class="list">${ev.map((x) => { const e = specialEvent(x); return `<button class="row" data-hevt="${x}"><span class="tag num">${d(x).getDate()}/${d(x).getMonth() + 1}</span><span class="mid"><span class="t">${specialLine(e)}</span><span class="s">${esc(dayLabel(x))}${e.note ? " · " + esc(e.note) : ""}</span></span><span class="right">›</span></button>`; }).join("")}</div>` : ""; })()}
     ${hiveNext.length ? `<h2>Kommende på Hive</h2><div class="list">${hiveNext.slice(0, 3).map(bookingRow).join("")}</div>` : ""}`;
@@ -1882,6 +1883,23 @@ function vCrew() {
   <details class="more"><summary>Koder og notifikationer</summary>${ps === "til" ? notif : ""}${invites}</details>` : ""}`;
 }
 const sold_ = (b) => (b.status === "kom" ? num(b.spent) || 0 : 0);
+/* Hjem (chef): overblik pr. underpromoter: solgt i alt + alle kommende borde */
+function teamHome(today) {
+  return (store.crew || []).map((c) => {
+    const bs = S.bookings.filter((b) => ownerOf(b) === c.id && active(b));
+    const soldAll = bs.reduce((a, b) => a + sold_(b), 0), cameN = bs.filter((b) => sold_(b) > 0).length;
+    const up = bs.filter((b) => b.date >= today).sort((a, b) => a.date.localeCompare(b.date) || num(a.table) - num(b.table));
+    const upExp = up.reduce((a, b) => a + num(b.expected), 0);
+    const open = ui.teamOpen === c.id, shown = open ? up : up.slice(0, 5);
+    return `<h2>${esc(first(c.name))}</h2><section class="cmp num" style="margin-top:0">
+      <div style="display:flex;justify-content:space-between;gap:10px;align-items:flex-end">
+        <div><div class="sub">Solgt i alt</div><div class="big" style="font-size:30px;color:var(--green)">${kr(soldAll)}</div><div class="sub">${nBorde(cameN)} kom</div></div>
+        <div style="text-align:right"><div class="sub">Kommende</div><div class="big" style="font-size:30px">${up.length}</div><div class="sub">${upExp ? "for " + kr(upExp) : nBorde(up.length)}</div></div></div>
+      ${up.length ? `<div class="list">${shown.map((b) => `<button class="row" data-gomap="${esc(b.id)}"><span class="tag num ${b.status}">${esc(b.table || "?")}</span><span class="mid"><span class="t">${esc(b.club || "Sø")} · ${esc(dayLabel(b.date))}</span><span class="s">${esc([b.name, num(b.guests) ? num(b.guests) + " pers." : ""].filter(Boolean).join(" · ")) || "&nbsp;"}</span></span><span class="right num">${kr(b.expected)}</span></button>`).join("")}</div>
+      ${up.length > 5 ? `<button class="btn" data-teamopen="${esc(c.id)}">${open ? "Vis færre" : "Vis alle " + up.length + " kommende borde"}</button>` : ""}` : `<p class="note" style="margin:0">Ingen kommende borde.</p>`}
+    </section>`;
+  }).join("");
+}
 /* ---------- Til Nyx: kopiér underpromoternes borde og lister ---------- */
 const nyxLine = (b) => [`Bord ${b.table || "?"}${b.area ? " (" + b.area + ")" : ""}`, b.name, b.guests ? b.guests + " pers" : "", num(b.expected) ? "min. " + kr(b.expected) : "", b.arrival ? "ankomst " + b.arrival : "", b.phone ? "tlf " + b.phone : "", b.email || "", b.notes || ""].filter(Boolean).join(" · ");
 const nyxName = (n) => n.name.trim() + (gN(n) > 1 ? " +" + (gN(n) - 1) : "");
@@ -2473,6 +2491,7 @@ view.addEventListener("change", (e) => {
 view.addEventListener("click", (e) => {
   const t = (s) => e.target.closest(s);
   let x;
+  if ((x = t("[data-teamopen]"))) { ui.teamOpen = ui.teamOpen === x.dataset.teamopen ? null : x.dataset.teamopen; return render(); }
   if ((x = t("[data-gomap]"))) {
     const b = S.bookings.find((y) => y.id === x.dataset.gomap); if (!b) return;
     if (isHiveClub(b.club)) { setClub("hive", true); ui.hiveDate = b.date; return go("hive"); }
