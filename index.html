@@ -2474,7 +2474,12 @@ view.addEventListener("click", (e) => {
   if ((x = t("[data-area]"))) { ui.area = (ui.area + Number(x.dataset.area) + AREAS.length) % AREAS.length; return render(); }
   if ((x = t("[data-gl]"))) { const inp = view.querySelector("#gl"); const nv = Math.max(0, num(inp.value) + Number(x.dataset.gl)); inp.value = nv; return setGuestlist(ui.tab === "liste" ? ui.listDate : ui.date, nv); }
   if (!ui.move && (x = t("[data-hive]")) && takenAt(ui.hiveDate, "Hive", x.dataset.hive, true)) return takenToast(takenAt(ui.hiveDate, "Hive", x.dataset.hive, true));
-  if (!ui.move && (x = t("[data-table]")) && takenAt(ui.date, AREAS[ui.area].name, x.dataset.table)) return takenToast(takenAt(ui.date, AREAS[ui.area].name, x.dataset.table));
+  if (!ui.move && (x = t("[data-table]")) && takenAt(ui.date, AREAS[ui.area].name, x.dataset.table)) {
+    const ns = nyxSoldAt(ui.date, AREAS[ui.area].name, x.dataset.table), tk = takenAt(ui.date, AREAS[ui.area].name, x.dataset.table);
+    if (ns) return openSheet(`<h3>${esc(AREAS[ui.area].name)}, bord ${esc(x.dataset.table)}</h3><p class="sh">${dayLabel(ui.date)} · ${esc(eventFor(ui.date).name)}</p>
+      <form class="form">${nyxSoldBox(ns)}<p class="full note">Har du en kunde, der vil give mindst ${kr(ns.min)}, så skriv til ${esc(first((store.boss && store.boss.name) || "din promoter"))}.</p><div class="full btns"><span></span><button type="button" class="btn" data-close>Luk</button></div></form>`, () => {});
+    return takenToast(tk);
+  }
   if ((x = t("[data-hive]"))) { const id = x.dataset.hive; return bookingSheet(hiveAt(ui.hiveDate, id) || { ...newBooking(ui.hiveDate, "Hive", id), club: "Hive" }); }
   if ((x = t("[data-nday]"))) { ui.date = stepNight(ui.date, Number(x.dataset.nday)); return render(); }
   if ((x = t("[data-hday]"))) { ui.hiveDate = addDays(ui.hiveDate, Number(x.dataset.hday)); return render(); }
