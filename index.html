@@ -1302,7 +1302,7 @@ function vHome() {
   const msg = isCrew() ? inboxUnread()[0] : null;
   const cNew = isBoss() ? crewNew() : [];
   const crewBox = cNew.length ? `<section class="msgc"><div class="l">Nyt fra dit team · ${cNew.length} ${cNew.length === 1 ? "bord" : "borde"}</div>
-    <div class="list" style="margin:8px 0 10px">${cNew.slice(0, 6).map((b) => `<button class="row" data-booking="${esc(b.id)}"><span class="tag num ${b.status}">${esc(b.table || "?")}</span><span class="mid"><span class="t">${esc(b.club || "Sø")} · ${esc(dayLabel(b.date))}</span><span class="s">${esc([first(crewName(ownerOf(b))), b.name, num(b.guests) ? num(b.guests) + " pers." : ""].filter(Boolean).join(" · "))}</span></span><span class="right num">${kr(b.expected)}</span></button>`).join("")}</div>
+    <div class="list" style="margin:8px 0 10px">${cNew.slice(0, 6).map((b) => `<button class="row" data-gomap="${esc(b.id)}"><span class="tag num ${b.status}">${esc(b.table || "?")}</span><span class="mid"><span class="t">${esc(b.club || "Sø")} · ${esc(dayLabel(b.date))}</span><span class="s">${esc([first(crewName(ownerOf(b))), b.name, num(b.guests) ? num(b.guests) + " pers." : ""].filter(Boolean).join(" · "))}</span></span><span class="right num">${kr(b.expected)}</span></button>`).join("")}</div>
     <button data-act="crewseen">Set ✓</button>${cNew.length > 6 ? ` <button data-tab-go="crew">Se alle ${cNew.length}</button>` : ""}</section>` : "";
   if ((isCrew() || (isBoss() && (store.crew || []).length)) && !ui.pushNow) pushState().then((st) => { ui.pushNow = st; if (ui.tab === "home" && st !== "til") render(); });
   const pushAsk = (isCrew() || (isBoss() && (store.crew || []).length)) && ui.pushNow && ui.pushNow !== "til" && ui.pushNow !== "nej"
@@ -2473,6 +2473,13 @@ view.addEventListener("change", (e) => {
 view.addEventListener("click", (e) => {
   const t = (s) => e.target.closest(s);
   let x;
+  if ((x = t("[data-gomap]"))) {
+    const b = S.bookings.find((y) => y.id === x.dataset.gomap); if (!b) return;
+    if (isHiveClub(b.club)) { setClub("hive", true); ui.hiveDate = b.date; return go("hive"); }
+    setClub("so", true);
+    const ai = AREAS.findIndex((a) => a.name === b.area); if (ai >= 0) { ui.area = ai; ui.mode = "kort"; } else ui.mode = "liste";
+    return go("night", { date: b.date });
+  }
   if ((x = t("[data-hevt]"))) { setClub("so", true); return go("night", { date: x.dataset.hevt }); }
   if ((x = t("[data-vmonth]"))) { ui.vmonth = shiftMonth(ui.vmonth, +x.dataset.vmonth); return render(); }
   if (t("[data-vcopy]")) return copyText(vCopyText(), "Oversigten er kopieret");
