@@ -2,9 +2,17 @@
 self.addEventListener('install', () => self.skipWaiting());
 self.addEventListener('activate', (e) => e.waitUntil(self.clients.claim()));
 self.addEventListener('fetch', () => {});
+// Tal på app-ikonet: tælles op ved hver notifikation, appen sætter det rigtige tal når den åbnes.
+async function bumpBadge() {
+  try {
+    const c = await caches.open('bordbog-badge'), r = await c.match('/badge'), n = (r ? Number(await r.text()) || 0 : 0) + 1;
+    await c.put('/badge', new Response(String(n)));
+    if (self.navigator.setAppBadge) await self.navigator.setAppBadge(n);
+  } catch {}
+}
 self.addEventListener('push', (e) => {
   let d = {}; try { d = e.data ? e.data.json() : {}; } catch { d = { title: 'Bordbog', body: e.data && e.data.text() }; }
-  e.waitUntil(self.registration.showNotification(d.title || 'Bordbog', { body: d.body || '', icon: 'assets/icon-192.png', badge: 'assets/icon-192.png', data: { url: d.url || '/' } }));
+  e.waitUntil(Promise.all([bumpBadge(), self.registration.showNotification(d.title || 'Bordbog', { body: d.body || '', icon: 'assets/icon-192.png', badge: 'assets/icon-192.png', data: { url: d.url || '/' } })]));
 });
 self.addEventListener('notificationclick', (e) => {
   e.notification.close();

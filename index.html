@@ -1025,7 +1025,18 @@ function clubSheet() {
 function clubSeg() {
   return `<div class="seg" style="margin-bottom:10px"><button data-pickclub="so" aria-pressed="${ui.club !== "hive"}">Søpavillonen</button><button data-pickclub="hive" aria-pressed="${ui.club === "hive"}">Hive</button></div>`;
 }
+/* tal på app-ikonet: nye borde fra teamet (chef) eller ulæste beskeder (underpromoter) */
+let badgeLast = -1;
+function syncBadge() {
+  try {
+    const n = !S.ready || store.viewer ? 0 : isBoss() ? crewNew().length : isCrew() ? inboxUnread().length : 0;
+    if (n === badgeLast) return; badgeLast = n;
+    if (navigator.setAppBadge) (n ? navigator.setAppBadge(n) : navigator.clearAppBadge()).catch(() => {});
+    if (window.caches) caches.open("bordbog-badge").then((c) => c.put("/badge", new Response(String(n)))).catch(() => {});
+  } catch {}
+}
 function render() {
+  setTimeout(syncBadge, 0);
   document.body.classList.toggle("viewer", !!store.viewer);
   if (store.viewer) { if (S.ready) view.innerHTML = vViewer(); return; }
   if (ui.tab === "hive" || ui.tab === "hivesalg") setClub("hive", true); else if (ui.tab === "stats" || ui.tab === "night") setClub("so", true);
