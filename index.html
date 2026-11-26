@@ -2124,7 +2124,7 @@ function bookingSheet(b) {
   const free = b.area === "Andet", other = b.club != null;
   const f = openSheet(`<h3>${other ? "Bord" + (b.table ? " " + esc(b.table) : "") + " på " + esc(b.club || "anden klub") : free ? "Bord" : esc(b.area) + ", bord " + esc(b.table)}</h3><p class="sh">${other ? "Booking uden for " + HOME : dayLabel(b.date) + " · " + esc(eventFor(b.date).name)}${!mine(b) ? " · delt af " + esc(memberName(ownerOf(b))) : ""}</p>
   <form class="form">
-    ${(() => { const n = !exists && !free && !other && nyxSoldAt(b.date, b.area, b.table); return n ? nyxSoldBox(n) : ""; })()}
+    ${(() => { const n = !free && !other && nyxSoldAt(b.date, b.area, b.table); return n ? nyxSoldBox(n) : ""; })()}
     ${!exists && !free ? `<button type="button" class="btn teal full" data-quicksold style="padding:14px;font-size:17px">✓ Solgt</button>
     <p class="full note" style="margin:-6px 0 2px;text-align:center">Ét tryk: bordet står som solgt. Navn og pris kan skrives på senere.</p>` : ""}
     ${other ? `<label class="f">Klub<input id="b-club" list="clubs" value="${esc(b.club)}" required autocomplete="off"><datalist id="clubs">${clubNames().map((c) => `<option value="${esc(c)}">`).join("")}</datalist></label>
