@@ -610,7 +610,7 @@ const HIVE = { name: "Hive", y0: 0, h: 968, items: [
   HB("Bar 2", 525, 760, 190, 135), HB("Balkon", 742, 700, 30, 240, true), HT("41", 780, 720, 58, 70, "8-10"), HT("40", 780, 855, 58, 70, "8-10"),
 ] };
 const NIGHT_DAYS = () => (isCrew() ? [4] : [4, 5, 6]);
-const okDay = (iso) => !isCrew() || d(iso).getDay() === 4;
+const okDay = (iso) => !isCrew() || d(iso).getDay() === 4 || !!SPECIAL_EVENTS[iso];
 const DEFAULT_EVENTS = { 3: ["Onsdag", "22:00–03:00", ""], 4: ["Moon", "22:00–05:00", "18+"], 5: ["Friday", "17:30–05:00", "23+"], 6: ["Saturday", "17:30–05:00", "23+"] };
 const STATUS = { booket: "Booket", kom: "Kom", udeblev: "Udeblev", aflyst: "Aflyst" };
 
@@ -2097,7 +2097,7 @@ function gaestSheet(n) {
     <div class="full btns">${noteOwner(n) === store.uid ? `<button type="button" class="btn danger" data-del>Slet</button>` : "<span></span>"}<button class="btn teal">Gem</button></div>
   </form>`, (f) => {
     const nx = { ...n, name: v(f, "ge-name"), count: Math.max(1, num(v(f, "ge-count"))), date: v(f, "ge-date") || n.date, note: v(f, "ge-note"), vip: f.querySelector("#ge-vip").checked };
-    if (!okDay(nx.date)) { toast("Du kan kun skrive gæster på torsdage (Moon)"); return false; }
+    if (!okDay(nx.date)) { toast("Du kan kun skrive gæster på torsdage (Moon) og event-dage"); return false; }
     if (n.nyx && (nx.name !== n.name || nx.count !== gN(n) || nx.date !== n.date)) nx.nyx = false;
     if (nx.vip && noteOwner(n) === store.uid && !vipRoom(nx.date, nx.count, n.id)) return false;
     safe(store.put("notes", nx), "Gemt");
@@ -2185,7 +2185,7 @@ function bookingSheet(b) {
     if (other) o.club = v(f, "b-club") || "Anden klub";
     if (other && isHiveClub(o.club)) o.club = "Hive";
     if (o.spent && o.status === "booket") o.status = "kom";
-    if (!o.club && !okDay(o.date)) { toast("Du kan kun booke torsdage (Moon)"); return false; }
+    if (!o.club && !okDay(o.date)) { toast("Du kan kun booke torsdage (Moon) og event-dage"); return false; }
     safe(store.put("bookings", o), "Gemt");
     if (ui.todoRun && o.spent) { (ui.todoDone ||= new Set()).add(o.id); setTimeout(() => { const n = nextTodo(); if (n) bookingSheet(n); else ui.todoRun = false; }, 250); }
   }, () => safe(store.del("bookings", b.id), "Slettet"));
@@ -2194,7 +2194,7 @@ function bookingSheet(b) {
   if (qs) qs.addEventListener("click", () => {
     const o = { ...b, name: "Solgt", status: "booket" };
     if (other) o.club = isHiveClub(b.club) ? "Hive" : b.club || "Anden klub";
-    if (!o.club && !okDay(o.date)) return toast("Du kan kun booke torsdage (Moon)");
+    if (!o.club && !okDay(o.date)) return toast("Du kan kun booke torsdage (Moon) og event-dage");
     safe(store.put("bookings", o), `Bord ${o.table} er solgt`); close();
   });
   const $ = (id) => f.querySelector("#" + id);
@@ -2484,7 +2484,7 @@ view.addEventListener("submit", (e) => {
 view.addEventListener("change", (e) => {
   if (e.target.dataset && e.target.dataset.vspent) return vSaveSpent(e.target.dataset.vspent, e.target.value);
   if (e.target.id === "hiveDate" && e.target.value) { ui.hiveDate = e.target.value; return render(); }
-  if (e.target.id === "nightDate" && e.target.value) { if (!okDay(e.target.value)) { toast("Du kan kun booke torsdage (Moon)"); return render(); } ui.date = e.target.value; return render(); }
+  if (e.target.id === "nightDate" && e.target.value) { if (!okDay(e.target.value)) { toast("Du kan kun booke torsdage (Moon) og event-dage"); return render(); } ui.date = e.target.value; return render(); }
   const id = e.target.dataset.done; if (!id) return;
   const n = S.notes.find((x) => x.id === id); if (n) safe(store.put("notes", { ...n, done: e.target.checked }));
 });
